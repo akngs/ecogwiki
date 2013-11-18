@@ -1,0 +1,79 @@
+{% extends "templates/wiki_base.html" %}
+{% block title %}Edit "{{ page.title }}"{% endblock %}
+{% block head %}
+    {% if not is_mobile %}
+    <link rel="stylesheet" href="/statics/css/codemirror.css?ver={{ app.version }}">
+    <style>
+    .CodeMirror {
+        border: 1px solid #eee;
+        height: auto;
+    }
+    .CodeMirror-scroll {
+        overflow-y: hidden;
+        overflow-x: auto;
+    }
+    .CodeMirror pre {
+        font-family: NanumGothicCoding, "Courier New", Courier, monospace;
+    }
+    </style>
+    <script type="text/javascript" src="/statics/js/codemirror/codemirror.js?ver={{ app.version }}"></script>
+    <script type="text/javascript" src="/statics/js/codemirror/markdown.js?ver={{ app.version }}"></script>
+    {% endif %}
+{% endblock %}
+{% block body %}
+<header>
+    <h1>{{ page.title }}</h1>
+</header>
+<form method="POST" action="{{ page.absolute_url }}" class="editform">
+    <input type="hidden" name="revision" value="{{ page.revision }}">
+
+    <textarea name="body" placeholder="Body" autofocus=autofocus>{{ page.body }}</textarea>
+    <input name="comment" placeholder="Comment" class="comment" value="">
+
+    <div class="actions">
+        <input type="submit" value="Save" class="btn btn-primary">
+        <input type="reset" value="Reset" class="btn">
+    </div>
+</form>
+{% endblock %}
+{% block before_body_close %}
+    {% if is_mobile %}
+    <script>
+        // Resize editor to remove nested scrollbar
+        $(function() {
+            var $editor = $('.editform textarea');
+            if ($editor.length === 0) return;
+
+            function resize_editor() {
+                // It doesn't work when there's large amount of reduction in text
+                $editor.height($editor.height() - 50);
+                $editor.height($editor.prop('scrollHeight'));
+            }
+
+            $(resize_editor);
+            $(window).resize(resize_editor);
+            $(window).on('orientationchange', resize_editor);
+            $editor.on('input propertychange', resize_editor);
+        })();
+    </script>
+    {% else %}
+    <script>
+        // Enable CodeMirror editor
+        $(function() {
+            var editor = CodeMirror.fromTextArea(document.querySelector('textarea'), {
+                indentUnit: 4,
+                indentWithTabs: false,
+                lineWrapping: true,
+                lineNumbers: true,
+                autofocus: true,
+                mode: 'markdown',
+                viewportMargin: Infinity
+            });
+            editor.addKeyMap({
+                'Cmd-Enter': function() {$('input.comment').focus();},
+                'Ctrl-Enter': function() {$('input.comment').focus();}
+            });
+        })
+    </script>
+    {% endif %}
+{% endblock %}

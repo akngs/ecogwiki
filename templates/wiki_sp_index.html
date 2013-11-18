@@ -1,0 +1,42 @@
+{% extends "templates/wiki_base.html" %}
+{% block title %}Title Index{% endblock %}
+{% block head %}
+    <link rel="alternate" type="application/atom+xml" href="/sp.index?_type=atom" title="Eogwiki title index">
+{% endblock %}
+{% block body %}
+<header>
+    <h1>Title Index</h1>
+</header>
+
+<table class="changes">
+    <thead><tr>
+        <th class="updated">Updated</th>
+        <th class="page">Pages</th>
+    </tr></thead>
+    {% for key, pages in page_group %}
+    <tbody>
+        <tr><td colspan="2">
+            <h2 id="index{{ key }}">{{ key }}</h2>
+        </td></tr>
+        {% for page in pages %}
+        <tr>
+            <td class="updated"><time datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|sdt }}</time></td>
+            <td class="page">
+                {% if page.modifier %}
+                    <span class="modifier">{{ page.modifier.email() }}</span>
+                {% else %}
+                    <span class="modifier">anonymous</span>
+                {% endif %}
+                <br>
+                <a href="{{ page.absolute_url }}">{{ page.title }}</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    {% else %}
+    <tbody>
+        <tr><td colspan=2>(no pages yet)</td></tr>
+    </tbody>
+    {% endfor %}
+</table>
+{% endblock %}

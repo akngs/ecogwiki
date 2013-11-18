@@ -1,0 +1,23 @@
+{% extends "templates/wiki_base.html" %}
+{% block title %}{{ page.title }}{% endblock %}
+{% block head %}
+    <link rel="canonical" href="http://{{ config.service.domain }}{{ page.absolute_url|e }}"/>
+{% endblock %}
+
+{% block body %}
+<article>
+    <header>
+        <h1><span>{{ page.title }}</span></h1>
+    </header>
+    <section class="body">
+        <div class="error">
+            <p>You don't have a permission to access this page.</p>
+            {% if user %}
+            <p>Please <a href="{{ users.create_logout_url(cur_url)|e }}">logout</a> and try another account.</p>
+            {% else %}
+            <p>Please <a href="{{ users.create_login_url(cur_url)|e }}">login</a> to access this page.</p>
+            {% endif %}
+        </div>
+    </section>
+</article>
+{% endblock %}

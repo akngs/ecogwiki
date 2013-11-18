@@ -1,0 +1,7 @@
+cron:
+- description: Randomly update related pages (recent changes)
+  url: /sp.randomly_update_related_pages?recent=1
+  schedule: every 30 minutes
+- description: Randomly update related pages
+  url: /sp.randomly_update_related_pages
+  schedule: every 30 minutes

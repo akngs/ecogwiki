@@ -1,0 +1,280 @@
+{% extends "templates/wiki_base.html" %}
+{% block html_class %}{% if 'pt' in page.metadata %}meta-pt{% endif %}{% endblock %}
+{% block title %}{{ page.title }}{% endblock %}
+{% block head %}
+    <link rel="canonical" href="http://{{ config.service.domain }}{{ page.absolute_url|e }}"/>
+    {% if 'pt' in page.metadata %}
+    <link rel="stylesheet" href="/statics/css/reveal.css?ver={{ app.version }}">
+    <link rel="stylesheet" href="/statics/css/reveal-theme-simple.css?ver={{ app.version }}">
+    {% endif %}
+    {% if ('uml' in page.hashbangs) %}
+    <link rel="stylesheet" href="/statics/css/jumly.css?ver={{ app.version }}">
+    {% endif %}
+
+    <meta name="description" content="{{ page.description|e }}" />
+
+    <!-- Open Graph properties { -->
+    <meta property="og:url" content="http://{{ config.service.domain }}{{ page.absolute_url|e }}" />
+    <meta property="og:image" content="http://{{ config.service.domain }}/large-icon.png?ver={{ app.version }}" />
+    <meta property="og:type" content="blog" />
+    <meta property="og:title" content="{{ page.title|e }}" />
+    <meta property="og:description" content="{{ page.description|e }}" />
+    <!-- } Open Graph properties -->
+
+    <!-- Twitter Card { -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@{{ config.admin.twitter }}" />
+    <meta name="twitter:title" content="{{ page.title|e }}" />
+    <meta name="twitter:image" content="http://{{ config.service.domain }}/large-icon.png?ver={{ app.version }}" />
+    <meta name="twitter:description" content="{{ page.description|e }}" />
+    <!-- } Twitter Card -->
+
+    {% if page.metadata.schema == 'Blog' %}
+    <link rel="alternate" type="application/atom+xml" href="/{{ page.title|e }}?_type=atom" title="{{ page.title }}">
+    {% endif %}
+{% endblock %}
+
+{% block after_body_open %}
+{% if 'pt' not in page.metadata and page.published_at %}
+<!-- Facebook API { -->
+<div id="fb-root"></div>
+<script>
+(function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&status=0";
+
+    fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
+
+window.fbAsyncInit = function() {
+    // init the FB JS SDK
+    FB.Event.subscribe('edge.create', function(targetUrl) {
+        ga('send', 'social', 'facebook', 'like', targetUrl);
+    });
+    FB.Event.subscribe('message.send', function(targetUrl) {
+        ga('send', 'social', 'facebook', 'send', targetUrl);
+    });
+    FB.Event.subscribe('comment.create', function(res) {
+        ga('send', 'social', 'facebook', 'comment', res.href);
+    });
+};
+</script>
+<!-- } Facebook API -->
+{% endif %}
+{% endblock %}
+
+{% block body %}
+<article itemscope itemtype="{{ page.itemtype_url }}">
+    <header>
+        <h1>
+            <a href="+{{ page.title }}" rel="nofollow" class="search pos">+</a>
+            <a href="-{{ page.title }}" rel="nofollow" class="search neg">-</a>
+            <br>
+            {% if 'pub' in page.metadata %}
+                {% if page.metadata.pub %}
+                    <span class="parent"><a href="/{{ page.metadata.pub|e }}">{{ page.metadata.pub }}</a></span>
+                {% else %}
+                    <span class="parent"><a href="/sp.posts">Posts</a></span>
+                {% endif %}
+            {% endif %}
+            <span itemprop="name">{{ page.title }}</span>
+
+            {% if page.revision > 0 %}
+            <a id="top" href="#top" class="caret-target">#</a>
+            {% endif %}
+
+            {% if page.metadata.schema == 'Blog' %}
+            <a href="/{{ page.title|e }}?_type=atom" class="rss">RSS</a>
+            {% endif %}
+        </h1>
+
+        {% if page.published_at and 'pt' not in page.metadata %}
+        <div class="social">
+            <!-- Facebook { -->
+            <div class="fb-like" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="300" data-layout="button_count" data-show-faces="true" data-send="true"></div>
+            <!-- } Facebook -->
+        </div>
+        {% endif %}
+
+        <ul class="info">
+            {% if page.updated_at %}
+            <li class="updated_at">
+                <a href="{{ page.absolute_url|e }}?_type=history">
+                <time
+                    {% if page.itemtype == 'Article' %}itemprop="dateModified"{% endif %}
+                    datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|dt }}
+                </time>
+                (rev. <span {% if page.itemtype == 'Article' %}itemprop="version"{% endif %}>{{ page.revision }}</span>)
+                </a>
+            </li>
+            {% endif %}
+            {% if page.published_at %}
+            <li class="published_at">
+                <time
+                    {% if page.itemtype == 'Article' %}itemprop="datePublished"{% endif %}
+                    datetime="{{ page.published_at|isodt }}">{{ page.published_at|dt }}
+                </time>
+                (published)
+            </li>
+            {% endif %}
+
+            {% if page.modifier %}
+            <li {% if page.itemtype == 'Article' %}itemprop="author"{% endif %} class="modifier">
+                {{ page.modifier.email() }}
+            </li>
+            {% endif %}
+
+            {% if page.modifier and page.modifier.email() == config.admin.email %}
+            <!-- Google authorship { -->
+            <li style="display:none;">
+                <a href="{{ config.admin.gplus_url }}?rel=author">Google</a>
+            </li>
+            <!-- } Google authorship -->
+            {% endif %}
+
+            {% if page.can_write(user) %}
+            <li class="edit_menu">
+                <a href="?_type=form" id="edit" {% if 'pt' not in page.metadata %}class='btn btn-primary'{% endif %}>Edit</a>
+            </li>
+            {% endif %}
+        </ul>
+    </header>
+    <section class="body" {% if page.itemtype == 'Article' %}itemprop="articleBody"{% endif %}>
+        {% for sname, sobj in page.special_sections.items() %}
+        <aside class="{{ sname }}">
+        {% if sname == 'years' %}
+            <h1>{{ sobj.title }}</h1>
+            <ol class="years">
+            {% for year_title in sobj.years %}
+                <li>
+                {% if year_title == sobj.cur_year %}
+                    <em class="current">{{ year_title }}</em>
+                {% else %}
+                    <a href="{{ year_title|to_path }}" class="wikipage" rel="nofollow">
+                    {{ year_title }}
+                    </a>
+                {% endif %}
+                </li>
+            {% endfor %}
+            </ol>
+        {% elif sname == 'dates' %}
+            <h1>
+                <a href="{{ sobj.prev_month }}" class="prev wikipage" rel="nofollow">{{ sobj.prev_month }}</a>
+                <a href="{{ sobj.month }}" class="cur wikipage" rel="nofollow">{{ sobj.month }}</a>
+                <a href="{{ sobj.next_month }}" class="next wikipage" rel="nofollow">{{ sobj.next_month }}</a>
+            </h1>
+            <ol class="dates">
+            {% for date in sobj.dates %}
+                <li>
+                {% if date == sobj.cur_date %}
+                <em class="current">{{ date }}</em>
+                {% else %}
+                <a href="{{ sobj.month }}_{{ date }}" class="wikipage" rel="nofollow">
+                {{ date }}
+                </a>
+                {% endif %}
+                </li>
+            {% endfor %}
+            </ol>
+        {% endif %}
+        </aside>
+        {% endfor %}
+
+        {% if page.body == '' %}
+        <p>The page is empty.</p>
+        {% endif %}
+
+        {{ page.rendered_body }}
+
+        {% if page.metadata.schema == 'Blog' %}
+        <table class="posts">
+            <thead><tr>
+                <th class="published">Published</th>
+                <th class="page">Pages</th>
+            </tr></thead>
+            <tbody>
+                {% for post in posts %}
+                <tr>
+                    <td class="published"><time datetime="{{ post.published_at|isodt }}">{{ post.published_at|sdt }}</time></td>
+                    <td class="page">
+                        {% if post.modifier %}
+                            <span class="modifier">{{ post.modifier.email() }}</span>
+                        {% else %}
+                            <span class="modifier">anonymous</span>
+                        {% endif %}
+                        <br>
+                        <a class="caret-target" itemprop="blogPost" href="{{ post.absolute_url }}">{{ post.title }}</a>
+                    </td>
+                </tr>
+                {% else %}
+                    <tr><td colspan=2>(no posts yet)</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if page.revision == 0 %}
+            {% for key, titles in page.get_similar_titles(user).items() %}
+                {% if key == 'startswiths' and titles %}
+                    <h1>Pages starting with "{{ page.title }}"</h1>
+                {% elif key == 'endswiths' and titles %}
+                    <h1>Pages ending with "{{ page.title }}"</h1>
+                {% elif key == 'contains' and titles %}
+                    <h1>Pages containing "{{ page.title }}"</h1>
+                {% endif %}
+
+                {% if titles %}
+                    <ul>
+                    {% for title in titles %}
+                        <li><a href="{{ title|to_path }}" class="wikipage caret-target">{{ title }}</a></li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </section>
+</article>
+
+{% if page.published_at and 'pt' not in page.metadata %}
+<div class="social">
+    <!-- Facebook { -->
+    <div class="fb-like" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="300" data-layout="button_count" data-show-faces="true" data-send="true"></div>
+    <div class="fb-comments" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="630"></div>
+    <!-- } Facebook -->
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block before_body_close %}
+    {% if 'pt' in page.metadata %}
+    <!-- Reveal.js for Presentation { -->
+    <script src="/statics/js/head.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script src="/statics/js/reveal.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script src="/statics/js/reveal-converter.js?ver={{ app.version }}" type="text/javascript"></script>
+    <!-- } Reveal.js for Presentation -->
+    {% endif %}
+
+    {% if ('dot' in page.hashbangs) or ('dot/s' in page.hashbangs) %}
+    <script src="/statics/js/viz.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script src="/statics/js/viz-run.js?ver={{ app.version }}" type="text/javascript"></script>
+    {% endif %}
+
+    {% if ('uml' in page.hashbangs) %}
+    <script src="/statics/js/coffee-script.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script src="/statics/js/jumly.min.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script src="/statics/js/jumly-run.js?ver={{ app.version }}" type="text/javascript"></script>
+    {% endif %}
+
+    {% if ('mathjax' in page.hashbangs) %}
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    {% endif %}
+
+    {% if page.body == '' %}
+    <script>
+    $(function() {ga('send', 'event', 'page', 'error', 'not found');});
+    </script>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,25 @@
+application: PROJECT_ID
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+default_expiration: 3000d
+
+handlers:
+- url: /statics/js
+  static_dir: statics/js
+- url: /statics/css
+  static_dir: statics/css
+- url: /statics/img
+  static_dir: statics/img
+- url: /(.*\.(html|ico|png|jpg|txt|xml))
+  static_files: statics/root/\1
+  upload: statics/(.*\.(html|ico|png|jpg|txt|xml))
+- url: /.*
+  script: main.app
+
+libraries:
+- name: jinja2
+  version: latest
+- name: lxml
+  version: latest

@@ -1,0 +1,38 @@
+{% extends "templates/wiki_base.html" %}
+{% block title %}Posts{% endblock %}
+{% block head %}
+    <link rel="alternate" type="application/atom+xml" href="/sp.posts?_type=atom" title="{{ config.service.title }} posts">
+{% endblock %}
+{% block body %}
+<header>
+    <h1>
+        Posts
+        <a href="/sp.posts?_type=atom" class="rss">RSS</a>
+    </h1>
+</header>
+
+<table class="posts">
+    <thead><tr>
+        <th class="published">Published</th>
+        <th class="page">Pages</th>
+    </tr></thead>
+    <tbody>
+        {% for page in pages %}
+        <tr>
+            <td class="published"><time datetime="{{ page.published_at|isodt }}">{{ page.published_at|sdt }}</time></td>
+            <td class="page">
+                {% if page.modifier %}
+                    <span class="modifier">{{ page.modifier.email() }}</span>
+                {% else %}
+                    <span class="modifier">anonymous</span>
+                {% endif %}
+                <br>
+                <a class="caret-target" href="{{ page.absolute_url }}">{{ page.title }}</a>
+            </td>
+        </tr>
+        {% else %}
+            <tr><td colspan=2>(no posts yet)</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "templates/wiki_base.html" %}
+{% block title %}Changes{% endblock %}
+{% block head %}
+    <link rel="alternate" type="application/atom+xml" href="/sp.changes?_type=atom" title="{{ config.service.title }} changes">
+{% endblock %}
+{% block body %}
+<header>
+    <h1>
+        Changes
+    </h1>
+</header>
+
+<table class="changes">
+    <thead><tr>
+        <th class="updated">Updated</th>
+        <th class="page">Pages</th>
+    </tr></thead>
+    <tbody>
+        {% for page in pages %}
+        <tr>
+            <td class="updated"><time datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|sdt }}</time></td>
+            <td class="page">
+                {% if page.modifier %}
+                    <span class="modifier">{{ page.modifier.email() }}</span>
+                {% else %}
+                    <span class="modifier">anonymous</span>
+                {% endif %}
+                <br>
+                <a class="caret-target" href="{{ page.absolute_url }}">{{ page.title }}</a>
+                <br>
+                <span class="comment">
+                {% if page.comment %}
+                {{ page.comment }}
+                {% else %}
+                (no comment)
+                {% endif %}
+                </span>
+            </td>
+        </tr>
+        {% else %}
+            <tr><td colspan=2>(no pages yet)</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
