@@ -1045,7 +1045,7 @@ class TocGenerator(object):
 
         duplicates = set([x for x in result if result.count(x) > 1])
         if len(duplicates) > 0:
-            raise ValueError(duplicates.pop())
+            raise ValueError("Duplicate paths not allowed: %s" % duplicates.pop())
 
         return result
 
