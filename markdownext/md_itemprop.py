@@ -30,12 +30,17 @@ class ItemProp(Pattern):
         if m.group('isbn'):
             num = m.group('isbnnum')
             el = etree.Element('a')
-            el.text = num
             if num[:2] == '89':
                 el.set('href', u'http://www.aladin.co.kr/shop/wproduct.aspx'
+                               u'?ISBN=978%s' % num)
+                el.text = '978%s' % num
+            elif num[:5] == '97889':
+                el.set('href', u'http://www.aladin.co.kr/shop/wproduct.aspx'
                                u'?ISBN=%s' % num)
+                el.text = num
             else:
                 el.set('href', u'http://www.amazon.com/gp/product/%s' % num)
+                el.text = num
             el.set('class', 'isbn')
             el.set('itemprop', 'isbn')
         else:

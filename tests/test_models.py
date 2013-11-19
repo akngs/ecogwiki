@@ -257,7 +257,14 @@ class SchemaItemPropertyRenderingTest(unittest.TestCase):
         actual = md.convert(u'{{isbn::8936437267}}')
         expected = u'<p><a class="isbn" href="http://www.aladin.co.kr/' \
                    u'shop/wproduct.aspx?ISBN=' \
-                   u'8936437267" itemprop="isbn">8936437267</a></p>'
+                   u'9788936437267" itemprop="isbn">9788936437267</a></p>'
+        self.assertEqual(expected, actual)
+
+    def test_isbn13_kr(self):
+        actual = md.convert(u'{{isbn::9788936437267}}')
+        expected = u'<p><a class="isbn" href="http://www.aladin.co.kr/' \
+                   u'shop/wproduct.aspx?ISBN=' \
+                   u'9788936437267" itemprop="isbn">9788936437267</a></p>'
         self.assertEqual(expected, actual)
 
     def test_generic_key_value(self):
