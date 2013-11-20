@@ -26,17 +26,283 @@ class MigrationHistory(ndb.Model):
     performed_at = ndb.DateTimeProperty()
 
 
-class WikiPage(ndb.Model):
+class PageOperationMixin(object):
     re_img = re.compile(ur'<p><img( .+? )/></p>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
-    re_normalize_title = re.compile(ur'([\[\]\(\)\~\!\@\#\$\%\^\&\*\-'
-                                    ur'\=\+\\:\;\'\"\,\.\/\?\<\>\s]|'
-                                    ur'\bthe\b|\ban?\b)')
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
                                          ur'April|May|June|July|August|'
                                          ur'September|October|November|'
                                          ur'December)( (?P<date>[0123]?\d))?)$')
+
+    @property
+    def rendered_body(self):
+        # body
+        body_parts = [PageOperationMixin.remove_metadata(self.body)]
+
+        # incoming links
+        if len(self.inlinks) > 0:
+            lines = [u'# Incoming Links']
+            for rel, links in self.inlinks.items():
+                itemtype, rel = rel.split('/')
+                humane_rel = schema.humane_property(itemtype, rel, True)
+                lines.append(u'## %s' % humane_rel)
+                lines += [u'* [[%s]]' % title for title in set(links)]
+            body_parts.append(u'\n'.join(lines))
+
+        # related links
+        related_links = self.related_links_by_score
+        if len(related_links) > 0:
+            lines = [u'# Suggested Pages']
+            lines += [u'* {{.score::%.2f}} [[%s]]' % (score, title)
+                      for title, score in related_links.items()[:10]]
+            body_parts.append(u'\n'.join(lines))
+
+        # other posts
+        if self.older_title or self.newer_title:
+            lines = [u'# Other Posts']
+            if self.newer_title:
+                lines.append(u'* {{.newer::newer}} [[%s]]' % self.newer_title)
+            if self.older_title:
+                lines.append(u'* {{.older::older}} [[%s]]' % self.older_title)
+            body_parts.append(u'\n'.join(lines))
+
+        # render to html
+        rendered = md.convert(u'\n'.join(body_parts))
+
+        # add table of contents
+        final = TocGenerator(rendered).add_toc()
+
+        # add class for embedded image
+        final = PageOperationMixin.re_img.sub(u'<p class="img-container"><img \\1/></p>', final)
+
+        # sanitize
+        if final:
+            cleaner = Cleaner(safe_attrs_only=False)
+            final = cleaner.clean_html(final)
+
+        return final
+
+    @property
+    def absolute_url(self):
+        return u'/%s' % WikiPage.title_to_path(self.title)
+
+    @property
+    def absolute_newer_url(self):
+        return u'/%s' % WikiPage.title_to_path(self.newer_title)
+
+    @property
+    def absolute_older_url(self):
+        return u'/%s' % WikiPage.title_to_path(self.older_title)
+
+    @property
+    def metadata(self):
+        return self.parse_metadata(self.body)
+
+    def can_read(self, user, default_acl=None):
+        if default_acl is None:
+            default_acl = WikiPage.yaml_by_title(u'.config')['service']['default_permissions']
+
+        acl = self.acl_read.split(',') if self.acl_read is not None and len(self.acl_read) != 0 else []
+        if len(acl) == 0:
+            acl = default_acl['read']
+
+        if user is not None and users.is_current_user_admin():
+            return True
+        elif u'all' in acl or len(acl) == 0:
+            return True
+        elif u'login' in acl and user is not None:
+            return True
+        elif user is not None and user.email() in acl:
+            return True
+        elif self.can_write(user, default_acl):
+            return True
+        else:
+            return False
+
+    def can_write(self, user, default_acl=None):
+        if default_acl is None:
+            default_acl = WikiPage.yaml_by_title(u'.config')['service']['default_permissions']
+
+        acl = self.acl_write.split(',') if self.acl_write is not None and len(self.acl_write) != 0 else []
+        if len(acl) == 0:
+            acl = default_acl['write']
+
+        if user is not None and users.is_current_user_admin():
+            return True
+        elif 'all' in acl:
+            return True
+        elif (len(acl) == 0 or u'login' in acl) and user is not None:
+            return True
+        elif user is not None and user.email() in acl:
+            return True
+        else:
+            return False
+
+    @property
+    def itemtype(self):
+        if 'schema' in self.metadata:
+            return self.metadata['schema']
+        else:
+            return u'Article'
+
+    @property
+    def itemtype_url(self):
+        return 'http://schema.org/%s' % self.itemtype
+
+    @property
+    def related_links_by_score(self):
+        sorted_tuples = sorted(self.related_links.iteritems(),
+                               key=operator.itemgetter(1),
+                               reverse=True)
+        return OrderedDict(sorted_tuples)
+
+    @property
+    def related_links_by_title(self):
+        sorted_tuples = sorted(self.related_links.iteritems(),
+                               key=operator.itemgetter(0))
+        return OrderedDict(sorted_tuples)
+
+    @property
+    def special_sections(self):
+        ss = {}
+
+        if self._check_special_titles_years():
+            ss[u'years'] = self._special_titles_years()
+        elif self._check_special_titles_dates():
+            ss[u'dates'] = self._special_titles_dates()
+
+        return ss
+
+    def _check_special_titles_years(self):
+        return (
+            self.title != '0' and
+            re.match(PageOperationMixin.re_special_titles_years, self.title)
+        )
+
+    def _check_special_titles_dates(self):
+        return (
+            re.match(PageOperationMixin.re_special_titles_dates, self.title)
+        )
+
+    def _special_titles_years(self):
+        ss = {}
+
+        # years: list year titles
+        if self.title.endswith(' BCE'):
+            cur_year = -int(self.title[:-4]) + 1
+        else:
+            cur_year = int(self.title)
+
+        years = range(cur_year - 3, cur_year + 4)
+        year_titles = []
+        for year in years:
+            if year < 1:
+                year_titles.append(str(abs(year - 1)) + u' BCE')
+            else:
+                year_titles.append(str(year))
+
+        ss[u'title'] = 'Years'
+        ss[u'years'] = year_titles
+        ss[u'cur_year'] = str(cur_year)
+        return ss
+
+    def _special_titles_dates(self):
+        ss = {}
+
+        # dates: list of dates in month
+        month_names = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November',
+                       'December']
+        m = re.match(WikiPage.re_special_titles_dates, self.title)
+        month = m.group('month')
+        max_date = 31
+        if month == 'February':
+            max_date = 29
+        elif month in ('April', 'June', 'September', 'November'):
+            max_date = 30
+        ss[u'title'] = month
+        ss[u'month'] = month
+        ss[u'prev_month'] = month_names[month_names.index(month) - 1]
+        ss[u'next_month'] = month_names[(month_names.index(month) + 1) %
+                                        len(month_names)]
+        if m.group('date'):
+            ss[u'cur_date'] = int(m.group('date'), 10)
+
+        ss[u'dates'] = range(1, max_date + 1)
+        return ss
+
+    @staticmethod
+    def parse_metadata(body):
+        matches = []
+        for line in body.split(u'\n'):
+            m = re.match(WikiPage.re_metadata, line.strip())
+            if m:
+                matches.append(m)
+            else:
+                break
+
+        metadata = {
+            'content-type': 'text/x-markdown',
+        }
+
+        for m in matches:
+            key = m.group(1).strip()
+            value = m.group(3)
+            if value is not None:
+                value = value.strip()
+            metadata[key] = value
+
+        return metadata
+
+    @staticmethod
+    def remove_metadata(body):
+        rest = []
+        lines = iter(body.split(u'\n'))
+
+        for line in lines:
+            m = re.match(WikiPage.re_metadata, line.strip())
+            if m is None:
+                rest.append(line)
+                break
+
+        rest += list(lines)
+        return u'\n'.join(rest)
+
+    @staticmethod
+    def extract_hashbangs(html):
+        matches = re.findall(ur'<code>#!(.+?)[\n;]', html)
+        if re.match(ur'.*(\\\(.+\\\)|\$\$.+\$\$)', html, re.DOTALL):
+            matches.append('mathjax')
+        return matches
+
+    def make_description(self, max_length=200):
+        head = PageOperationMixin.remove_metadata(self.body)[:max_length].strip()
+
+        # try newline
+        index = head.find(u'\n')
+        if index != -1:
+            return head[:index].strip()
+
+        # try period
+        index = 0
+        while index < max_length:
+            next_index = head.find(u'. ', index)
+            if next_index == -1:
+                break
+            index = next_index + 1
+
+        if index > 3:
+            return head[:index].strip()
+
+        # just cut-off
+        return head[:max_length - 3].strip() + u'...'
+
+
+class WikiPage(ndb.Model, PageOperationMixin):
+    re_normalize_title = re.compile(ur'([\[\]\(\)\~\!\@\#\$\%\^\&\*\-'
+                                    ur'\=\+\\:\;\'\"\,\.\/\?\<\>\s]|'
+                                    ur'\bthe\b|\ban?\b)')
 
     itemtype_path = ndb.StringProperty()
     title = ndb.StringProperty()
@@ -58,6 +324,20 @@ class WikiPage(ndb.Model):
     older_title = ndb.StringProperty()
     newer_title = ndb.StringProperty()
 
+    @property
+    def is_old_revision(self):
+        return False
+
+    @property
+    def rendered_body(self):
+        html = cache.get_rendered_body(self.title)
+        if html is not None:
+            return html
+
+        html = super(WikiPage, self).rendered_body
+        cache.set_rendered_body(self.title, html)
+        return html
+
     def update_content(self, new_body, base_revision, comment, user=None, force_update=False):
         if not force_update and self.body == new_body:
             return False
@@ -67,13 +347,13 @@ class WikiPage(ndb.Model):
 
         # update body
         old_md = self.metadata
-        new_md = WikiPage.parse_metadata(new_body)
+        new_md = PageOperationMixin.parse_metadata(new_body)
 
         # validate contents
         if u'pub' in new_md and u'redirect' in new_md:
             raise ValueError('You cannot use "pub" and "redirect" metadata at '
                              'the same time.')
-        if u'redirect' in new_md and len(WikiPage.remove_metadata(new_body).strip()) != 0:
+        if u'redirect' in new_md and len(PageOperationMixin.remove_metadata(new_body).strip()) != 0:
             raise ValueError('Page with "redirect" metadata cannot have a body '
                              'content.')
         if u'read' in new_md and new_md['content-type'] != 'text/x-markdown':
@@ -129,7 +409,7 @@ class WikiPage(ndb.Model):
         self.itemtype_path = schema.get_itemtype_path(self.itemtype)
 
         # update hashbangs
-        self.hashbangs = WikiPage.extract_hashbangs(self.rendered_body)
+        self.hashbangs = PageOperationMixin.extract_hashbangs(self.rendered_body)
 
         # save
         self.put()
@@ -155,103 +435,8 @@ class WikiPage(ndb.Model):
         return True
 
     @property
-    def itemtype(self):
-        if 'schema' in self.metadata:
-            return self.metadata['schema']
-        else:
-            return u'Article'
-
-    @property
-    def itemtype_url(self):
-        return 'http://schema.org/%s' % self.itemtype
-
-    @property
-    def rendered_body(self):
-        final = cache.get_rendered_body(self.title)
-
-        if final is not None:
-            return final
-
-        # body
-        body_parts = [WikiPage.remove_metadata(self.body)]
-
-        # incoming links
-        if len(self.inlinks) > 0:
-            lines = [u'# Incoming Links']
-            for rel, links in self.inlinks.items():
-                itemtype, rel = rel.split('/')
-                humane_rel = schema.humane_property(itemtype, rel, True)
-                lines.append(u'## %s' % humane_rel)
-                lines += [u'* [[%s]]' % title for title in set(links)]
-            body_parts.append(u'\n'.join(lines))
-
-        # related links
-        related_links = self.related_links_by_score
-        if len(related_links) > 0:
-            lines = [u'# Suggested Pages']
-            lines += [u'* {{.score::%.2f}} [[%s]]' % (score, title)
-                      for title, score in related_links.items()[:10]]
-            body_parts.append(u'\n'.join(lines))
-
-        # other posts
-        if self.older_title or self.newer_title:
-            lines = [u'# Other Posts']
-            if self.newer_title:
-                lines.append(u'* {{.newer::newer}} [[%s]]' % self.newer_title)
-            if self.older_title:
-                lines.append(u'* {{.older::older}} [[%s]]' % self.older_title)
-            body_parts.append(u'\n'.join(lines))
-
-        # render to html
-        rendered = md.convert(u'\n'.join(body_parts))
-
-        # add table of contents
-        final = TocGenerator(rendered).add_toc()
-
-        # add class for embedded image
-        final = WikiPage.re_img.sub(u'<p class="img-container"><img \\1/></p>', final)
-
-        # sanitize
-        if final:
-            cleaner = Cleaner(safe_attrs_only=False)
-            final = cleaner.clean_html(final)
-
-        cache.set_rendered_body(self.title, final)
-
-        return final
-
-    @property
-    def absolute_url(self):
-        return u'/%s' % WikiPage.title_to_path(self.title)
-
-    @property
-    def absolute_newer_url(self):
-        return u'/%s' % WikiPage.title_to_path(self.newer_title)
-
-    @property
-    def absolute_older_url(self):
-        return u'/%s' % WikiPage.title_to_path(self.older_title)
-
-    @property
     def revisions(self):
         return WikiPageRevision.query(ancestor=self._rev_key())
-
-    @property
-    def metadata(self):
-        return self.parse_metadata(self.body)
-
-    @property
-    def related_links_by_score(self):
-        sorted_tuples = sorted(self.related_links.iteritems(),
-                               key=operator.itemgetter(1),
-                               reverse=True)
-        return OrderedDict(sorted_tuples)
-
-    @property
-    def related_links_by_title(self):
-        sorted_tuples = sorted(self.related_links.iteritems(),
-                               key=operator.itemgetter(0))
-        return OrderedDict(sorted_tuples)
 
     @property
     def link_scoretable(self):
@@ -277,121 +462,12 @@ class WikiPage(ndb.Model):
                                    reverse=True)
         return OrderedDict(sorted_scoretable)
 
-    @property
-    def special_sections(self):
-        ss = {}
-
-        if self._check_special_titles_years():
-            ss[u'years'] = self._special_titles_years()
-        elif self._check_special_titles_dates():
-            ss[u'dates'] = self._special_titles_dates()
-
-        return ss
-
-    def _check_special_titles_years(self):
-        return (
-            self.title != '0' and
-            re.match(WikiPage.re_special_titles_years, self.title)
-        )
-
-    def _check_special_titles_dates(self):
-        return (
-            re.match(WikiPage.re_special_titles_dates, self.title)
-        )
-
-    def _special_titles_years(self):
-        ss = {}
-
-        # years: list year titles
-        if self.title.endswith(' BCE'):
-            cur_year = -int(self.title[:-4]) + 1
-        else:
-            cur_year = int(self.title)
-
-        years = range(cur_year - 3, cur_year + 4)
-        year_titles = []
-        for year in years:
-            if year < 1:
-                year_titles.append(str(abs(year - 1)) + u' BCE')
-            else:
-                year_titles.append(str(year))
-
-        ss[u'title'] = 'Years'
-        ss[u'years'] = year_titles
-        ss[u'cur_year'] = str(cur_year)
-        return ss
-
-    def _special_titles_dates(self):
-        ss = {}
-
-        # dates: list of dates in month
-        month_names = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November',
-                       'December']
-        m = re.match(WikiPage.re_special_titles_dates, self.title)
-        month = m.group('month')
-        max_date = 31
-        if month == 'February':
-            max_date = 29
-        elif month in ('April', 'June', 'September', 'November'):
-            max_date = 30
-        ss[u'title'] = month
-        ss[u'month'] = month
-        ss[u'prev_month'] = month_names[month_names.index(month) - 1]
-        ss[u'next_month'] = month_names[(month_names.index(month) + 1) %
-                                        len(month_names)]
-        if m.group('date'):
-            ss[u'cur_date'] = int(m.group('date'), 10)
-
-        ss[u'dates'] = range(1, max_date + 1)
-        return ss
-
     def parse_as_yaml(self):
-        body = WikiPage.remove_metadata(self.body)
+        body = PageOperationMixin.remove_metadata(self.body)
         try:
             return yaml.load(body)
         except:
             return None
-
-    def can_read(self, user, default_acl=None):
-        if default_acl is None:
-            default_acl = WikiPage.yaml_by_title(u'.config')['service']['default_permissions']
-
-        acl = self.acl_read.split(',') if self.acl_read is not None and len(self.acl_read) != 0 else []
-        if len(acl) == 0:
-            acl = default_acl['read']
-
-        if user is not None and users.is_current_user_admin():
-            return True
-        elif u'all' in acl or len(acl) == 0:
-            return True
-        elif u'login' in acl and user is not None:
-            return True
-        elif user is not None and user.email() in acl:
-            return True
-        elif self.can_write(user, default_acl):
-            return True
-        else:
-            return False
-
-    def can_write(self, user, default_acl=None):
-        if default_acl is None:
-            default_acl = WikiPage.yaml_by_title(u'.config')['service']['default_permissions']
-
-        acl = self.acl_write.split(',') if self.acl_write is not None and len(self.acl_write) != 0 else []
-        if len(acl) == 0:
-            acl = default_acl['write']
-
-        if user is not None and users.is_current_user_admin():
-            return True
-        elif 'all' in acl:
-            return True
-        elif (len(acl) == 0 or u'login' in acl) and user is not None:
-            return True
-        elif user is not None and user.email() in acl:
-            return True
-        else:
-            return False
 
     def update_links(self, old_redir=None, new_redir=None):
         """Updates outlinks of this page and inlinks of target pages"""
@@ -599,28 +675,6 @@ class WikiPage(ndb.Model):
         # done
         self.related_links = related_links
 
-    def make_description(self, max_length=200):
-        head = WikiPage.remove_metadata(self.body)[:max_length].strip()
-
-        # try newline
-        index = head.find(u'\n')
-        if index != -1:
-            return head[:index].strip()
-
-        # try period
-        index = 0
-        while index < max_length:
-            next_index = head.find(u'. ', index)
-            if next_index == -1:
-                break
-            index = next_index + 1
-
-        if index > 3:
-            return head[:index].strip()
-
-        # just cut-off
-        return head[:max_length - 3].strip() + u'...'
-
     def _parse_outlinks(self):
         body = WikiPage.remove_metadata(self.body)
         links = md_wikilink.parse_wikilinks(self.itemtype, body)
@@ -744,8 +798,8 @@ class WikiPage(ndb.Model):
 
         return titles
 
-    @classmethod
-    def get_published_posts(cls, title, limit):
+    @staticmethod
+    def get_published_posts(title, limit):
         q = WikiPage.query(ancestor=WikiPage._key())
         q = q.filter(WikiPage.published_to == title)
         q = q.filter(WikiPage.published_at != None)
@@ -860,50 +914,6 @@ class WikiPage(ndb.Model):
         return ndb.Key(u'wiki', u'/')
 
     @staticmethod
-    def parse_metadata(body):
-        matches = []
-        for line in body.split(u'\n'):
-            m = re.match(WikiPage.re_metadata, line.strip())
-            if m:
-                matches.append(m)
-            else:
-                break
-
-        metadata = {
-            'content-type': 'text/x-markdown',
-        }
-
-        for m in matches:
-            key = m.group(1).strip()
-            value = m.group(3)
-            if value is not None:
-                value = value.strip()
-            metadata[key] = value
-
-        return metadata
-
-    @staticmethod
-    def remove_metadata(body):
-        rest = []
-        lines = iter(body.split(u'\n'))
-
-        for line in lines:
-            m = re.match(WikiPage.re_metadata, line.strip())
-            if m is None:
-                rest.append(line)
-                break
-
-        rest += list(lines)
-        return u'\n'.join(rest)
-
-    @staticmethod
-    def extract_hashbangs(html):
-        matches = re.findall(ur'<code>#!(.+?)[\n;]', html)
-        if re.match(ur'.*(\\\(.+\\\)|\$\$.+\$\$)', html, re.DOTALL):
-            matches.append('mathjax')
-        return matches
-
-    @staticmethod
     def _add_inout_links(links, titles, rel):
         if len(titles) == 0:
             return
@@ -938,7 +948,7 @@ class WikiPage(ndb.Model):
         return ndb.Key(u'revision', self.title)
 
 
-class WikiPageRevision(ndb.Model):
+class WikiPageRevision(ndb.Model, PageOperationMixin):
     title = ndb.StringProperty()
     body = ndb.TextProperty()
     revision = ndb.IntegerProperty()
@@ -947,6 +957,34 @@ class WikiPageRevision(ndb.Model):
     acl_read = ndb.StringProperty()
     acl_write = ndb.StringProperty()
     created_at = ndb.DateTimeProperty()
+
+    @property
+    def is_old_revision(self):
+        return True
+
+    @property
+    def updated_at(self):
+        return self.created_at
+
+    @property
+    def inlinks(self):
+        return {}
+
+    @property
+    def outlinks(self):
+        return {}
+
+    @property
+    def related_links(self):
+        return {}
+
+    @property
+    def older_title(self):
+        return None
+
+    @property
+    def newer_title(self):
+        return None
 
 
 class TocGenerator(object):

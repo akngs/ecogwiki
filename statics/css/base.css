@@ -573,6 +573,13 @@ article .body a.quotable strong {
     font-style: normal;
     font-weight: normal;
 }
+article .body .message {
+    padding: 0.2em 1em;
+    margin: 1em 0;
+    background-color: #E9EDF5;
+    border: 1px solid #CCF;
+}
+
 article .body .error {
     padding: 0.2em 1em;
     margin: 1em 0;

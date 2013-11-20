@@ -90,7 +90,16 @@ class WikiPageHandler(webapp2.RequestHandler):
             return self.get_sp(path[3:], head)
 
         user = WikiPageHandler._get_cur_user()
+        restype = self._get_restype()
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
+
+        rev = self.request.GET.get('rev', 'latest')
+        if rev == 'latest':
+            rev = '%d' % page.revision
+        rev = int(rev)
+
+        if rev != page.revision:
+            page = page.revisions.filter(WikiPageRevision.revision==rev).get()
 
         if not page.can_read(user):
             self.response.status = 403
@@ -98,8 +107,6 @@ class WikiPageHandler(webapp2.RequestHandler):
             html = self._template('403.html', {'page': page})
             self._set_response_body(html, False)
             return
-
-        restype = self._get_restype()
 
         # custom content-type metadata?
         if restype == 'default' and page.metadata['content-type'] != 'text/x-markdown':
@@ -140,6 +147,9 @@ class WikiPageHandler(webapp2.RequestHandler):
             html = self._template('bodyonly.html', {'page': page})
             self._set_response_body(html, head)
         elif restype == 'history':
+            if type(page) == WikiPageRevision:
+                raise ValueError()
+
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             revisions = page.revisions.order(-WikiPageRevision.created_at)
             html = self._template('history.html', {'page': page, 'revisions': revisions})

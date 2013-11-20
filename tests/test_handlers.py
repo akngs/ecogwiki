@@ -169,6 +169,62 @@ class WikiPageHandlerTest(unittest.TestCase):
                          self.browser.res.location)
 
 
+class RevisionTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_user_stub()
+        self.parser = html5parser.HTMLParser(strict=True)
+        self.browser = Browser()
+
+    def test_rev(self):
+        page = WikiPage.get_by_title(u'A')
+        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello there', 1, '')
+
+        self.browser.get('/A?rev=1')
+        self.assertEqual(200, self.browser.res.status_code)
+
+        self.browser.get('/A?_type=rawbody&rev=1')
+        self.assertEqual(200, self.browser.res.status_code)
+
+        self.browser.get('/A?_type=body&rev=1')
+        self.assertEqual(200, self.browser.res.status_code)
+
+    def test_rev_param(self):
+        page = WikiPage.get_by_title(u'A')
+        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello there', 1, '')
+
+        self.browser.get('/A?_type=rawbody&rev=1')
+        self.assertEqual(u'Hello', self.browser.res.body)
+
+        self.browser.get('/A?_type=rawbody&rev=2')
+        self.assertEqual(u'Hello there', self.browser.res.body)
+
+        self.browser.get('/A?_type=rawbody&rev=latest')
+        self.assertEqual(u'Hello there', self.browser.res.body)
+
+    def test_rev_acl(self):
+        self.browser.login('a@x.com', 'a')
+        page = WikiPage.get_by_title(u'A')
+        page.update_content(u'Hello', 0, '')
+        page.update_content(u'.read a@x.com\nHello there', 1, '')
+
+        self.browser.get('/A?_type=rawbody&rev=1')
+        self.assertEqual(200, self.browser.res.status_code)
+        self.browser.get('/A?_type=rawbody&rev=2')
+        self.assertEqual(200, self.browser.res.status_code)
+
+        self.browser.logout()
+        self.browser.get('/A?_type=rawbody&rev=1')
+        self.assertEqual(200, self.browser.res.status_code)
+        self.browser.get('/A?_type=rawbody&rev=2')
+        self.assertEqual(403, self.browser.res.status_code)
+
+
 class HTML5ValidationTest(unittest.TestCase):
     def setUp(self):
         self.testbed = testbed.Testbed()

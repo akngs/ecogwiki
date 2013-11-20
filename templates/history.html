@@ -28,7 +28,7 @@
                     {% endif %}
                 </span>
                 <br>
-                <a class="caret-target comment" href="#" onclick="alert('Not implemented yet'); return false;">
+                <a class="caret-target comment" href="{{ page.absolute_url|e }}?rev={{ revision.revision }}">
                     {% if revision.comment %}
                     {{ revision.comment }}
                     {% else %}

@@ -698,6 +698,80 @@ class WikiPageTitleGroupingTest(unittest.TestCase):
         self.assertEqual([u'나나나'], list(titles))
 
 
+class PageOperationMixinTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.pub X\nHello [[There]]', 0, u'')
+
+        page2 = WikiPage.get_by_title(u'Other')
+        page2.update_content(u'[[Hello]]', 0, u'')
+
+        self.page = WikiPage.get_by_title(u'Hello')
+        self.revision = self.page.revisions.fetch()[0]
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_rendered_body(self):
+        self.assertEqual(u'<div><p>Hello <a class="wikipage" href="/There">There</a></p>\n<h1>Incoming Links <a id="h_ea3d40041db650b8c49e9a81fb17e208" href="#h_ea3d40041db650b8c49e9a81fb17e208" class="caret-target">#</a></h1>\n<h2>Related pages <a id="h_466b0df4e8bf6d9144017ce2e7321748" href="#h_466b0df4e8bf6d9144017ce2e7321748" class="caret-target">#</a></h2>\n<ul>\n<li><a class="wikipage" href="/Other">Other</a></li>\n</ul></div>',
+                         self.page.rendered_body)
+        self.assertEqual(u'<p>Hello <a class="wikipage" href="/There">There</a></p>',
+                         self.revision.rendered_body)
+
+    def test_is_old_revision(self):
+        self.assertEqual(False, self.page.is_old_revision)
+        self.assertEqual(True, self.revision.is_old_revision)
+
+    def test_inlinks(self):
+        self.assertEqual({u'Article/relatedTo': [u'Other']}, self.page.inlinks)
+        self.assertEqual({}, self.revision.inlinks)
+
+    def test_outlinks(self):
+        self.assertEqual({u'Article/relatedTo': [u'There']}, self.page.outlinks)
+        self.assertEqual({}, self.revision.outlinks)
+
+    def test_related_links(self):
+        self.assertEqual({}, self.page.related_links)
+        self.assertEqual({}, self.revision.related_links)
+
+    def test_related_links_by_score(self):
+        self.assertEqual({}, self.page.related_links_by_score)
+        self.assertEqual({}, self.revision.related_links_by_score)
+
+    def test_related_links_by_title(self):
+        self.assertEqual({}, self.page.related_links_by_title)
+        self.assertEqual({}, self.revision.related_links_by_title)
+
+    def test_metadata(self):
+        self.assertEqual(u'X', self.page.metadata['pub'])
+        self.assertEqual(u'X', self.revision.metadata['pub'])
+
+    def test_can_read(self):
+        self.assertEqual(True, self.page.can_read(None))
+        self.assertEqual(True, self.revision.can_read(None))
+
+    def test_can_write(self):
+        self.assertEqual(False, self.page.can_write(None))
+        self.assertEqual(False, self.revision.can_write(None))
+
+    def test_special_sections(self):
+        self.assertEqual({}, self.page.special_sections)
+        self.assertEqual({}, self.revision.special_sections)
+
+    def test_itemtype(self):
+        self.assertEqual(u'Article', self.page.itemtype)
+        self.assertEqual(u'Article', self.revision.itemtype)
+
+    def test_itemtype_url(self):
+        self.assertEqual(u'http://schema.org/Article', self.page.itemtype_url)
+        self.assertEqual(u'http://schema.org/Article', self.revision.itemtype_url)
+
+
 class WikiPageBugsTest(unittest.TestCase):
     def setUp(self):
         self.testbed = testbed.Testbed()

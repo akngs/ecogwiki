@@ -142,6 +142,12 @@ window.fbAsyncInit = function() {
         </ul>
     </header>
     <section class="body" {% if page.itemtype == 'Article' %}itemprop="articleBody"{% endif %}>
+        {% if page.is_old_revision %}
+        <div class="message">
+            <p>You are seeing an old version of the page. Go to <a href="{{ page.absolute_url|e }}">latest version</a></p>
+        </div>
+        {% endif %}
+
         {% for sname, sobj in page.special_sections.items() %}
         <aside class="{{ sname }}">
         {% if sname == 'years' %}
