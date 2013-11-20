@@ -245,6 +245,8 @@ class HTML5ValidationTest(unittest.TestCase):
         for title, body in self.fixtures:
             page = WikiPage.get_by_title(title)
             page.update_content(body, 0, None)
+            # update again to create revisions
+            page.update_content(body + u'!', 1, None)
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -253,7 +255,11 @@ class HTML5ValidationTest(unittest.TestCase):
         for title, _ in self.fixtures:
             self._validate('/%s' % WikiPage.title_to_path(title),
                            'html')
-            self._validate('/%s?_form=edit' % WikiPage.title_to_path(title),
+            self._validate('/%s?rev=1' % WikiPage.title_to_path(title),
+                           'html')
+            self._validate('/%s?_type=body' % WikiPage.title_to_path(title),
+                           'html')
+            self._validate('/%s?_type=form' % WikiPage.title_to_path(title),
                            'html')
 
     def test_special_pages(self):
