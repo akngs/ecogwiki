@@ -6,3 +6,8 @@
 4.   Deploy and wait for index building (takes a few minutes)
 5.   Edit .config page. See [this example](http://www.ecogwiki.com/.config?_type=rawbody)
 6.   Done
+
+
+# How to use
+
+See [Ecogwiki Help page](http://www.ecogwiki.com/Help)
