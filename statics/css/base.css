@@ -33,7 +33,7 @@ a:hover {
     margin: 0;
     text-shadow: none;
     display: inline-block;
-    padding: 0.2em 1em 0.1em;
+    padding: 0.3em 0.7em;
     text-align: center;
     white-space: nowrap;
     cursor: pointer;
@@ -59,8 +59,8 @@ a:hover {
 .btn-primary:focus,
 .btn-primary:active
 {
-    background-color: #249;
-    border-color: #249;
+    background-color: #138;
+    border-color: #138;
 }
 
 .vcaret-parent {
@@ -181,7 +181,7 @@ nav ul li {
 
 /* Wiki Header { */
 header {
-    margin: 1.5em 0 2.5em;
+    margin: 1.5em 0 1em;
 }
 
 header h1 {
@@ -265,13 +265,12 @@ header .edit_menu {
 
 .editform input.comment {
     width: 90%;
-    margin: 10px 0 20px 0;
+    margin: 10px 0;
 }
 .editform .actions {
     margin: 0.5em 0;
 }
 .editform .actions input {
-    padding: 0.5em 1em;
     margin-right: 0.5em;
 }
 /* } Wiki Edit Form */
