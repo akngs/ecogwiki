@@ -54,7 +54,7 @@ class PageOperationMixin(object):
         related_links = self.related_links_by_score
         if len(related_links) > 0:
             lines = [u'# Suggested Pages']
-            lines += [u'* {{.score::%.2f}} [[%s]]' % (score, title)
+            lines += [u'* {{.score::%.3f}} [[%s]]' % (score, title)
                       for title, score in related_links.items()[:10]]
             body_parts.append(u'\n'.join(lines))
 
@@ -173,6 +173,10 @@ class PageOperationMixin(object):
             ss[u'dates'] = self._special_titles_dates()
 
         return ss
+
+    @property
+    def hashbangs(self):
+        return PageOperationMixin.extract_hashbangs(self.rendered_body)
 
     def _check_special_titles_years(self):
         return (
@@ -316,7 +320,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
     inlinks = ndb.JsonProperty()
     outlinks = ndb.JsonProperty()
     related_links = ndb.JsonProperty()
-    hashbangs = ndb.JsonProperty()
     updated_at = ndb.DateTimeProperty()
 
     published_at = ndb.DateTimeProperty()
@@ -338,12 +341,23 @@ class WikiPage(ndb.Model, PageOperationMixin):
         cache.set_rendered_body(self.title, html)
         return html
 
+    @property
+    def hashbangs(self):
+        result = cache.get_hashbangs(self.title)
+        if result is not None:
+            return result
+
+        result = super(WikiPage, self).hashbangs
+        cache.set_hashbangs(self.title, result)
+        return result
+
     def update_content(self, new_body, base_revision, comment, user=None, force_update=False):
         if not force_update and self.body == new_body:
             return False
 
         # delete rendered body cache
         cache.del_rendered_body(self.title)
+        cache.del_hashbangs(self.title)
 
         # update body
         old_md = self.metadata
@@ -408,9 +422,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # update itemtype_path
         self.itemtype_path = schema.get_itemtype_path(self.itemtype)
 
-        # update hashbangs
-        self.hashbangs = PageOperationMixin.extract_hashbangs(self.rendered_body)
-
         # save
         self.put()
 
@@ -453,9 +464,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
         inout_score = 1.0 / inout_links_len if inout_links_len != 0 else 0.0
         inout_links_scoretable = dict(zip(inout_links, [inout_score] * inout_links_len))
 
-        # normalize related links' score
-        related_links_scoretable = dict((k, v / inout_links_len if inout_links_len != 0 else 0.0) for k, v in related_links_scoretable.items())
-
         scoretable = dict(inout_links_scoretable.items() + related_links_scoretable.items())
         sorted_scoretable = sorted(scoretable.iteritems(),
                                    key=operator.itemgetter(1),
@@ -491,6 +499,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     page.put()
                     cache.del_yaml(page.title)
                     cache.del_rendered_body(page.title)
+                    cache.del_hashbangs(page.title)
 
                 target.add_inlinks(source.inlinks[rel], rel)
                 del source.inlinks[rel]
@@ -498,9 +507,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
             source.put()
             cache.del_yaml(source.title)
             cache.del_rendered_body(source.title)
+            cache.del_hashbangs(source.title)
             target.put()
             cache.del_yaml(target.title)
             cache.del_rendered_body(target.title)
+            cache.del_hashbangs(target.title)
 
         # 2. update in/out links
         cur_outlinks = self.outlinks or {}
@@ -524,6 +535,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                             page.put()
                         cache.del_yaml(page.title)
                         cache.del_rendered_body(page.title)
+                        cache.del_hashbangs(page.title)
                     except ValueError:
                         pass
         else:
@@ -548,6 +560,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     page.put()
                     cache.del_yaml(page.title)
                     cache.del_rendered_body(page.title)
+                    cache.del_hashbangs(page.title)
             for rel, titles in removed_outlinks.items():
                 for title in titles:
                     page = WikiPage.get_by_title(title, follow_redirect=True)
@@ -559,6 +572,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                             page.put()
                         cache.del_yaml(page.title)
                         cache.del_rendered_body(page.title)
+                        cache.del_hashbangs(page.title)
                     except ValueError:
                         pass
 
@@ -588,12 +602,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         cache.del_yaml(self.title)
         cache.del_rendered_body(self.title)
+        cache.del_hashbangs(self.title)
         if self.newer_title:
             cache.del_yaml(self.newer_title)
             cache.del_rendered_body(self.newer_title)
+            cache.del_hashbangs(self.newer_title)
         if self.older_title:
             cache.del_yaml(self.older_title)
             cache.del_rendered_body(self.older_title)
+            cache.del_hashbangs(self.older_title)
 
     def _unpublish(self, save):
         if self.published_at is None:
@@ -601,12 +618,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         cache.del_yaml(self.title)
         cache.del_rendered_body(self.title)
+        cache.del_hashbangs(self.title)
         if self.newer_title:
             cache.del_yaml(self.newer_title)
             cache.del_rendered_body(self.newer_title)
+            cache.del_hashbangs(self.newer_title)
         if self.older_title:
             cache.del_yaml(self.older_title)
             cache.del_rendered_body(self.older_title)
+            cache.del_hashbangs(self.older_title)
 
         older = WikiPage.get_by_title(self.older_title)
         newer = WikiPage.get_by_title(self.newer_title)
@@ -849,8 +869,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                               ancestor=key).get()
         if page is None:
             page = WikiPage(parent=key, title=title, body='', revision=0,
-                            inlinks={}, outlinks={}, related_links={},
-                            hashbangs=[])
+                            inlinks={}, outlinks={}, related_links={})
 
         if follow_redirect and 'redirect' in page.metadata:
             new_title = page.metadata['redirect']
@@ -862,8 +881,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             page.outlinks = {}
         if page.related_links is None:
             page.related_links = {}
-        if page.hashbangs is None:
-            page.hashbangs = []
 
         return page
 

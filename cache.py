@@ -70,6 +70,14 @@ def set_rendered_body(title, content):
         return None
 
 
+def set_hashbangs(title, content):
+    try:
+        memcache.set('model\thashbangs\t%s' % title, content,
+                     time=60*60*24*7)
+    except:
+        return None
+
+
 def get_yaml(title):
     try:
         return memcache.get('model\tyaml\t%s' % title)
@@ -84,6 +92,13 @@ def get_rendered_body(title):
         return None
 
 
+def get_hashbangs(title):
+    try:
+        return memcache.get('model\thashbangs\t%s' % title)
+    except:
+        return None
+
+
 def del_yaml(title):
     try:
         memcache.delete('model\tyaml\t%s' % title)
@@ -94,5 +109,12 @@ def del_yaml(title):
 def del_rendered_body(title):
     try:
         memcache.delete('model\trendered_body\t%s' % title)
+    except:
+        return None
+
+
+def del_hashbangs(title):
+    try:
+        memcache.delete('model\thashbangs\t%s' % title)
     except:
         return None

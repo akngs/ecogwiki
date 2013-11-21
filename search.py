@@ -29,11 +29,14 @@ def parse_expression(exp):
 
 def evaluate(positives, negatives):
     scoretable = {}
-    length = len(positives.keys()) + len(negatives.keys())
+    keys = positives.keys() + negatives.keys()
+    length = len(keys)
 
     # calc positives
     for scores in positives.values():
         for title, score in scores.items():
+            if title in keys:
+                continue
             if title not in scoretable:
                 scoretable[title] = 0.0
             scoretable[title] += score / length
@@ -41,6 +44,8 @@ def evaluate(positives, negatives):
     # calc negatives
     for scores in negatives.values():
         for title, score in scores.items():
+            if title in keys:
+                continue
             if title not in scoretable:
                 scoretable[title] = 0.0
             scoretable[title] -= score / length

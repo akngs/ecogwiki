@@ -30,6 +30,30 @@ class ExpressionParserTest(unittest.TestCase):
 
 
 class EvaluationTest(unittest.TestCase):
+    def test_should_not_contain_self(self):
+        positives = {
+            u'A': {
+                u'A': 0.2,
+                u'B': 0.2,
+                u'C': 0.3,
+            },
+            u'B': {
+                u'B': 0.2,
+                u'C': 0.2,
+                u'D': 0.2,
+            }
+        }
+        negatives = {
+            u'C': {
+                u'A': 0.2,
+                u'E': 0.1,
+            }
+        }
+
+        expected = [u'D', u'E']
+        actual = search.evaluate(positives, negatives).keys()
+        self.assertEqual(expected, actual)
+
     def test_complex_case(self):
         positives = {
             u'Page 1': {
