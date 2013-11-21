@@ -574,8 +574,13 @@ article li .score {
     color: #888;
 }
 
-article a.search.pos,
-article a.search.neg {
+article header h1 a.search.pos {
+    font-size: 14px;
+    font-weight: normal;
+}
+
+article .body a.search.pos,
+article .body a.search.neg {
     font-size: 12px;
     padding: 1px 0.5em;
     background-color: #EEE;

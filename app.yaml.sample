@@ -12,7 +12,7 @@ handlers:
   static_dir: statics/css
 - url: /statics/img
   static_dir: statics/img
-- url: /(.*\.(html|ico|png|jpg|txt|xml))
+- url: /(.*\.(ico|png|jpg))
   static_files: statics/root/\1
   upload: statics/(.*\.(html|ico|png|jpg|txt|xml))
 - url: /.*

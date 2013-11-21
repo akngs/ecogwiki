@@ -69,9 +69,6 @@ window.fbAsyncInit = function() {
 <article itemscope itemtype="{{ page.itemtype_url }}">
     <header>
         <h1>
-            <a href="+{{ page.title }}" rel="nofollow" class="search pos">+</a>
-            <a href="-{{ page.title }}" rel="nofollow" class="search neg">-</a>
-            <br>
             {% if 'pub' in page.metadata %}
                 {% if page.metadata.pub %}
                     <span class="parent"><a href="/{{ page.metadata.pub|e }}">{{ page.metadata.pub }}</a></span>
@@ -88,6 +85,9 @@ window.fbAsyncInit = function() {
             {% if page.metadata.schema == 'Blog' %}
             <a href="/{{ page.title|e }}?_type=atom" class="rss">RSS</a>
             {% endif %}
+
+            <br>
+            <a href="+{{ page.title }}" rel="nofollow" class="search pos">Related pages</a>
         </h1>
 
         {% if page.published_at and 'pt' not in page.metadata %}
