@@ -66,7 +66,7 @@ a:hover {
 .vcaret-parent {
     transition: background-color 0.3s;
     transition-timing-function: ease;
-    background-color: #EEEFF6;
+    background-color: #F6F6F6;
 }
 
 .vcaret:before {
@@ -276,26 +276,28 @@ header .edit_menu {
 /* } Wiki Edit Form */
 
 
-/* Wiki sp.changes { */
-table.changes {
+/* System page tables { */
+table {
     width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    border-color: gray;
 }
 
+table th, td {
+    padding: 8px;
+    text-align: left;
+    vertical-align: text-top;
+    border-top: 1px solid #dddddd;
+}
+
+/* } System page tables */
+
+
+/* Wiki sp.changes { */
 table.changes th {
     display: none;
     text-align: left;
-}
-
-table.changes th, td {
-    padding: 0.4em 0.2em;
-    vertical-align: text-top;
-}
-
-table.changes tr :first-child {
-    padding-left: 0;
-}
-table.changes tr :last-child {
-    padding-right: 0;
 }
 
 table.changes td.updated {
@@ -307,7 +309,6 @@ table.changes .modifier {
 }
 table.changes .comment {
     font-size: 0.75em;
-    line-height: 2em;
     color: #888;
 }
 
@@ -315,25 +316,9 @@ table.changes .comment {
 
 
 /* Wiki sp.posts { */
-table.posts {
-    width: 100%;
-}
-
 table.posts th {
     display: none;
     text-align: left;
-}
-
-table.posts th, td {
-    padding: 0.4em 0.2em;
-    vertical-align: text-top;
-}
-
-table.posts tr :first-child {
-    padding-left: 0;
-}
-table.posts tr :last-child {
-    padding-right: 0;
 }
 
 table.posts td.published {
@@ -348,25 +333,9 @@ table.posts .modifier {
 
 
 /* Revision history { */
-table.revisions {
-    width: 100%;
-}
-
 table.revisions th {
     display: none;
     text-align: left;
-}
-
-table.revisions th, td {
-    padding: 0.4em 0.2em;
-    vertical-align: text-top;
-}
-
-table.revisions tr :first-child {
-    padding-left: 0;
-}
-table.revisions tr :last-child {
-    padding-right: 0;
 }
 
 table.revisions td.modified {
@@ -377,7 +346,6 @@ table.revisions .modifier {
     font-size: 0.75em;
 }
 table.revisions .comment {
-    line-height: 2em;
     color: #888;
 }
 

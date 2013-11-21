@@ -127,10 +127,16 @@ $(function() {
             $('.vcaret').removeClass('vcaret');
             $('.vcaret-parent').removeClass('vcaret-parent');
 
-            $($caret_targets[index]).addClass('vcaret').focus();
+            var $target = $($caret_targets[index]);
+            $target.addClass('vcaret').focus();
             if(isFirstTime) return;
 
-            $($caret_targets[index]).parent()
+            var $parent = $target.parent();
+            if($parent[0].nodeName === 'TD') {
+                $parent = $parent.parent();
+            }
+
+            $parent
                 .addClass('vcaret-parent')
                 .on('transitionend', function() {
                     $(this).removeClass('vcaret-parent');
