@@ -22,14 +22,20 @@ JINJA = jinja2.Environment(
 
 
 def format_short_datetime(value):
+    if value is None:
+        return ''
     return value.strftime('%m-%d %H:%M')
 
 
 def format_datetime(value):
+    if value is None:
+        return ''
     return value.strftime('%Y-%m-%d %H:%M:%S')
 
 
 def format_iso_datetime(value):
+    if value is None:
+        return ''
     return value.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
