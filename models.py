@@ -656,7 +656,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     def update_related_links(self, max_distance=5):
         """Update related_links score table by random walk"""
-        if len(self.outlinks) is None:
+        if len(self.outlinks) == 0:
             return
 
         if self.related_links is None:

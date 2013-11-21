@@ -37,7 +37,7 @@ class WikiPageUpdateTest(unittest.TestCase):
         self.assertEqual(u'Hello', revs[0].body)
         self.assertEqual(u'Hello 2', revs[1].body)
 
-    def test_should_not_create_revision_if_content_is_same(self):
+    def test_should_not_create_revision_if_content_is_not_changed(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'Hello', 0, '')
         page.update_content(u'Hello', 0, '')
@@ -46,7 +46,7 @@ class WikiPageUpdateTest(unittest.TestCase):
         self.assertEqual(1, len(revs))
         self.assertEqual(u'Hello', revs[0].body)
 
-    def test_conflict(self):
+    def test_automerge(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'A\nB\nC', 0, '')
 
