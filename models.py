@@ -99,15 +99,9 @@ class PageOperationMixin(object):
     def metadata(self):
         return self.parse_metadata(self.body)
 
-    def get_default_permission(self):
-        try:
-            return WikiPage.yaml_by_title(u'.config')['service']['default_permissions']
-        except KeyError:
-            return {'read':['all'], 'write':['login']}
-
     def can_read(self, user, default_acl=None):
         if default_acl is None:
-            default_acl = self.get_default_permission()
+            default_acl = PageOperationMixin.get_default_permission()
 
         acl = self.acl_read.split(',') if self.acl_read is not None and len(self.acl_read) != 0 else []
         if len(acl) == 0:
@@ -128,7 +122,7 @@ class PageOperationMixin(object):
 
     def can_write(self, user, default_acl=None):
         if default_acl is None:
-            default_acl = self.get_default_permission()
+            default_acl = PageOperationMixin.get_default_permission()
 
         acl = self.acl_write.split(',') if self.acl_write is not None and len(self.acl_write) != 0 else []
         if len(acl) == 0:
@@ -241,6 +235,13 @@ class PageOperationMixin(object):
 
         ss[u'dates'] = range(1, max_date + 1)
         return ss
+
+    @staticmethod
+    def get_default_permission():
+        try:
+            return WikiPage.yaml_by_title(u'.config')['service']['default_permissions']
+        except KeyError:
+            return main.DEFAULT_CONFIG['service']['default_permissions']
 
     @staticmethod
     def parse_metadata(body):
