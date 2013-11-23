@@ -810,8 +810,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
             WikiPage.modifier,
             WikiPage.updated_at])
 
+        default_permission = PageOperationMixin.get_default_permission()
         return [page for page in pages
-                if page.updated_at and page.can_read(user)]
+                if page.updated_at and page.can_read(user, default_permission)]
 
     @classmethod
     def get_titles(cls, user=None):
@@ -854,7 +855,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             ]
             pages = q.order(-WikiPage.updated_at).fetch(projection=prjs)
 
-        return [page for page in pages if page.can_read(user)]
+        default_permission = PageOperationMixin.get_default_permission()
+        return [page for page in pages if page.can_read(user, default_permission)]
 
     @classmethod
     def yaml_by_title(cls, title, follow_redirect=False):
