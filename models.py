@@ -909,19 +909,19 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 (u'contains', []),
             ])
 
-        normalized_titles = [cls._normalize_title(t) for t in titles]
-
-        startswiths_i = [i for i, t in enumerate(normalized_titles)
-                         if t.startswith(normalized_target)]
-        endswiths_i = [i for i, t in enumerate(normalized_titles)
-                       if t.endswith(normalized_target)]
-        contains_i = [i for i, t in enumerate(normalized_titles)
-                      if t.find(normalized_target) != -1]
-
-        startswiths = map(lambda i: titles[i], startswiths_i)
-        endswiths = map(lambda i: titles[i], endswiths_i)
-        contains = map(lambda i: titles[i], contains_i)
-        contains = list(set(contains).difference(startswiths + endswiths))
+        contains = []
+        startswiths = []
+        endswiths = []
+        for title in titles:
+            normalized_title = cls._normalize_title(title)
+            if normalized_title.find(normalized_target) == -1:
+                continue
+            if normalized_title.startswith(normalized_target):
+                startswiths.append(title)
+            elif normalized_title.endswith(normalized_target):
+                endswiths.append(title)
+            else:
+                contains.append(title)
 
         return OrderedDict([
             (u'startswiths', startswiths),
