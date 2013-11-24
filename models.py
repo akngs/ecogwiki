@@ -772,7 +772,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         score_table[next_link] = next_score
 
         # update target page's relate links
-        if next_page.revision > 0 and len(next_page.outlinks) > 0:
+        if next_page.revision > 0:
             if next_page.related_links is None:
                 next_page.related_links = {}
             if start_page.title not in next_page.related_links:

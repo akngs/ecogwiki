@@ -347,7 +347,7 @@ class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
         d.update_content(u'Destination', 0, '')
 
         a.update_related_links()
-        self.assertFalse(u'D' in a.related_links)
+        self.assertTrue(u'D' in a.related_links)
 
 
 class WikiPageSimilarTitlesTest(unittest.TestCase):
