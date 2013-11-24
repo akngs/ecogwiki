@@ -659,7 +659,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # random walk
         score_table = self.related_links
-        WikiPage._update_related_links(self, self, 1.0, score_table,
+        WikiPage._update_related_links(self, self, 0.1, score_table,
                                        max_distance)
 
         self.related_links = score_table
@@ -750,7 +750,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
     @classmethod
     def _update_related_links(cls, start_page, page, score, score_table,
                               distance):
-        if distance == 0 or score < 0.001:
+        if distance == 0:
             return
 
         #if l != start_page.title
@@ -778,7 +778,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             if start_page.title not in next_page.related_links:
                 next_page.related_links[start_page.title] = 0.0
 
-            next_page_score = score * 0.5
+            next_page_score = next_score
             next_page.related_links[start_page.title] += next_page_score
             next_page.normalize_related_links()
             next_page.put()
