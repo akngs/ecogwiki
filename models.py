@@ -753,7 +753,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if distance == 0 or score < 0.001:
             return
 
-         #if l != start_page.title
+        #if l != start_page.title
         nested_links = [l for l in page.outlinks.values()]
         links = []
         for l in nested_links:
@@ -768,7 +768,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if next_link not in score_table:
             score_table[next_link] = 0.0
 
-        next_score = score * (1.0 / len(links))
+        next_score = score * 0.5
         score_table[next_link] = next_score
 
         # update target page's relate links
@@ -778,7 +778,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             if start_page.title not in next_page.related_links:
                 next_page.related_links[start_page.title] = 0.0
 
-            next_page_score = score * (1.0 / len(next_page.outlinks))
+            next_page_score = score * 0.5
             next_page.related_links[start_page.title] += next_page_score
             next_page.normalize_related_links()
             next_page.put()
