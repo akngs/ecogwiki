@@ -34,6 +34,7 @@ class PageOperationMixin(object):
                                          ur'April|May|June|July|August|'
                                          ur'September|October|November|'
                                          ur'December)( (?P<date>[0123]?\d))?)$')
+    parsed_metadata = None
 
     @property
     def rendered_body(self):
@@ -97,7 +98,9 @@ class PageOperationMixin(object):
 
     @property
     def metadata(self):
-        return self.parse_metadata(self.body)
+        if self.parsed_metadata is None:
+            self.parsed_metadata = self.parse_metadata(self.body)
+        return self.parsed_metadata
 
     def can_read(self, user, default_acl=None):
         if default_acl is None:
@@ -369,6 +372,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # update body
         old_md = self.metadata
         new_md = PageOperationMixin.parse_metadata(new_body)
+        self.parsed_metadata = None
 
         # validate contents
         if u'pub' in new_md and u'redirect' in new_md:
