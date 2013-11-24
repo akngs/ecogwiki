@@ -53,7 +53,7 @@ SUPPORTED_SCHEMA = {
         'parent': 'CreativeWork',
         'properties': {
             'relatedTo': (u'Related softwares', u'Related to'),
-            'operatingSystem': (u'Related operating systems', u'Related to'),
+            'operatingSystem': (u'Related softwares', u'Related to'),
         }
     },
     'Thing': {
