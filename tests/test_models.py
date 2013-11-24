@@ -310,7 +310,7 @@ class WikiYamlParserTest(unittest.TestCase):
         self.testbed.deactivate()
 
     def test_empty_page(self):
-        self.assertEqual(main.DEFAULT_CONFIG, WikiPage.yaml_by_title('Test'))
+        self.assertEqual(main.DEFAULT_CONFIG, WikiPage.get_config())
 
 
 class WikiPageRelatedPageUpdatingTest(unittest.TestCase):

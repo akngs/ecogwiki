@@ -34,7 +34,6 @@ class PageOperationMixin(object):
                                          ur'April|May|June|July|August|'
                                          ur'September|October|November|'
                                          ur'December)( (?P<date>[0123]?\d))?)$')
-    parsed_metadata = None
 
     @property
     def rendered_body(self):
@@ -98,9 +97,11 @@ class PageOperationMixin(object):
 
     @property
     def metadata(self):
-        if self.parsed_metadata is None:
-            self.parsed_metadata = self.parse_metadata(self.body)
-        return self.parsed_metadata
+        metadata = cache.get_metadata(self.title)
+        if metadata is None:
+            metadata = self.parse_metadata(self.body)
+            cache.set_metadata(self.title, metadata)
+        return metadata
 
     def can_read(self, user, default_acl=None):
         if default_acl is None:
@@ -242,7 +243,7 @@ class PageOperationMixin(object):
     @staticmethod
     def get_default_permission():
         try:
-            return WikiPage.yaml_by_title(u'.config')['service']['default_permissions']
+            return WikiPage.get_config()['service']['default_permissions']
         except KeyError:
             return main.DEFAULT_CONFIG['service']['default_permissions']
 
@@ -372,7 +373,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # update body
         old_md = self.metadata
         new_md = PageOperationMixin.parse_metadata(new_body)
-        self.parsed_metadata = None
+        cache.del_metadata(self.title)
 
         # validate contents
         if u'pub' in new_md and u'redirect' in new_md:
@@ -450,7 +451,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         self.update_links(old_redir, new_redir)
 
         # invalidate cache
-        cache.del_yaml(self.title)
+        if self.title == '.config':
+            cache.del_config()
         if self.revision == 1:
             cache.del_titles()
 
@@ -481,13 +483,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
                                    reverse=True)
         return OrderedDict(sorted_scoretable)
 
-    def parse_as_yaml(self):
-        body = PageOperationMixin.remove_metadata(self.body)
-        try:
-            return yaml.load(body)
-        except:
-            return None
-
     def update_links(self, old_redir=None, new_redir=None):
         """Updates outlinks of this page and inlinks of target pages"""
         # 1. process "redirect" metadata
@@ -508,7 +503,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     page.del_outlink(source.title, rel)
                     page.add_outlink(target.title, rel)
                     page.put()
-                    cache.del_yaml(page.title)
                     cache.del_rendered_body(page.title)
                     cache.del_hashbangs(page.title)
 
@@ -516,11 +510,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 del source.inlinks[rel]
 
             source.put()
-            cache.del_yaml(source.title)
             cache.del_rendered_body(source.title)
             cache.del_hashbangs(source.title)
             target.put()
-            cache.del_yaml(target.title)
             cache.del_rendered_body(target.title)
             cache.del_hashbangs(target.title)
 
@@ -569,7 +561,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     page = WikiPage.get_by_title(title)
                     page.add_inlink(self.title, rel)
                     page.put()
-                    cache.del_yaml(page.title)
                     cache.del_rendered_body(page.title)
                     cache.del_hashbangs(page.title)
             for rel, titles in removed_outlinks.items():
@@ -581,7 +572,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
                             page.put().delete()
                         else:
                             page.put()
-                        cache.del_yaml(page.title)
                         cache.del_rendered_body(page.title)
                         cache.del_hashbangs(page.title)
                     except ValueError:
@@ -611,15 +601,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if save:
             self.put()
 
-        cache.del_yaml(self.title)
         cache.del_rendered_body(self.title)
         cache.del_hashbangs(self.title)
         if self.newer_title:
-            cache.del_yaml(self.newer_title)
             cache.del_rendered_body(self.newer_title)
             cache.del_hashbangs(self.newer_title)
         if self.older_title:
-            cache.del_yaml(self.older_title)
             cache.del_rendered_body(self.older_title)
             cache.del_hashbangs(self.older_title)
 
@@ -627,15 +614,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if self.published_at is None:
             return
 
-        cache.del_yaml(self.title)
         cache.del_rendered_body(self.title)
         cache.del_hashbangs(self.title)
         if self.newer_title:
-            cache.del_yaml(self.newer_title)
             cache.del_rendered_body(self.newer_title)
             cache.del_hashbangs(self.newer_title)
         if self.older_title:
-            cache.del_yaml(self.older_title)
             cache.del_rendered_body(self.older_title)
             cache.del_hashbangs(self.older_title)
 
@@ -863,16 +847,21 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return [page for page in pages if page.can_read(user, default_permission)]
 
     @classmethod
-    def yaml_by_title(cls, title, follow_redirect=False):
-        result = cache.get_yaml(title)
+    def get_config(cls):
+        result = cache.get_config()
         if result is None:
-            page = cls.get_by_title(title, follow_redirect=follow_redirect)
-            result = page.parse_as_yaml()
+            page = cls.get_by_title('.config')
+            result = None
+            try:
+                result = yaml.load(PageOperationMixin.remove_metadata(page.body))
+            except:
+                pass
+
             if result is None:
                 result = main.DEFAULT_CONFIG
             else:
                 result = dict(main.DEFAULT_CONFIG.items() + result.items())
-            cache.set_yaml(title, result)
+            cache.set_config(result)
         return result
 
     @classmethod

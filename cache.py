@@ -56,18 +56,23 @@ def del_titles():
         return None
 
 
-def set_yaml(title, content):
+def set_config(content):
     try:
-        memcache.set('model\tyaml\t%s' % title, content,
-                     time=60*60*24*7)
+        memcache.set('model\tyaml\t.config', content, time=60*60*24*7)
     except:
         return None
 
 
 def set_rendered_body(title, content):
     try:
-        memcache.set('model\trendered_body\t%s' % title, content,
-                     time=60*60*24*7)
+        memcache.set('model\trendered_body\t%s' % title, content, time=60*60*24*7)
+    except:
+        return None
+
+
+def set_metadata(title, md):
+    try:
+        memcache.set('model\tmetadata\t%s' % title, md, time=60*60*24*7)
     except:
         return None
 
@@ -80,9 +85,9 @@ def set_hashbangs(title, content):
         return None
 
 
-def get_yaml(title):
+def get_config():
     try:
-        return memcache.get('model\tyaml\t%s' % title)
+        return memcache.get('model\tyaml\t.config')
     except:
         return None
 
@@ -94,6 +99,13 @@ def get_rendered_body(title):
         return None
 
 
+def get_metadata(title):
+    try:
+        return memcache.get('model\tmetadata\t%s' % title)
+    except:
+        return None
+
+
 def get_hashbangs(title):
     try:
         return memcache.get('model\thashbangs\t%s' % title)
@@ -101,9 +113,9 @@ def get_hashbangs(title):
         return None
 
 
-def del_yaml(title):
+def del_config():
     try:
-        memcache.delete('model\tyaml\t%s' % title)
+        memcache.delete('model\tyaml\t.config')
     except:
         return None
 
@@ -111,6 +123,13 @@ def del_yaml(title):
 def del_rendered_body(title):
     try:
         memcache.delete('model\trendered_body\t%s' % title)
+    except:
+        return None
+
+
+def del_metadata(title):
+    try:
+        memcache.delete('model\tmetadata\t%s' % title)
     except:
         return None
 

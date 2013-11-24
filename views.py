@@ -297,7 +297,7 @@ class WikiPageHandler(webapp2.RequestHandler):
         elif restype == 'atom':
             if rendered is None:
                 pages = WikiPage.get_changes(None, 3, include_body=True)
-                config = WikiPage.yaml_by_title('.config')
+                config = WikiPage.get_config()
                 host = self.request.host_url
                 url = "%s/sp.changes?_type=atom" % host
                 feed = AtomFeed(title="%s: changes" % config['service']['title'],
@@ -340,7 +340,7 @@ class WikiPageHandler(webapp2.RequestHandler):
 
     def _render_posts_atom(self, title, pages):
         host = self.request.host_url
-        config = WikiPage.yaml_by_title('.config')
+        config = WikiPage.get_config()
         if title is None:
             feed_title = '%s: posts' % config['service']['title']
             url = "%s/sp.posts?_type=atom" % host
@@ -373,7 +373,7 @@ class WikiPageHandler(webapp2.RequestHandler):
             self._set_response_body(html, head)
         elif restype == 'atom':
             pages = WikiPage.get_index(None)
-            config = WikiPage.yaml_by_title('.config')
+            config = WikiPage.get_config()
             host = self.request.host_url
             url = "%s/sp.index?_type=atom" % host
             feed = AtomFeed(title="%s: title index" % config['service']['title'],
@@ -422,7 +422,7 @@ class WikiPageHandler(webapp2.RequestHandler):
 
     def _template(self, path, data):
         t = JINJA.get_template('templates/%s' % path)
-        config = WikiPage.yaml_by_title('.config')
+        config = WikiPage.get_config()
 
         data['is_local'] = self.request.host_url.startswith('http://localhost')
         data['is_mobile'] = self._is_mobile()
