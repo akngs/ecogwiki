@@ -393,7 +393,7 @@ article .body h6 {
 article .body a[href^="ftp://"],
 article .body a[href^="https://"],
 article .body a[href^="http://"] {
-    padding-right: 18px;
+    padding-right: 12px;
     background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAKAgMAAAAfnkwQAAAAA3NCSVQICAjb4U/gAAAACVBMVEX///8kUmQkUmTp7WYpAAAAA3RSTlMAu//QRVwgAAAACXBIWXMAAAsSAAALEgHS3X78AAAAHHRFWHRTb2Z0d2FyZQBBZG9iZSBGaXJld29ya3MgQ1M0BrLToAAAABZ0RVh0Q3JlYXRpb24gVGltZQAwOC8xMi8xMKNAeX0AAAAnSURBVAiZY2BgDGFgYEhhEHWcwiDA5sIgIMnAICACxAwOcCwa6gAATVoD5WIuD5EAAAAASUVORK5CYII=) no-repeat right;
 }
 
