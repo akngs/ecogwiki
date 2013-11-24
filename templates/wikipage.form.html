@@ -11,6 +11,13 @@
     .CodeMirror-scroll {
         overflow-y: hidden;
         overflow-x: auto;
+
+        /* Fixes first line rendering problem in Chrome,
+           removing CSS code for hiding scrollbars (uses auto-resizing) */
+        margin-bottom: 0px;
+        padding-bottom: 0px;
+        margin-right: 0px;
+        padding-right: 0px;
     }
     .CodeMirror pre {
         font-family: NanumGothicCoding, "Courier New", Courier, monospace;
