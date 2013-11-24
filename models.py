@@ -878,22 +878,13 @@ class WikiPage(ndb.Model, PageOperationMixin):
     @classmethod
     def get_by_title(cls, title, follow_redirect=False):
         key = cls._key()
-        page = WikiPage.query(WikiPage.title == title,
-                              ancestor=key).get()
+        page = WikiPage.query(WikiPage.title == title, ancestor=key).get()
         if page is None:
-            page = WikiPage(parent=key, title=title, body='', revision=0,
+            page = WikiPage(parent=key, title=title, body=u'', revision=0,
                             inlinks={}, outlinks={}, related_links={})
-
-        if follow_redirect and 'redirect' in page.metadata:
+        elif follow_redirect and 'redirect' in page.metadata:
             new_title = page.metadata['redirect']
             page = cls.get_by_title(new_title, follow_redirect)
-
-        if page.inlinks is None:
-            page.inlinks = {}
-        if page.outlinks is None:
-            page.outlinks = {}
-        if page.related_links is None:
-            page.related_links = {}
 
         return page
 

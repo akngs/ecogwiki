@@ -7,6 +7,8 @@ max_recent_users = 20
 def add_recent_email(email):
     try:
         emails = get_recent_emails()
+        if len(emails) > 0 and emails[-1] == email:
+            return
         if email in emails:
             emails.remove(email)
         emails.append(email)
