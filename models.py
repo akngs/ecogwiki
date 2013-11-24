@@ -763,7 +763,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if len(links) == 0:
             return
 
-        next_page = WikiPage.get_by_title(random.choice(links))
+        next_page = WikiPage.get_by_title(random.choice(links), follow_redirect=True)
         next_link = next_page.title
         if next_link not in score_table:
             score_table[next_link] = 0.0
