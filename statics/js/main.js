@@ -1,4 +1,15 @@
 $(function() {
+    // Render score graph
+    (function() {
+        $('span.score').each(function() {
+            var $this = $(this);
+            var percent = (+$this.text() * 100) + '%';
+            var $replace = $('<span>').addClass('scorebar');
+            $('<span>').appendTo($replace).addClass('bar').css('width', percent);
+            $this.replaceWith($replace);
+        })
+    })();
+
     // Localize datetime
     (function() {
         $('time').each(function() {

@@ -85,6 +85,19 @@ div.contents {
     padding: 0 1em;
 }
 
+.scorebar {
+    display: inline-block;
+    width: 40px;
+    height: 10px;
+    background-color: #DDD;
+    margin-right: 5px;
+}
+.scorebar .bar {
+    display: block;
+    width: 0%;
+    height: 100%;
+    background-color: #A6C5F3;
+}
 
 @media print {
     .vcaret:before {

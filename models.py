@@ -672,8 +672,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         outlinks = reduce(lambda x, y: x + y, self.outlinks.values(), [])
         inlinks = reduce(lambda x, y: x + y, self.inlinks.values(), [])
         direct_links = set(outlinks + inlinks)
-        related_links = dict(filter(lambda (k, v): k not in direct_links,
-                                    related_links.items()))
+        related_links = dict(filter(lambda (k, v): k not in direct_links, related_links.items()))
 
         # filter out insignificant links
         if len(related_links) > 30:
