@@ -56,6 +56,8 @@ JINJA.filters['urlencode'] = urlencode
 
 class WikiPageHandler(webapp2.RequestHandler):
     def post(self, path):
+        cache.create_prc()
+
         user = WikiPageHandler._get_cur_user()
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
         revision = int(self.request.POST['revision'])
@@ -82,6 +84,8 @@ class WikiPageHandler(webapp2.RequestHandler):
         return self.get(path, True)
 
     def get(self, path, head=False):
+        cache.create_prc()
+
         if path == '':
             self.response.headers['Location'] = '/Home'
             self.response.status = 303

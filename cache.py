@@ -2,28 +2,31 @@ from google.appengine.api import memcache
 import threading
 
 
+prc = None
 max_recent_users = 20
 
 
 class PerRequestCache(threading.local):
-    config = None
-    data = {}
-
     def get(self, key):
-        if key in self.data:
-            return self.data[key]
+        if key in self.__dict__:
+            return self.__dict__[key]
         else:
             return None
 
     def set(self, key, value):
-        self.data[key] = value
+        self.__dict__[key] = value
 
     def flush_all(self):
-        self.config = None
-        self.data = {}
+        self.__dict__.clear()
 
 
-prc = PerRequestCache()
+def create_prc():
+    global prc
+    prc = PerRequestCache()
+
+
+if prc is None:
+    create_prc()
 
 
 def add_recent_email(email):
@@ -95,10 +98,11 @@ def del_titles():
         return None
 
 
-def set_config(content):
+def set_config(value):
+    key = 'model\tconfig'
     try:
-        memcache.set('model\tconfig', content)
-        prc.config = content
+        memcache.set(key, value)
+        prc.set(key, value)
     except:
         return None
 
@@ -131,12 +135,13 @@ def set_hashbangs(title, value):
 
 
 def get_config():
-    if prc.config is None:
+    key = 'model\tconfig'
+    if prc.get(key) is None:
         try:
-            prc.config = memcache.get('model\tconfig')
+            prc.set(key, memcache.get(key))
         except:
             pass
-    return prc.config
+    return prc.get(key)
 
 
 def get_rendered_body(title):
@@ -170,9 +175,10 @@ def get_hashbangs(title):
 
 
 def del_config():
+    key = 'model\tconfig'
     try:
-        memcache.delete('model\tconfig')
-        prc.config = None
+        memcache.delete(key)
+        prc.set(key, None)
     except:
         return None
 

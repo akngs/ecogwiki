@@ -475,6 +475,7 @@ class WikiPageSpecialTitlesTest(unittest.TestCase):
 
 class WikiPageLinksTest(unittest.TestCase):
     def setUp(self):
+        cache.prc.flush_all()
         self.testbed = testbed.Testbed()
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
@@ -482,7 +483,6 @@ class WikiPageLinksTest(unittest.TestCase):
 
     def tearDown(self):
         self.testbed.deactivate()
-        cache.prc.flush_all()
 
     def test_nonexisting_page(self):
         a = WikiPage.get_by_title(u'A')
