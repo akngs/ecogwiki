@@ -1,7 +1,15 @@
 from google.appengine.api import memcache
+import threading
 
 
 max_recent_users = 20
+
+
+class PerRequestCache(threading.local):
+    config = None
+
+
+prc = PerRequestCache()
 
 
 def add_recent_email(email):
@@ -13,20 +21,19 @@ def add_recent_email(email):
             emails.remove(email)
         emails.append(email)
 
-        memcache.set('view\trecent_emails',
-                     '\t'.join(emails[-max_recent_users:]))
+        memcache.set('view\trecentemails', emails[-max_recent_users:])
     except:
         return None
 
 
 def get_recent_emails():
     try:
-        emails = memcache.get('view\trecent_emails')
+        emails = memcache.get('view\trecentemails')
         if emails is None:
             memcache.flush_all()
             return []
         else:
-            return emails.split('\t')
+            return emails
     except:
         return []
 
@@ -58,7 +65,8 @@ def del_titles():
 
 def set_config(content):
     try:
-        memcache.set('model\tyaml\t.config', content, time=60*60*24*7)
+        memcache.set('model\tconfig', content, time=60*60*24*7)
+        prc.config = content
     except:
         return None
 
@@ -79,17 +87,18 @@ def set_metadata(title, md):
 
 def set_hashbangs(title, content):
     try:
-        memcache.set('model\thashbangs\t%s' % title, content,
-                     time=60*60*24*7)
+        memcache.set('model\thashbangs\t%s' % title, content, time=60*60*24*7)
     except:
         return None
 
 
 def get_config():
-    try:
-        return memcache.get('model\tyaml\t.config')
-    except:
-        return None
+    if prc.config is None:
+        try:
+            prc.config = memcache.get('model\tconfig')
+        except:
+            pass
+    return prc.config
 
 
 def get_rendered_body(title):
@@ -115,7 +124,8 @@ def get_hashbangs(title):
 
 def del_config():
     try:
-        memcache.delete('model\tyaml\t.config')
+        memcache.delete('model\tconfig')
+        PerRequestCache().config = None
     except:
         return None
 

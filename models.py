@@ -97,11 +97,7 @@ class PageOperationMixin(object):
 
     @property
     def metadata(self):
-        metadata = cache.get_metadata(self.title)
-        if metadata is None:
-            metadata = self.parse_metadata(self.body)
-            cache.set_metadata(self.title, metadata)
-        return metadata
+        return self.parse_metadata(self.body)
 
     def can_read(self, user, default_acl=None):
         if default_acl is None:
@@ -338,22 +334,43 @@ class WikiPage(ndb.Model, PageOperationMixin):
     older_title = ndb.StringProperty()
     newer_title = ndb.StringProperty()
 
+    # request scope to reduce memcache call within single request
+    metadata_cache = None
+    hashbangs_cache = None
+    rendered_body_cache = None
+
     @property
     def is_old_revision(self):
         return False
 
     @property
     def rendered_body(self):
-        html = cache.get_rendered_body(self.title)
-        if html is not None:
-            return html
+        if self.rendered_body_cache is None:
+            self.rendered_body_cache = cache.get_rendered_body(self.title)
+            if self.rendered_body_cache is None:
+                self.rendered_body_cache = super(WikiPage, self).rendered_body
+                cache.set_rendered_body(self.title, self.rendered_body_cache)
+        return self.rendered_body_cache
 
-        html = super(WikiPage, self).rendered_body
-        cache.set_rendered_body(self.title, html)
-        return html
+    @property
+    def metadata(self):
+        if self.metadata_cache is None:
+            self.metadata_cache = cache.get_metadata(self.title)
+            if self.metadata_cache is None:
+                self.metadata_cache = super(WikiPage, self).metadata
+                cache.set_metadata(self.title, self.metadata_cache)
+        return self.metadata_cache
 
     @property
     def hashbangs(self):
+        if self.hashbangs_cache is None:
+            self.hashbangs_cache = cache.get_hashbangs(self.title)
+            if self.hashbangs_cache is None:
+                self.hashbangs_cache = super(WikiPage, self).hashbangs
+                cache.set_hashbangs(self.title, self.hashbangs_cache)
+        return self.hashbangs_cache
+
+
         result = cache.get_hashbangs(self.title)
         if result is not None:
             return result
@@ -368,12 +385,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # delete rendered body cache
         cache.del_rendered_body(self.title)
+        self.rendered_body_cache = None
         cache.del_hashbangs(self.title)
+        self.hashbangs_cache = None
 
         # update body
         old_md = self.metadata
         new_md = PageOperationMixin.parse_metadata(new_body)
         cache.del_metadata(self.title)
+        self.metadata_cache = None
 
         # validate contents
         if u'pub' in new_md and u'redirect' in new_md:
@@ -536,7 +556,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
                             page.put().delete()
                         else:
                             page.put()
-                        cache.del_yaml(page.title)
                         cache.del_rendered_body(page.title)
                         cache.del_hashbangs(page.title)
                     except ValueError:
@@ -602,6 +621,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             self.put()
 
         cache.del_rendered_body(self.title)
+        self.rendered_body_cache = None
         cache.del_hashbangs(self.title)
         if self.newer_title:
             cache.del_rendered_body(self.newer_title)
@@ -615,6 +635,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             return
 
         cache.del_rendered_body(self.title)
+        self.rendered_body_cache = None
         cache.del_hashbangs(self.title)
         if self.newer_title:
             cache.del_rendered_body(self.newer_title)
@@ -805,11 +826,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def get_titles(cls, user=None):
         email = user.email() if user is not None else u'None'
         titles = cache.get_titles(email)
-        if titles is not None:
-            titles = json.loads(titles)
-        else:
+        if titles is None:
             titles = [page.title for page in cls.get_index(user)]
-            cache.set_titles(email, json.dumps(titles))
+            cache.set_titles(email, titles)
 
         return titles
 
