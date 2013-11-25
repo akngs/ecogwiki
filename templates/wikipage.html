@@ -14,6 +14,7 @@
     <meta name="description" content="{{ page.description|e }}" />
 
     <!-- Open Graph properties { -->
+    <meta property="fb:app_id" content="{{ config.service.fb_app_id }}" />
     <meta property="og:url" content="http://{{ config.service.domain }}{{ page.absolute_url|e }}" />
     <meta property="og:image" content="http://{{ config.service.domain }}/large-icon.png?ver={{ app.version }}" />
     <meta property="og:type" content="blog" />
@@ -89,14 +90,6 @@ window.fbAsyncInit = function() {
             <br>
             <a href="+{{ page.title }}" rel="nofollow" class="search pos">Related pages</a>
         </h1>
-
-        {% if page.published_at and 'pt' not in page.metadata %}
-        <div class="social">
-            <!-- Facebook { -->
-            <div class="fb-like" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="300" data-layout="button_count" data-show-faces="true" data-send="true"></div>
-            <!-- } Facebook -->
-        </div>
-        {% endif %}
 
         <ul class="info">
             {% if page.updated_at %}
@@ -246,7 +239,7 @@ window.fbAsyncInit = function() {
 {% if page.published_at and 'pt' not in page.metadata %}
 <div class="social">
     <!-- Facebook { -->
-    <div class="fb-like" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="300" data-layout="button_count" data-show-faces="true" data-send="true"></div>
+    <div class="fb-like" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="300" data-layout="standard" data-show-faces="true" data-send="true"></div>
     <div class="fb-comments" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="630"></div>
     <!-- } Facebook -->
 </div>
@@ -278,7 +271,7 @@ window.fbAsyncInit = function() {
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     {% endif %}
 
-    {% if page.body == '' %}
+    {% if page.revision == 0 %}
     <script>
     $(function() {ga('send', 'event', 'page', 'error', 'not found');});
     </script>

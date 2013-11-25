@@ -27,6 +27,7 @@ DEFAULT_CONFIG = {
     'service': {
         'title': '',
         'domain': '',
+        'fb_app_id': '',
         'ga_profile_id': '',
         'ga_classic_profile_id': '',
         'css_list': [
