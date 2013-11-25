@@ -41,7 +41,12 @@ class PageOperationMixin(object):
                 itemtype, rel = rel.split('/')
                 humane_rel = schema.humane_property(itemtype, rel, True)
                 lines.append(u'## %s' % humane_rel)
-                lines += [u'* [[%s]]' % title for title in set(links)]
+
+                # remove dups and sort
+                links = list(set(links))
+                links.sort()
+
+                lines += [u'* [[%s]]' % title for title in links]
             body_parts.append(u'\n'.join(lines))
 
         # related links
