@@ -20,11 +20,6 @@ from markdown.extensions.def_list import DefListExtension
 from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax
 
 
-class MigrationHistory(ndb.Model):
-    version = ndb.IntegerProperty()
-    performed_at = ndb.DateTimeProperty()
-
-
 class PageOperationMixin(object):
     re_img = re.compile(ur'<p><img( .+? )/></p>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')

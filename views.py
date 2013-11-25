@@ -219,8 +219,6 @@ class WikiPageHandler(webapp2.RequestHandler):
             titles = WikiPage.randomly_update_related_links(50, recent == '1')
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             self.response.write('\n'.join(titles))
-        elif title == 'migrate':
-            pass
         elif title == 'fix_suggested_pages':
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             index = int(self.request.GET.get('index', '0'))
