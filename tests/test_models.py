@@ -5,6 +5,7 @@ from itertools import groupby
 from models import md, WikiPage, title_grouper
 from google.appengine.ext import testbed
 from markdownext.md_wikilink import parse_wikilinks
+import cache
 
 
 class WikiPageUpdateTest(unittest.TestCase):
@@ -481,6 +482,7 @@ class WikiPageLinksTest(unittest.TestCase):
 
     def tearDown(self):
         self.testbed.deactivate()
+        cache.prc.flush_all()
 
     def test_nonexisting_page(self):
         a = WikiPage.get_by_title(u'A')
@@ -560,6 +562,9 @@ class WikiPageLinksTest(unittest.TestCase):
         WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, '')
         WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, '')
         WikiPage.get_by_title(u'B').update_content(u'.redirect D', 1, '')
+
+        # flush thread-local cache
+        cache.prc.flush_all()
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')

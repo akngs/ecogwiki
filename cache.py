@@ -7,12 +7,27 @@ max_recent_users = 20
 
 class PerRequestCache(threading.local):
     config = None
+    data = {}
+
+    def get(self, key):
+        if key in self.data:
+            return self.data[key]
+        else:
+            return None
+
+    def set(self, key, value):
+        self.data[key] = value
+
+    def flush_all(self):
+        self.config = None
+        self.data = {}
 
 
 prc = PerRequestCache()
 
 
 def add_recent_email(email):
+    key = 'view\trecentemails'
     try:
         emails = get_recent_emails()
         if len(emails) > 0 and emails[-1] == email:
@@ -21,21 +36,38 @@ def add_recent_email(email):
             emails.remove(email)
         emails.append(email)
 
-        memcache.set('view\trecentemails', emails[-max_recent_users:])
+        value = emails[-max_recent_users:]
+        memcache.set(key, value)
+        prc.set(key, value)
     except:
         return None
 
 
 def get_recent_emails():
-    try:
-        emails = memcache.get('view\trecentemails')
-        if emails is None:
-            memcache.flush_all()
-            return []
-        else:
-            return emails
-    except:
-        return []
+    key = 'view\trecentemails'
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
+
+
+def get_recent_emails():
+    key = 'view\trecentemails'
+    if prc.get(key) is None:
+        try:
+            emails = memcache.get(key)
+            if emails is None:
+                memcache.flush_all()
+                prc.flush_all()
+                prc.set(key, [])
+            else:
+                prc.set(key, emails)
+        except:
+            pass
+
+    return prc.get(key)
 
 
 def set_titles(email, content):
@@ -65,29 +97,35 @@ def del_titles():
 
 def set_config(content):
     try:
-        memcache.set('model\tconfig', content, time=60*60*24*7)
+        memcache.set('model\tconfig', content)
         prc.config = content
     except:
         return None
 
 
-def set_rendered_body(title, content):
+def set_rendered_body(title, value):
+    key = 'model\trendered_body\t%s' % title
     try:
-        memcache.set('model\trendered_body\t%s' % title, content, time=60*60*24*7)
+        memcache.set(key, value)
+        prc.set(key, value)
     except:
         return None
 
 
-def set_metadata(title, md):
+def set_metadata(title, value):
+    key = 'model\tmetadata\t%s' % title
     try:
-        memcache.set('model\tmetadata\t%s' % title, md, time=60*60*24*7)
+        memcache.set(key, value)
+        prc.set(key, value)
     except:
         return None
 
 
-def set_hashbangs(title, content):
+def set_hashbangs(title, value):
+    key = 'model\thashbangs\t%s' % title
     try:
-        memcache.set('model\thashbangs\t%s' % title, content, time=60*60*24*7)
+        memcache.set(key, value)
+        prc.set(key, value)
     except:
         return None
 
@@ -102,50 +140,65 @@ def get_config():
 
 
 def get_rendered_body(title):
-    try:
-        return memcache.get('model\trendered_body\t%s' % title)
-    except:
-        return None
+    key = 'model\trendered_body\t%s' % title
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
 
 
 def get_metadata(title):
-    try:
-        return memcache.get('model\tmetadata\t%s' % title)
-    except:
-        return None
+    key = 'model\tmetadata\t%s' % title
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
 
 
 def get_hashbangs(title):
-    try:
-        return memcache.get('model\thashbangs\t%s' % title)
-    except:
-        return None
+    key = 'model\thashbangs\t%s' % title
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
 
 
 def del_config():
     try:
         memcache.delete('model\tconfig')
-        PerRequestCache().config = None
+        prc.config = None
     except:
         return None
 
 
 def del_rendered_body(title):
+    key = 'model\trendered_body\t%s' % title
     try:
-        memcache.delete('model\trendered_body\t%s' % title)
+        memcache.delete(key)
+        prc.set(key, None)
     except:
         return None
 
 
 def del_metadata(title):
+    key = 'model\tmetadata\t%s' % title
     try:
-        memcache.delete('model\tmetadata\t%s' % title)
+        memcache.delete(key)
+        prc.set(key, None)
     except:
         return None
 
 
 def del_hashbangs(title):
+    key = 'model\thashbangs\t%s' % title
     try:
-        memcache.delete('model\thashbangs\t%s' % title)
+        memcache.delete(key)
+        prc.set(key, None)
     except:
         return None
