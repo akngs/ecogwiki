@@ -238,36 +238,6 @@ class WikiPageHandler(webapp2.RequestHandler):
             for page in pages:
                 page.comment = ''
                 page.put()
-        elif title == 'fix_links':
-            self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
-
-            def fix_it(links):
-                for key, values in links.items():
-                    if len(key.split('/')) == 2:
-                        continue
-                    if key == u'deathDate':
-                        newkey = 'Person/%s' % key
-                    elif key == u'birthDate':
-                        newkey = 'Person/%s' % key
-                    elif key == u'datePublished':
-                        newkey = 'Book/%s' % key
-                    elif key == u'author':
-                        newkey = 'Book/%s' % key
-                    else:
-                        continue
-
-                    if newkey not in links:
-                        links[newkey] = values
-                    else:
-                        links[newkey] = list(set(links[newkey] + values))
-
-                    del links[key]
-
-            page = WikiPage.query(WikiPage.title == self.request.GET['title']).fetch()[0]
-            fix_it(page.inlinks)
-            fix_it(page.outlinks)
-            page.put()
-            self.response.write('Done')
         elif title == 'gcstest':
             import cloudstorage as gcs
             f = gcs.open(
