@@ -329,9 +329,9 @@ class UserPreferences(ndb.Model):
 
     @classmethod
     def get_by_email(cls, email):
-        print 1
         keyid = ndb.Key(cls, email).string_id()
         return cls.get_by_id(keyid)
+
 
 class WikiPage(ndb.Model, PageOperationMixin):
     re_normalize_title = re.compile(ur'([\[\]\(\)\~\!\@\#\$\%\^\&\*\-'
