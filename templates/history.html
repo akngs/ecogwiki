@@ -20,13 +20,7 @@
         <tr>
             <td class="modified"><time datetime="{{ revision.created_at|isodt }}">{{ revision.created_at|sdt }}</time></td>
             <td>
-                <span class="modifier">
-                    {% if revision.modifier %}
-                    {{ revision.modifier.email() }}
-                    {% else %}
-                    anonymous
-                    {% endif %}
-                </span>
+                <span class="modifier">{{ revision.modifier|userpage }}</span>
                 <br>
                 <a class="caret-target comment" href="{{ page.absolute_url|e }}?rev={{ revision.revision }}">
                     {% if revision.comment %}

@@ -99,6 +99,20 @@ div.contents {
     background-color: #A6C5F3;
 }
 
+.message {
+    padding: 0.2em 1em;
+    margin: 1em 0;
+    background-color: #E9EDF5;
+    border: 1px solid #CCF;
+}
+
+.error {
+    padding: 0.2em 1em;
+    margin: 1em 0;
+    background-color: #FFD2D3;
+    border: 1px solid #F00;
+}
+
 @media print {
     .vcaret:before {
         display: none;
@@ -138,10 +152,8 @@ div.contents {
     float: right;
 }
 
-.top-bar li .email {
-    padding-right: 1em;
+.top-bar li .preferences {
     margin-right: 1em;
-    border-right: 1px solid #CCC;
 }
 
 .top-bar li.search input {
@@ -151,7 +163,7 @@ div.contents {
 }
 
 @media (max-width:320px) {
-    .top-bar .email {
+    .top-bar .preferences {
         display: none;
     }
 }
@@ -287,6 +299,19 @@ header .edit_menu {
     margin-right: 0.5em;
 }
 /* } Wiki Edit Form */
+
+
+/* User Preferences Form { */
+.preferencesform input.userpage_title {
+    margin: 10px 0;
+}
+.preferencesform .actions {
+    margin: 0.5em 0;
+}
+.preferencesform .actions input {
+    margin-right: 0.5em;
+}
+/* } User Preferences Form */
 
 
 /* System page tables { */
@@ -552,19 +577,6 @@ article .body a.quotable strong {
     text-decoration: none;
     font-style: normal;
     font-weight: normal;
-}
-article .body .message {
-    padding: 0.2em 1em;
-    margin: 1em 0;
-    background-color: #E9EDF5;
-    border: 1px solid #CCF;
-}
-
-article .body .error {
-    padding: 0.2em 1em;
-    margin: 1em 0;
-    background-color: #FFD2D3;
-    border: 1px solid #F00;
 }
 
 article .body .older,

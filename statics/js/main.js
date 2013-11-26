@@ -72,7 +72,7 @@ $(function() {
 
     // Shortcut keys
     (function() {
-        var $editor = $('.editform textarea');
+        var $editor = $('.editform, .preferencesform');
 
         // not in editor mode
         if ($editor.length) return;

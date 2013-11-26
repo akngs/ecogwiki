@@ -21,11 +21,7 @@
         <tr>
             <td class="published"><time datetime="{{ page.published_at|isodt }}">{{ page.published_at|sdt }}</time></td>
             <td class="page">
-                {% if page.modifier %}
-                    <span class="modifier">{{ page.modifier.email() }}</span>
-                {% else %}
-                    <span class="modifier">anonymous</span>
-                {% endif %}
+                <span class="modifier">{{ page.modifier|userpage }}</span>
                 <br>
                 <a class="caret-target" href="{{ page.absolute_url }}">{{ page.title }}</a>
             </td>

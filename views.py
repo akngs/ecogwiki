@@ -13,7 +13,7 @@ from pyatom import AtomFeed
 from itertools import groupby
 from collections import OrderedDict
 from google.appengine.api import users
-from models import WikiPage, WikiPageRevision, title_grouper
+from models import WikiPage, WikiPageRevision, UserPreferences, title_grouper
 
 
 JINJA = jinja2.Environment(
@@ -47,16 +47,36 @@ def urlencode(s):
     return urllib2.quote(s.encode('utf-8'))
 
 
+def userpage_link(user):
+    if user is None:
+        return '<span class="user">Anonymous</span>'
+    else:
+        email = user.email()
+        preferences = UserPreferences.get_by_email(email)
+
+        if preferences is None:
+            return '<span class="user email">%s</span>' % email
+        elif preferences.userpage_title is None or len(preferences.userpage_title.strip()) == 0:
+            return '<span class="user email">%s</span>' % email
+        else:
+            path = to_path(preferences.userpage_title)
+            return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
+
+
 JINJA.filters['dt'] = format_datetime
 JINJA.filters['sdt'] = format_short_datetime
 JINJA.filters['isodt'] = format_iso_datetime
 JINJA.filters['to_path'] = to_path
 JINJA.filters['urlencode'] = urlencode
+JINJA.filters['userpage'] = userpage_link
 
 
 class WikiPageHandler(webapp2.RequestHandler):
     def post(self, path):
         cache.create_prc()
+
+        if path.startswith('sp.'):
+            return self.post_sp(path[3:])
 
         user = WikiPageHandler._get_cur_user()
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
@@ -79,6 +99,29 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             html = self._template('406.html', {'page': page, 'errors': [e.message]})
             self._set_response_body(html, False)
+
+    def post_sp(self, title):
+        user = WikiPageHandler._get_cur_user()
+        if title == 'preferences':
+            self.post_sp_preferences(user)
+        else:
+            self.abort(404)
+
+    def post_sp_preferences(self, user):
+        if user is None:
+            self.response.status = 403
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = self._template('403.html', {'page': {
+                'absolute_url': '/sp.preferences',
+                'title': 'User preferences',
+            }})
+            self._set_response_body(html, False)
+            return
+
+        userpage_title = self.request.POST['userpage_title']
+        UserPreferences.save(user, userpage_title)
+        self.response.headers['X-Message'] = 'Successfully updated.'
+        self.get_sp_preferences(user, False)
 
     def head(self, path):
         return self.get(path, True)
@@ -240,6 +283,8 @@ class WikiPageHandler(webapp2.RequestHandler):
             for page in pages:
                 page.comment = ''
                 page.put()
+        elif title == 'preferences':
+            self.get_sp_preferences(user, head)
         elif title == 'gcstest':
             import cloudstorage as gcs
             f = gcs.open(
@@ -253,6 +298,27 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.write('Done')
         else:
             self.abort(404)
+
+    def get_sp_preferences(self, user, head):
+        if user is None:
+            self.response.status = 403
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = self._template('403.html', {
+                'page': {
+                    'absolute_url': '/sp.preferences',
+                    'title': 'User preferences',
+                }
+            })
+            self._set_response_body(html, False)
+            return
+
+        preferences = UserPreferences.get_by_email(user.email())
+        rendered = self._template('wiki_sp_preferences.html', {
+            'preferences': preferences,
+            'message': self.response.headers.get('X-Message', None),
+        })
+        self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+        self._set_response_body(rendered, head)
 
     def get_sp_changes(self, user, head):
         restype = self._get_restype()
@@ -396,9 +462,15 @@ class WikiPageHandler(webapp2.RequestHandler):
         t = JINJA.get_template('templates/%s' % path)
         config = WikiPage.get_config()
 
+        user = WikiPageHandler._get_cur_user()
+        preferences = None
+        if user is not None:
+            preferences = UserPreferences.get_by_email(user.email())
+
         data['is_local'] = self.request.host_url.startswith('http://localhost')
         data['is_mobile'] = self._is_mobile()
-        data['user'] = WikiPageHandler._get_cur_user()
+        data['user'] = user
+        data['preferences'] = preferences
         data['users'] = users
         data['cur_url'] = self.request.url
         data['config'] = config

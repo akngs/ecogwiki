@@ -89,7 +89,8 @@
     </li>
     <li>
         {% if user %}
-        <span class="email">{{ user.email() }}</span><a href="{{ users.create_logout_url(cur_url)|e }}">Logout</a>
+        <a href="/sp.preferences" class="preferences">Preferences</a>
+        <a href="{{ users.create_logout_url(cur_url)|e }}">Logout</a>
         {% else %}
         <a href="{{ users.create_login_url(cur_url)|e }}">Login</a>
         {% endif %}

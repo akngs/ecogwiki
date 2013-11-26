@@ -113,11 +113,9 @@ window.fbAsyncInit = function() {
             </li>
             {% endif %}
 
-            {% if page.modifier %}
             <li {% if page.itemtype == 'Article' %}itemprop="author"{% endif %} class="modifier">
-                {{ page.modifier.email() }}
+                <span class="modifier">{{ page.modifier|userpage }}</span>
             </li>
-            {% endif %}
 
             {% if page.modifier and page.modifier.email() == config.admin.email %}
             <!-- Google authorship { -->
@@ -198,11 +196,7 @@ window.fbAsyncInit = function() {
                 <tr>
                     <td class="published"><time datetime="{{ post.published_at|isodt }}">{{ post.published_at|sdt }}</time></td>
                     <td class="page">
-                        {% if post.modifier %}
-                            <span class="modifier">{{ post.modifier.email() }}</span>
-                        {% else %}
-                            <span class="modifier">anonymous</span>
-                        {% endif %}
+                        <span class="modifier">{{ page.modifier|userpage }}</span>
                         <br>
                         <a class="caret-target" itemprop="blogPost" href="{{ post.absolute_url }}">{{ post.title }}</a>
                     </td>

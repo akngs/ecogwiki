@@ -233,6 +233,7 @@ class HTML5ValidationTest(unittest.TestCase):
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
         self.parser = html5parser.HTMLParser(strict=True)
+        self.browser = Browser()
 
         self.fixtures = [
             [u'Home', u'Goto [[한글 제목]]'],
@@ -250,6 +251,7 @@ class HTML5ValidationTest(unittest.TestCase):
 
     def tearDown(self):
         self.testbed.deactivate()
+        self.browser.logout()
 
     def test_normal_pages(self):
         for title, _ in self.fixtures:
@@ -263,27 +265,40 @@ class HTML5ValidationTest(unittest.TestCase):
                            'html')
 
     def test_special_pages(self):
-        self._validate('/sp.changes', 'html')
-        self._validate('/sp.changes?_type=atom', 'xml')
+        def validate():
+            self._validate('/sp.changes', 'html')
+            self._validate('/sp.changes?_type=atom', 'xml')
 
-        self._validate('/sp.index', 'html')
-        self._validate('/sp.index?_type=atom', 'xml')
+            self._validate('/sp.index', 'html')
+            self._validate('/sp.index?_type=atom', 'xml')
 
-        self._validate('/sp.search?_type=json&format=opensearch', 'json')
+            self._validate('/sp.search?_type=json&format=opensearch', 'json')
 
-        self._validate('/sp.titles?_type=json', 'json')
+            self._validate('/sp.titles?_type=json', 'json')
 
-        self._validate('/sp.posts', 'html')
-        self._validate('/sp.posts?_type=atom', 'xml')
+            self._validate('/sp.posts', 'html')
+            self._validate('/sp.posts?_type=atom', 'xml')
 
-        self._validate('/sp.randomly_update_related_pages', 'text')
-        self._validate('/sp.randomly_update_related_pages?recent=1', 'text')
+            self._validate('/sp.randomly_update_related_pages', 'text')
+            self._validate('/sp.randomly_update_related_pages?recent=1', 'text')
 
-    def _validate(self, url, validator):
+        self.browser.login('user@example.com', 'ak', is_admin=False)
+        validate()
+        self._validate('/sp.preferences', 'html', 200)
+
+        self.browser.login('user@example.com', 'ak', is_admin=True)
+        validate()
+        self._validate('/sp.preferences', 'html', 200)
+
+        self.browser.logout()
+        validate()
+        self._validate('/sp.preferences', 'html', 403)
+
+    def _validate(self, url, validator, status_code=200):
         req = webapp2.Request.blank(url)
         res = req.get_response(main.app)
 
-        self.assertEqual(200, res.status_code)
+        self.assertEqual(status_code, res.status_code)
 
         if validator == 'html':
             self.assertEqual('text/html', res.content_type)

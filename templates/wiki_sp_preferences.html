@@ -1,0 +1,48 @@
+{% extends "templates/wiki_base.html" %}
+{% block title %}User Preferences{% endblock %}
+{% block body %}
+<article>
+<header>
+    <h1>User Preferences</h1>
+    <div class="info"></div>
+</header>
+
+<section class="body">
+    {% if message %}
+    <div class="message">
+        <p>{{ message }}</p>
+    </div>
+    {% endif %}
+
+    <h1>Basics</h1>
+    <ul>
+        {% if preferences.userpage_title %}
+        <li>
+            Your user page: <a href="{{ preferences.userpage_title|to_path }}" class="wikipage">{{ preferences.userpage_title }}</a>
+        </li>
+        <li class="created_at">
+            Created at: <time datetime="{{ preferences.created_at|isodt }}">{{ preferences.created_at|dt }}</time>
+        </li>
+        {% else %}
+        <li>
+            No preferences yet.
+        </li>
+        {% endif %}
+    </ul>
+
+    <hr>
+
+    <h1>Edit Preferences</h1>
+    <form method="POST" class="preferencesform">
+        <label for="userpage_title">User page title:</label><br>
+        <input id="userpage_title" name="userpage_title" placeholder="Page title" class="userpage_title" value="{{ preferences.userpage_title }}" autofocus="autofocus">
+
+        <div class="actions">
+            <input type="submit" value="Save" class="btn btn-primary">
+            <input type="reset" value="Reset" class="btn">
+        </div>
+    </form>
+
+</section>
+</article>
+{% endblock %}

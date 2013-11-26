@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import main
+import cache
 import unittest
 from itertools import groupby
-from models import md, WikiPage, title_grouper
+from google.appengine.api import users
 from google.appengine.ext import testbed
+from models import md, WikiPage, UserPreferences, title_grouper
 from markdownext.md_wikilink import parse_wikilinks
-import cache
 
 
 class WikiPageUpdateTest(unittest.TestCase):
@@ -791,3 +792,37 @@ class WikiPageBugsTest(unittest.TestCase):
         WikiPage.get_by_title(u'A').update_content(u'.read jania902@gmail.com\n'
                                                    u'[[B]]', 0, '')
         WikiPage.get_by_title(u'A').update_content(u'Hello', 1, '')
+
+
+class UserPreferencesTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.user = users.User('user@example.com')
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_save_once(self):
+        self.assertEqual(0, UserPreferences.query().count())
+
+        preferences = UserPreferences.save(self.user, u'김경수')
+        self.assertEqual(1, UserPreferences.query().count())
+        self.assertEqual(self.user, preferences.user)
+        self.assertEqual(u'김경수', preferences.userpage_title)
+
+    def test_save_twice(self):
+        UserPreferences.save(self.user, u'김경수')
+        preferences = UserPreferences.save(self.user, u'나부군')
+
+        self.assertEqual(1, UserPreferences.query().count())
+        self.assertEqual(self.user, preferences.user)
+        self.assertEqual(u'나부군', preferences.userpage_title)
+
+    def test_get_by_email(self):
+        self.assertEquals(None, UserPreferences.get_by_email('user@example.com'))
+        UserPreferences.save(self.user, u'김경수')
+
+        self.assertEquals(u'김경수', UserPreferences.get_by_email('user@example.com').userpage_title)
