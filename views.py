@@ -92,8 +92,9 @@ class WikiPageHandler(webapp2.RequestHandler):
 
         try:
             page.update_content(self.request.POST['body'], revision, comment, user)
-            self.response.status = 303
             self.response.location = page.absolute_url
+            self.response.headers['X-Message'] = 'Successfully updated.'
+            self.get(path, False)
         except ValueError as e:
             self.response.status = 406
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -174,7 +175,10 @@ class WikiPageHandler(webapp2.RequestHandler):
                 self.response.status = 303
                 return
 
-            template_data = {'page': page}
+            template_data = {
+                'page': page,
+                'message': self.response.headers.get('X-Message', None),
+            }
             if page.metadata.get('schema', None) == 'Blog':
                 template_data['posts'] = WikiPage.get_published_posts(page.title, 20)
             elif page.revision == 0:
