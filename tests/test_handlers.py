@@ -19,6 +19,7 @@ class ContentTypeTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
+        self.testbed.init_taskqueue_stub()
 
         self.browser = Browser()
 
@@ -176,6 +177,7 @@ class RevisionTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
+        self.testbed.init_taskqueue_stub()
         self.parser = html5parser.HTMLParser(strict=True)
         self.browser = Browser()
 
@@ -232,6 +234,7 @@ class HTML5ValidationTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
+        self.testbed.init_taskqueue_stub()
         self.parser = html5parser.HTMLParser(strict=True)
         self.browser = Browser()
 

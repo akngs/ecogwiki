@@ -3,7 +3,7 @@ import cache
 import schema
 import unittest
 from google.appengine.ext import testbed
-from models import WikiPage
+from models import WikiPage, SchemaDataIndex
 
 
 class SchemaPathTest(unittest.TestCase):
@@ -34,20 +34,44 @@ class SchemaDataTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
         cache.prc.flush_all()
 
     def tearDown(self):
         self.testbed.deactivate()
 
-    def test_default_data(self):
+    def test_no_data(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'Hello', 0, '')
-        self.assertEqual(u'Hello', page.data['name'])
-        self.assertEqual(u'Article', page.data['schema'])
+        self.assertEqual(set([]), page.data)
 
     def test_author_and_isbn(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}', 0, '')
-        self.assertEqual(u'Book', page.data['schema'])
-        self.assertEqual(u'AK', page.data['author'])
-        self.assertEqual(u'123456789', page.data['isbn'])
+        self.assertTrue((u'author', u'AK') in page.data)
+        self.assertTrue((u'isbn', u'123456789') in page.data)
+
+    def test_multiple_authors(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n[[author::AK]] and [[author::TK]]', 0, '')
+        self.assertTrue((u'author', u'AK') in page.data)
+        self.assertTrue((u'author', u'TK') in page.data)
+
+    def test_schema_index_create(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0, '')
+        page.rebuild_data_index()
+        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.schema == u'Book', SchemaDataIndex.name == u'author', SchemaDataIndex.value == u'AK').count())
+        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.schema == u'Book', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456789').count())
+        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.schema == u'Book', SchemaDataIndex.name == u'datePublished', SchemaDataIndex.value == u'2013').count())
+
+    def test_schema_index_update(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0, '')
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456780}}\n[[dateModified::2013]]', 1, '')
+        page.rebuild_data_index()
+        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.schema == u'Book', SchemaDataIndex.name == u'author', SchemaDataIndex.value == u'AK').count())
+        self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.schema == u'Book', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456789').count())
+        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.schema == u'Book', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456780').count())
+        self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.schema == u'Book', SchemaDataIndex.name == u'datePublished', SchemaDataIndex.value == u'2013').count())
+        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.schema == u'Book', SchemaDataIndex.name == u'dateModified', SchemaDataIndex.value == u'2013').count())

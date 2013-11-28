@@ -11,6 +11,7 @@ class DefaultAclTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
         self.page = WikiPage.get_by_title(u'Hello')
         self.page.update_content(u'Hello', 0, '')
@@ -57,6 +58,7 @@ class PageLevelAclTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
@@ -94,6 +96,7 @@ class InconsistantAclTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
