@@ -6,11 +6,11 @@ from markdown.inlinepatterns import Pattern
 
 
 RE_WIKILINK = ur'\[\[' \
-              ur'((?P<rel>[^\]]+?)\:\:)?' \
+              ur'((?P<rel>[^\]=]+?)\:\:)?' \
               ur'(' \
               ur'(?P<date>(?P<y>\d+)-(?P<m>(\d+|\?\?))-(?P<d>(\d+|\?\?))' \
               ur'( (?P<bce>BCE))?)|' \
-              ur'(?P<plain>.+?)' \
+              ur'(?P<plain>[^=]+?)' \
               ur')\]\]'
 
 

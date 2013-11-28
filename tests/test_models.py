@@ -140,6 +140,9 @@ class WikiPageWikiLinkParserTest(unittest.TestCase):
                           u'Article/author': [u'B']},
                          parse_wikilinks('Article', u'[[A]] [[author::B]]'))
 
+    def test_wikiquery(self):
+        self.assertEqual({}, parse_wikilinks('Article', u'[[="Hello"]]'))
+
 
 class WikiPageWikilinkRenderingTest(unittest.TestCase):
     def test_plain(self):

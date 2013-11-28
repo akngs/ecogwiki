@@ -4,7 +4,7 @@ from search import parse_wikiquery
 from google.appengine.ext import testbed
 
 
-class ParserTest(unittest.TestCase):
+class WikiqueryParserTest(unittest.TestCase):
     def setUp(self):
         self.testbed = testbed.Testbed()
         self.testbed.activate()
@@ -15,23 +15,23 @@ class ParserTest(unittest.TestCase):
         self.testbed.deactivate()
 
     def test_simplist_expression(self):
-        self.assertEqual([['title', 'A'], ['title']],
-                         parse_wikiquery('title:"A" > title'))
-        self.assertEqual([['title', 'A'], ['title']],
-                         parse_wikiquery('title:"A"'))
-        self.assertEqual([['title', 'A'], ['title']],
+        self.assertEqual([['name', 'A'], ['name']],
+                         parse_wikiquery('name:"A" > name'))
+        self.assertEqual([['name', 'A'], ['name']],
+                         parse_wikiquery('name:"A"'))
+        self.assertEqual([['name', 'A'], ['name']],
                          parse_wikiquery('"A"'))
 
     def test_logical_expression(self):
-        self.assertEqual([[['title', 'A'], '*', ['title', 'B']], ['title']],
+        self.assertEqual([[['name', 'A'], '*', ['name', 'B']], ['name']],
                          parse_wikiquery('"A" * "B"'))
-        self.assertEqual([[['title', 'A'], '+', ['title', 'B']], ['title']],
+        self.assertEqual([[['name', 'A'], '+', ['name', 'B']], ['name']],
                          parse_wikiquery('"A" + "B"'))
-        self.assertEqual([[['title', 'A'], '+', [['title', 'B'], '*', ['title', 'C']]], ['title']],
+        self.assertEqual([[['name', 'A'], '+', [['name', 'B'], '*', ['name', 'C']]], ['name']],
                          parse_wikiquery('"A" + "B" * "C"'))
-        self.assertEqual([[[['title', 'A'], '+', ['title', 'B']], '*', ['title', 'C']], ['title']],
+        self.assertEqual([[[['name', 'A'], '+', ['name', 'B']], '*', ['name', 'C']], ['name']],
                          parse_wikiquery('("A" + "B") * "C"'))
 
     def test_attr_expression(self):
-        self.assertEqual([['title', 'A'], ['title', 'prop.author']],
-                         parse_wikiquery('title:"A" > title, prop.author'))
+        self.assertEqual([['name', 'A'], ['name', 'author']],
+                         parse_wikiquery('name:"A" > name, author'))
