@@ -116,6 +116,15 @@ def set_rendered_body(title, value):
         return None
 
 
+def set_data(title, value):
+    key = 'model\tdata\t%s' % title
+    try:
+        memcache.set(key, value)
+        prc.set(key, value)
+    except:
+        return None
+
+
 def set_metadata(title, value):
     key = 'model\tmetadata\t%s' % title
     try:
@@ -146,6 +155,16 @@ def get_config():
 
 def get_rendered_body(title):
     key = 'model\trendered_body\t%s' % title
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
+
+
+def get_data(title):
+    key = 'model\tdata\t%s' % title
     if prc.get(key) is None:
         try:
             prc.set(key, memcache.get(key))
@@ -185,6 +204,15 @@ def del_config():
 
 def del_rendered_body(title):
     key = 'model\trendered_body\t%s' % title
+    try:
+        memcache.delete(key)
+        prc.set(key, None)
+    except:
+        return None
+
+
+def del_data(title):
+    key = 'model\tdata\t%s' % title
     try:
         memcache.delete(key)
         prc.set(key, None)

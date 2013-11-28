@@ -23,6 +23,7 @@ from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax
 class PageOperationMixin(object):
     re_img = re.compile(ur'<p><img( .+? )/></p>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
+    re_data = re.compile(ur'({{|\[\[)(?P<name>.+)::(?P<value>.+?)(}}|\]\])')
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
                                          ur'April|May|June|July|August|'
@@ -95,8 +96,16 @@ class PageOperationMixin(object):
         return u'/%s' % WikiPage.title_to_path(self.older_title)
 
     @property
+    def data(self):
+        data = PageOperationMixin.parse_data(self.body)
+        data['name'] = self.title
+        data['schema'] = self.itemtype
+
+        return data
+
+    @property
     def metadata(self):
-        return self.parse_metadata(self.body)
+        return PageOperationMixin.parse_metadata(self.body)
 
     def can_read(self, user, default_acl=None):
         if default_acl is None:
@@ -243,6 +252,14 @@ class PageOperationMixin(object):
             return main.DEFAULT_CONFIG['service']['default_permissions']
 
     @staticmethod
+    def parse_data(body):
+        matches = {}
+        for m in re.finditer(WikiPage.re_data, body):
+            matches[m.group('name')] = m.group('value')
+
+        return matches
+
+    @staticmethod
     def parse_metadata(body):
         matches = []
         for line in body.split(u'\n'):
@@ -367,6 +384,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if value is None:
             value = super(WikiPage, self).rendered_body
             cache.set_rendered_body(self.title, value)
+        return value
+
+    @property
+    def data(self):
+        value = cache.get_data(self.title)
+        if value is None:
+            value = super(WikiPage, self).data
+            cache.set_data(self.title, value)
         return value
 
     @property
