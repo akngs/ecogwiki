@@ -503,14 +503,14 @@ article .body li > p:first-child {
     margin-top: 0;
 }
 
-article .body .wq-list {
+article .body .wq-list .wq-list {
     list-style-type: none;
     margin-left: 0;
     padding-left: 0;
 }
 
 article .body dl {
-    margin: 0 0 1.25em 0;
+    margin: 0 0 1em 0;
 }
 
 article .body dt {
