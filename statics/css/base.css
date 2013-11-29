@@ -503,14 +503,27 @@ article .body li > p:first-child {
     margin-top: 0;
 }
 
+article .body .wq-list {
+    list-style-type: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+article .body dl {
+    margin: 0 0 1.25em 0;
+}
+
 article .body dt {
-    display: run-in;
+    float: left;
+    clear: left;
+    width: 80px;
+    text-align: right;
     font-family: NanumGothicCoding, "Courier New", Courier, monospace;
-    margin-right: 1em;
+    color: #888;
 }
 
 article .body dd {
-    margin: 0;
+    margin: 0 0 0 90px;
     padding: 0;
 }
 

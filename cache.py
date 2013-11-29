@@ -119,7 +119,7 @@ def set_rendered_body(title, value):
 def set_wikiquery(q, email, value):
     key = 'model\twikiquery\t%s\t%s' % (q, email)
     try:
-        memcache.set(key, value, 60 * 10)
+        memcache.set(key, value, 60 * 60)
         prc.set(key, value)
     except:
         return None

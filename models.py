@@ -993,7 +993,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             results = []
             for title, data in datas.items():
                 if title in accessible_titles:
-                    results.append(dict((attr, data[attr] if attr in data else None) for attr in attrs))
+                    results.append(OrderedDict((attr, data[attr] if attr in data else None) for attr in attrs))
 
             if len(results) == 1:
                 results = results[0]
