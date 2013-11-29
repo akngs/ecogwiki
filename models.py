@@ -971,6 +971,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def wikiquery(cls, q):
         page_query, attrs = search.parse_wikiquery(q)
         datas = cls._evaluate_pages(page_query)
+
         results = []
         for title, data in datas.items():
             results.append(dict((attr, data[attr] if attr in data else None) for attr in attrs))
@@ -982,19 +983,29 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     @classmethod
     def _evaluate_pages(cls, q):
-        if len(q) == 2:
-            pages = cls._evaluate_page_query_term(q[0], q[1])
-        elif len(q) == 1:
+        if len(q) == 1:
             pages = cls._evaluate_pages(q[0])
+        elif len(q) == 2:
+            pages = cls._evaluate_page_query_term(q[0], q[1])
         else:
             pages = cls._evaluate_page_query_expr(q[0], q[1], q[2:])
+        return pages
+
+    @classmethod
+    def _evaluate_page_query_term(cls, name, value):
+        if name == 'schema' and value.find('/') == -1:
+            value = schema.get_itemtype_path(value)
+
+        pages = {}
+        for index in SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value):
+            pages[index.title] = index.data
+
         return pages
 
     @classmethod
     def _evaluate_page_query_expr(cls, operand, op, rest):
         pages1 = cls._evaluate_pages(operand)
         pages2 = cls._evaluate_pages(rest)
-
         pages = {}
 
         if op == '*':
@@ -1006,17 +1017,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     pages[key] = pages2[key]
         elif op == '+':
             pages = dict(pages1.items() + pages2.items())
-
-        return pages
-
-    @classmethod
-    def _evaluate_page_query_term(cls, name, value):
-        if name == 'schema' and value != 'Things' and value.find('/') == -1:
-            value = schema.get_itemtype_path(value)
-
-        pages = {}
-        for index in SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value):
-            pages[index.title] = index.data
 
         return pages
 
