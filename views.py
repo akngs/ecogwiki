@@ -227,6 +227,7 @@ class WikiPageHandler(webapp2.RequestHandler):
                 'revision': page.revision,
                 'acl_read': page.acl_read,
                 'acl_write': page.acl_write,
+                'data': page.data,
             }
             self._set_response_body(json.dumps(pagedict), head)
         else:

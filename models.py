@@ -103,6 +103,20 @@ class PageOperationMixin(object):
     @property
     def data(self):
         data = PageOperationMixin.parse_data(self.title, self.itemtype, self.body)
+        for rel, links in self.inlinks.items():
+            if not rel.endswith('/relatedTo'):
+                continue
+            if 'inlinks' not in data:
+                data['inlinks'] = []
+            data['inlinks'] += links
+
+        for rel, links in self.outlinks.items():
+            if not rel.endswith('/relatedTo'):
+                continue
+            if 'outlinks' not in data:
+                data['outlinks'] = []
+            data['outlinks'] += links
+
         return data
 
     @property
@@ -431,17 +445,16 @@ class WikiPage(ndb.Model, PageOperationMixin):
         cache.del_rendered_body(self.title)
         cache.del_hashbangs(self.title)
 
-        # get old and new metadata
+        # get old data amd metadata
         old_md = self.metadata
         old_data = self.data
 
         cache.del_metadata(self.title)
         cache.del_data(self.title)
 
-        new_md = PageOperationMixin.parse_metadata(new_body)
-        new_data = PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
-
         # validate contents
+        new_md = PageOperationMixin.parse_metadata(new_body)
+
         if u'pub' in new_md and u'redirect' in new_md:
             raise ValueError('You cannot use "pub" and "redirect" metadata at '
                              'the same time.')
@@ -492,9 +505,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             else:
                 self._unpublish(save=False)
 
-        # deferred update schema data index
-        deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
-
         # update related pages if it's first time
         if self.revision == 1:
             for _ in range(5):
@@ -524,6 +534,10 @@ class WikiPage(ndb.Model, PageOperationMixin):
             cache.del_config()
         if self.revision == 1:
             cache.del_titles()
+
+        # deferred update schema data index
+        new_data = self.data
+        deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
 
         return True
 
@@ -1127,7 +1141,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def rebuild_all_data_index(cls, page_index=0):
         logging.debug('Rebuilding data index: %d' % page_index)
 
-        batch_size = 50
+        batch_size = 20
         all_pages = list(cls.query().fetch(batch_size, offset=page_index * batch_size))
         if len(all_pages) == 0:
             logging.debug('Rebuilding data index: Finished!')

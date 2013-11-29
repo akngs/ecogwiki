@@ -56,6 +56,14 @@ class SchemaDataTest(unittest.TestCase):
         page.update_content(u'.schema Book\n[[author::AK]] and [[author::TK]]', 0, '')
         self.assertEqual([u'AK', u'TK'], page.data['author'])
 
+    def test_normal_links(self):
+        page_a = WikiPage.get_by_title(u'A')
+        page_a.update_content(u'[[B]]', 0, '')
+        page_b = WikiPage.get_by_title(u'B')
+
+        self.assertEqual([u'A'], page_b.data['inlinks'])
+        self.assertEqual([u'B'], page_a.data['outlinks'])
+
     def test_schema_index_create(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0, '')
