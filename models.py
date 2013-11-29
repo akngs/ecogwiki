@@ -912,7 +912,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         email = user.email() if user is not None else u'None'
         titles = cache.get_titles(email)
         if titles is None:
-            titles = [page.title for page in cls.get_index(user)]
+            titles = set([page.title for page in cls.get_index(user)])
             cache.set_titles(email, titles)
 
         return titles
@@ -968,18 +968,24 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return result
 
     @classmethod
-    def wikiquery(cls, q):
-        page_query, attrs = search.parse_wikiquery(q)
-        datas = cls._evaluate_pages(page_query)
+    def wikiquery(cls, q, user=None):
+        email = user.email() if user is not None else 'None'
+        results = cache.get_wikiquery(q, email)
+        if results is None:
+            page_query, attrs = search.parse_wikiquery(q)
+            datas = cls._evaluate_pages(page_query)
+            accessible_titles = WikiPage.get_titles(user)
 
-        results = []
-        for title, data in datas.items():
-            results.append(dict((attr, data[attr] if attr in data else None) for attr in attrs))
+            results = []
+            for title, data in datas.items():
+                if title in accessible_titles:
+                    results.append(dict((attr, data[attr] if attr in data else None) for attr in attrs))
 
-        if len(results) == 1:
-            return results[0]
-        else:
-            return results
+            if len(results) == 1:
+                results = results[0]
+
+            cache.set_wikiquery(q, email, results)
+        return results
 
     @classmethod
     def _evaluate_pages(cls, q):
@@ -997,6 +1003,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             value = schema.get_itemtype_path(value)
 
         pages = {}
+
         for index in SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value):
             pages[index.title] = index.data
 
@@ -1016,7 +1023,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 else:
                     pages[key] = pages2[key]
         elif op == '+':
-            pages = dict(pages1.items() + pages2.items())
+            keys = set(pages1.keys()).union(set(pages2.keys()))
+            pages = dict((k, v) for k, v in (pages1.items() + pages2.items()) if k in keys)
 
         return pages
 

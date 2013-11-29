@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import cache
 import unittest
 from models import WikiPage
 from google.appengine.ext import testbed
@@ -73,6 +74,7 @@ class WikiqueryEvaluationTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_taskqueue_stub()
+        cache.prc.flush_all()
 
         WikiPage.get_by_title(u'The Mind\'s I').update_content(u'.schema Book\n[[author::Daniel Dennett]] and [[author::Douglas Hofstadter]]\n[[datePublished::1982]]', 0, u'')
         WikiPage.get_by_title(u'GEB').update_content(u'.schema Book\n{{author::Douglas Hofstadter}}\n[[datePublished::1979]]', 0, u'')

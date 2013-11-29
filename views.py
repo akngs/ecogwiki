@@ -233,8 +233,9 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.abort(400, 'Unknown type: %s' % restype)
 
     def get_wikiquery_result(self, path, head):
+        user = WikiPageHandler._get_cur_user()
         q = path[1:].replace('_', ' ')
-        result = WikiPage.wikiquery(q)
+        result = WikiPage.wikiquery(q, user)
         restype = self._get_restype()
         if restype == 'default' or restype == 'html':
             html = self._template('wikiquery.html', {
@@ -477,7 +478,7 @@ class WikiPageHandler(webapp2.RequestHandler):
             if q is not None and len(q) > 0:
                 titles = [t for t in titles if t.find(q) != -1]
             self.response.headers['Content-Type'] = 'application/json'
-            self._set_response_body(json.dumps([q, titles]), head)
+            self._set_response_body(json.dumps([q, list(titles)]), head)
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
@@ -492,7 +493,7 @@ class WikiPageHandler(webapp2.RequestHandler):
         if restype == 'json':
             titles = WikiPage.get_titles(user)
             self.response.headers['Content-Type'] = 'application/json'
-            self._set_response_body(json.dumps(titles), head)
+            self._set_response_body(json.dumps(list(titles)), head)
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 

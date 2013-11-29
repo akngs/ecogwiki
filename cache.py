@@ -116,6 +116,15 @@ def set_rendered_body(title, value):
         return None
 
 
+def set_wikiquery(q, email, value):
+    key = 'model\twikiquery\t%s\t%s' % (q, email)
+    try:
+        memcache.set(key, value, 60 * 10)
+        prc.set(key, value)
+    except:
+        return None
+
+
 def set_data(title, value):
     key = 'model\tdata\t%s' % title
     try:
@@ -155,6 +164,16 @@ def get_config():
 
 def get_rendered_body(title):
     key = 'model\trendered_body\t%s' % title
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
+
+
+def get_wikiquery(q, email):
+    key = 'model\twikiquery\t%s\t%s' % (q, email)
     if prc.get(key) is None:
         try:
             prc.set(key, memcache.get(key))
