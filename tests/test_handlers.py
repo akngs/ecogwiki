@@ -278,6 +278,10 @@ class HTML5ValidationTest(unittest.TestCase):
 
             self._validate('/sp.search?_type=json&format=opensearch', 'json')
 
+            self._validate('/="Home"', 'html')
+            self._validate('/="Home"?_type=body', 'html')
+            self._validate('/="Home"?_type=json', 'json')
+
             self._validate('/sp.titles?_type=json', 'json')
 
             self._validate('/sp.posts', 'html')

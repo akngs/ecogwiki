@@ -204,7 +204,10 @@ class WikiPageHandler(webapp2.RequestHandler):
             self._set_response_body(page.body, head)
         elif restype == 'body':
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = self._template('bodyonly.html', {'page': page})
+            html = self._template('bodyonly.html', {
+                'title': page.title,
+                'body': page.rendered_body,
+            })
             self._set_response_body(html, head)
         elif restype == 'history':
             if type(page) == WikiPageRevision:
@@ -215,7 +218,7 @@ class WikiPageHandler(webapp2.RequestHandler):
             html = self._template('history.html', {'page': page, 'revisions': revisions})
             self._set_response_body(html, head)
         elif restype == 'json':
-            self.response.headers['Content-Type'] = 'application/json'
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
             pagedict = {
                 'title': page.title,
                 'modifier': page.modifier.email() if page.modifier else None,
@@ -232,8 +235,27 @@ class WikiPageHandler(webapp2.RequestHandler):
     def get_wikiquery_result(self, path, head):
         q = path[1:].replace('_', ' ')
         result = WikiPage.wikiquery(q)
-        self.response.headers['Content-Type'] = 'application/json'
-        self._set_response_body(json.dumps(result), head)
+        restype = self._get_restype()
+        if restype == 'default' or restype == 'html':
+            # TODO
+            html = self._template('bodyonly.html', {
+                'title': u'Search: %s ' % q,
+                'body': obj_to_html(result),
+            })
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            self._set_response_body(html, head)
+        elif restype == 'body':
+            html = self._template('bodyonly.html', {
+                'title': u'Search: %s ' % q,
+                'body': obj_to_html(result),
+            })
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            self._set_response_body(html, head)
+        elif restype == 'json':
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            self._set_response_body(json.dumps(result), head)
+        else:
+            self.abort(400, 'Unknown type: %s' % restype)
 
     def get_search_result(self, path, head):
         expression = WikiPage.path_to_title(path)
@@ -518,3 +540,46 @@ class WikiPageHandler(webapp2.RequestHandler):
         if user is not None:
             cache.add_recent_email(user.email())
         return user
+
+
+def obj_to_html(o, key=None):
+    obj_type = type(o)
+    if isinstance(o, dict):
+        return _render_dict(o)
+    elif obj_type == list:
+        return _render_list(o)
+    elif obj_type == str or obj_type == unicode:
+        if key is not None and key == 'schema':
+            return o
+        else:
+            return '<a href="%s">%s</a>' % (to_path(o), o)
+    else:
+        return str(o)
+
+
+def _render_dict(o):
+    if len(o) == 1:
+        return obj_to_html(o.values()[0])
+    else:
+        html = ['<dl class="wq wq-dict">']
+        for key, value in o.items():
+            html.append('<dt class="wq-key-%s">' % key)
+            html.append(key)
+            html.append('</dt>')
+            html.append('<dd class="wq-value-%s">' % key)
+            html.append(obj_to_html(value, key))
+            html.append('</dd>')
+        html.append('</dl>')
+
+        return '\n'.join(html)
+
+
+def _render_list(o):
+    html = ['<ul class="wq wq-list">']
+    for value in o:
+        html.append('<li>')
+        html.append(obj_to_html(value))
+        html.append('</li>')
+    html.append('</ul>')
+
+    return '\n'.join(html)
