@@ -2,31 +2,68 @@
 import unittest
 from models import WikiPage
 from google.appengine.ext import testbed
-from search import parse_wikiquery
+from search import parse_wikiquery as p
 
 
 class WikiqueryParserTest(unittest.TestCase):
     def test_simplist_expression(self):
         self.assertEqual([['name', 'A'], ['name']],
-                         parse_wikiquery('name:"A" > name'))
+                         p('name:"A" > name'))
         self.assertEqual([['name', 'A'], ['name']],
-                         parse_wikiquery('name:"A"'))
+                         p('name:"A"'))
         self.assertEqual([['name', 'A'], ['name']],
-                         parse_wikiquery('"A"'))
+                         p('"A"'))
 
     def test_logical_expression(self):
         self.assertEqual([[['name', 'A'], '*', ['name', 'B']], ['name']],
-                         parse_wikiquery('"A" * "B"'))
+                         p('"A" * "B"'))
         self.assertEqual([[['name', 'A'], '+', ['name', 'B']], ['name']],
-                         parse_wikiquery('"A" + "B"'))
+                         p('"A" + "B"'))
         self.assertEqual([[['name', 'A'], '+', [['name', 'B'], '*', ['name', 'C']]], ['name']],
-                         parse_wikiquery('"A" + "B" * "C"'))
+                         p('"A" + "B" * "C"'))
         self.assertEqual([[[['name', 'A'], '+', ['name', 'B']], '*', ['name', 'C']], ['name']],
-                         parse_wikiquery('("A" + "B") * "C"'))
+                         p('("A" + "B") * "C"'))
 
     def test_attr_expression(self):
         self.assertEqual([['name', 'A'], ['name', 'author']],
-                         parse_wikiquery('name:"A" > name, author'))
+                         p('name:"A" > name, author'))
+
+
+#class WikiqueryNormalizerTest(unittest.TestCase):
+#    def test_ordering(self):
+#        self.assertEqual(p('"A" * "B"'), p('"B" * "A"'))
+#        self.assertEqual(p('"A" * ("B" + "C")'), p('("C" + "B") * "A"'))
+#
+#    def test_parentheses(self):
+#        self.assertEqual(p('"A"'), p('("A")'))
+#        self.assertEqual(p('"A" + "B"'), p('("A" + "B")'))
+#
+#        self.assertEqual(p('"A" + "B" + "C"'), p('("A" + "B") + "C"'))
+#        self.assertEqual(p('"A" + "B" + "C"'), p('"A" + ("B" + "C")'))
+#
+#        self.assertEqual(p('"A" * "B" * "C"'), p('("A" * "B") * "C"'))
+#        self.assertEqual(p('"A" * "B" * "C"'), p('"A" * ("B" * "C")'))
+#
+#        self.assertNotEqual(p('"A" + "B" * "C"'), p('("A" + "B") * "C"'))
+#        self.assertNotEqual(p('"A" * "B" * "C"'), p('("A" * "B") * "C"'))
+#
+#    def test_remove_dup(self):
+#        self.assertEqual(p('"A" * "B"'), p('"A" * "B" * "A"'))
+#        self.assertEqual(p('"A" + "B"'), p('"A" + "B" + "A"'))
+#        self.assertEqual(p('"A" + "B"'), p('("A" + "B") * ("A" + "B")'))
+#
+#    def test_elimination(self):
+#        # (A * B) + A == A
+#        self.assertEqual(p('"A"'), p('"A" * "B" + "A"'))
+#
+#        # A + (B * (C * A)) == A
+#        self.assertEqual(p('"A"'), p('"A" + ("B" * ("C" * "A"))'))
+#
+#        # A * (A + B) = A
+#        self.assertEqual(p('"A"'), p('"A" * ("A" + "B")'))
+#
+#        # A * C * (A + B + C + D) = A * C
+#        self.assertEqual(p('"A" * "C"'), p('"A" * "C" * ("A" + "B" + "C" + "D")'))
 
 
 class WikiqueryEvaluationTest(unittest.TestCase):

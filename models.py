@@ -967,7 +967,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             cache.set_config(result)
         return result
 
-
     @classmethod
     def wikiquery(cls, q):
         page_query, attrs = search.parse_wikiquery(q)
