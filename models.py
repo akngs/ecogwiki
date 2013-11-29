@@ -7,10 +7,10 @@ import random
 import schema
 import search
 import hashlib
+import logging
 import urllib2
 import markdown
 import operator
-from itertools import groupby
 from bzrlib.merge3 import Merge3
 from lxml.html.clean import Cleaner
 from collections import OrderedDict
@@ -20,6 +20,9 @@ from datetime import datetime, timedelta
 from google.appengine.ext import deferred
 from markdown.extensions.def_list import DefListExtension
 from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax
+
+
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 class PageOperationMixin(object):
@@ -971,7 +974,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         datas = cls._evaluate_pages(page_query)
         results = []
         for title, data in datas.items():
-            results.append(dict((attr, data[attr]) for attr in attrs))
+            results.append(dict((attr, data[attr] if attr in data else None) for attr in attrs))
 
         if len(results) == 1:
             return results[0]
@@ -1112,6 +1115,21 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 titles.remove(title)
                 if len(titles) == 0:
                     del links[rel]
+
+    @classmethod
+    def rebuild_all_data_index(cls, page_index=0):
+        logging.debug('Rebuilding data index: %d' % page_index)
+
+        batch_size = 50
+        all_pages = list(cls.query().fetch(batch_size, offset=page_index * batch_size))
+        if len(all_pages) == 0:
+            logging.debug('Rebuilding data index: Finished!')
+            return
+
+        for p in all_pages:
+            p.rebuild_data_index()
+
+        deferred.defer(cls.rebuild_all_data_index, page_index + 1)
 
     def _rev_key(self):
         return ndb.Key(u'revision', self.title)

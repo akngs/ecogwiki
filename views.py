@@ -13,6 +13,7 @@ from pyatom import AtomFeed
 from itertools import groupby
 from collections import OrderedDict
 from google.appengine.api import users
+from google.appengine.ext import deferred
 from models import WikiPage, WikiPageRevision, UserPreferences, title_grouper
 
 
@@ -275,17 +276,9 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             self.response.write('\n'.join(titles))
         elif title == 'rebuild_data_index':
+            deferred.defer(WikiPage.rebuild_all_data_index, 0)
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
-            index = int(self.request.GET.get('index', '0'))
-            pages = WikiPage.query().fetch(200, offset=index * 200)
-            for page in pages:
-                page.rebuild_data_index()
-                self.response.write(u'%s\n' % page.title)
-                data = page.data
-                for name, value in data.items():
-                    self.response.write(u'- %s: %s\n' % (name, value))
-                self.response.write(u'\n')
-            self.response.write(u'DONE')
+            self.response.write('Done! (queued)')
         elif title == 'fix_suggested_pages':
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             index = int(self.request.GET.get('index', '0'))
