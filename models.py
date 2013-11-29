@@ -19,6 +19,7 @@ from google.appengine.api import users
 from datetime import datetime, timedelta
 from google.appengine.ext import deferred
 from markdown.extensions.def_list import DefListExtension
+from markdown.extensions.attr_list import AttrListExtension
 from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax
 
 
@@ -1350,6 +1351,7 @@ md = markdown.Markdown(
         md_url.URLExtension(),
         md_mathjax.MathJaxExtension(),
         DefListExtension(),
+        AttrListExtension(),
     ],
     safe_mode=False,
 )
