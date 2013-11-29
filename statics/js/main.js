@@ -166,10 +166,10 @@ $(function() {
                     var $container = $('<div>');
                     $container.addClass('wikiquery-container');
                     $(this.parentNode).replaceWith($container);
-                    $container.load($this.attr('href') + ' .wrap');
+                    $container.load($this.attr('href') + '?_type=body .wrap');
                 } else {
                     // Other block-level elements can contain block-level elements so use it as a parent
-                    $(this.parentNode).addClass('wikiquery-container').load($this.attr('href') + ' .wrap');
+                    $(this.parentNode).addClass('wikiquery-container').load($this.attr('href') + '?_type=body .wrap');
                 }
             } else {
                 // Do nothing for now (I don't know what should be happened here, yet)

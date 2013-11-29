@@ -237,10 +237,9 @@ class WikiPageHandler(webapp2.RequestHandler):
         result = WikiPage.wikiquery(q)
         restype = self._get_restype()
         if restype == 'default' or restype == 'html':
-            # TODO
-            html = self._template('bodyonly.html', {
-                'title': u'Search: %s ' % q,
-                'body': obj_to_html(result),
+            html = self._template('wikiquery.html', {
+                'query': q,
+                'result': obj_to_html(result),
             })
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             self._set_response_body(html, head)
