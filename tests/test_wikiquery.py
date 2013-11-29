@@ -52,6 +52,10 @@ class WikiqueryEvaluationTest(unittest.TestCase):
 
     def test_by_schema(self):
         self.assertEqual([{u'name': u'The Mind\'s I'}, {u'name': u'GEB'}],
+                         WikiPage.wikiquery(u'schema:"Thing/CreativeWork/Book/"'))
+
+    def test_by_abbr_schema(self):
+        self.assertEqual([{u'name': u'The Mind\'s I'}, {u'name': u'GEB'}],
                          WikiPage.wikiquery(u'schema:"Book"'))
 
     def test_by_attr(self):
@@ -64,7 +68,15 @@ class WikiqueryEvaluationTest(unittest.TestCase):
         self.assertEqual({u'author': u'Douglas Hofstadter', u'name': u'GEB', u'datePublished': u'1979'},
                          WikiPage.wikiquery(u'"GEB" > name, author, datePublished'))
 
+    def test_logical_operations(self):
+        self.assertEqual([{u'name': u'The Mind\'s I'}, {u'name': u'GEB'}],
+                         WikiPage.wikiquery(u'"GEB" + "The Mind\'s I"'))
+        self.assertEqual({u'name': u'The Mind\'s I'},
+                         WikiPage.wikiquery(u'schema:"Book" * author:"Douglas Hofstadter" * author:"Daniel Dennett"'))
+        self.assertEqual([{'name': u"The Mind's I"}, {'name': u'GEB'}],
+                         WikiPage.wikiquery(u'schema:"Book" + author:"Douglas Hofstadter" * author:"Daniel Dennett"'))
+
     def test_complex(self):
         self.assertEqual([{u'name': u'The Mind\'s I', u'author': [u'Daniel Dennett', u'Douglas Hofstadter']},
                           {u'author': u'Douglas Hofstadter', u'name': u'GEB'}],
-                         WikiPage.wikiquery(u'schema:"Book" > name, author'))
+                         WikiPage.wikiquery(u'schema:"Thing/CreativeWork/Book/" > name, author'))

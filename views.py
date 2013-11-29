@@ -138,6 +138,8 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.headers['Location'] = '/%s' % urllib2.quote(path.replace(' ', '_'))
             self.response.status = 303
             return
+        if path.startswith('='):
+            return self.get_wikiquery_result(path, head)
         if path.startswith('+') or path.startswith('-'):
             return self.get_search_result(path, head)
         if path.startswith('sp.'):
@@ -226,6 +228,12 @@ class WikiPageHandler(webapp2.RequestHandler):
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
+    def get_wikiquery_result(self, path, head):
+        q = path[1:].replace('_', ' ')
+        result = WikiPage.wikiquery(q)
+        self.response.headers['Content-Type'] = 'application/json'
+        self._set_response_body(json.dumps(result), head)
+
     def get_search_result(self, path, head):
         expression = WikiPage.path_to_title(path)
         parsed_expression = search.parse_expression(expression)
@@ -274,7 +282,7 @@ class WikiPageHandler(webapp2.RequestHandler):
                 page.rebuild_data_index()
                 self.response.write(u'%s\n' % page.title)
                 data = page.data
-                for name, value in data:
+                for name, value in data.items():
                     self.response.write(u'- %s: %s\n' % (name, value))
                 self.response.write(u'\n')
             self.response.write(u'DONE')

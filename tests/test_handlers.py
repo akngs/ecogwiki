@@ -58,6 +58,7 @@ class WikiPageHandlerTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
+        self.testbed.init_taskqueue_stub()
 
         self.fixtures = [
             [u'Home', u'Home'],

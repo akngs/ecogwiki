@@ -10,7 +10,7 @@ RE_WIKILINK = ur'\[\[' \
               ur'(' \
               ur'(?P<date>(?P<y>\d+)-(?P<m>(\d+|\?\?))-(?P<d>(\d+|\?\?))' \
               ur'( (?P<bce>BCE))?)|' \
-              ur'(?P<plain>[^=]+?)' \
+              ur'(?P<plain>.+?)' \
               ur')\]\]'
 
 
@@ -38,14 +38,22 @@ class WikiLinks(Pattern):
     def handleMatch(self, m):
         if m.group('plain'):
             text = plain_link(m)
-            url = self.build_url(text, '/', '')
-            a = etree.Element('a')
-            a.text = text
-            a.set('href', url)
-            a.set('class', 'wikipage')
+            if text[0] == '=':
+                # treat it as a wikiquery link
+                url = self.build_url(text, '/', '')
+                a = etree.Element('a')
+                a.text = text
+                a.set('href', url)
+                a.set('class', 'wikiquery')
+            else:
+                url = self.build_url(text, '/', '')
+                a = etree.Element('a')
+                a.text = text
+                a.set('href', url)
+                a.set('class', 'wikipage')
 
-            if m.group('rel'):
-                a.set('itemprop', m.group('rel'))
+                if m.group('rel'):
+                    a.set('itemprop', m.group('rel'))
         elif m.group('date'):
             links = date_links(m)
 
@@ -88,6 +96,10 @@ class WikiLinks(Pattern):
 def parse_wikilinks(itemtype, text):
     wikilinks = {}
     for m in re.finditer(RE_WIKILINK, text):
+        if m.group('plain') and m.group('plain')[0] == '=':
+            # skip wikiquery
+            continue
+
         if m.group('rel'):
             rel = u'%s/%s' % (itemtype, m.group('rel'))
         else:

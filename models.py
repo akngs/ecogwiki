@@ -99,8 +99,7 @@ class PageOperationMixin(object):
 
     @property
     def data(self):
-        data = PageOperationMixin.parse_data(self.body)
-
+        data = PageOperationMixin.parse_data(self.title, self.itemtype, self.body)
         return data
 
     @property
@@ -252,11 +251,21 @@ class PageOperationMixin(object):
             return main.DEFAULT_CONFIG['service']['default_permissions']
 
     @staticmethod
-    def parse_data(body):
-        matches = set([])
+    def parse_data(title, itemtype, body):
+        matches = {
+            'name': title,
+            'schema': schema.get_itemtype_path(itemtype)
+        }
         for m in re.finditer(WikiPage.re_data, body):
-            matches.add((m.group('name'), m.group('value')))
-
+            name = m.group('name')
+            value = m.group('value')
+            if name in matches:
+                if type(matches[name]) == list:
+                    matches[name].append(value)
+                else:
+                    matches[name] = [matches[name], value]
+            else:
+                matches[name] = value
         return matches
 
     @staticmethod
@@ -271,6 +280,7 @@ class PageOperationMixin(object):
 
         metadata = {
             'content-type': 'text/x-markdown',
+            'schema': 'Article',
         }
 
         for m in matches:
@@ -418,14 +428,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
         cache.del_rendered_body(self.title)
         cache.del_hashbangs(self.title)
 
-        # get old and new data/metadata
+        # get old and new metadata
+        old_md = self.metadata
         old_data = self.data
-        new_data = PageOperationMixin.parse_data(new_body)
+
+        cache.del_metadata(self.title)
         cache.del_data(self.title)
 
-        old_md = self.metadata
         new_md = PageOperationMixin.parse_metadata(new_body)
-        cache.del_metadata(self.title)
+        new_data = PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
 
         # validate contents
         if u'pub' in new_md and u'redirect' in new_md:
@@ -479,9 +490,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 self._unpublish(save=False)
 
         # deferred update schema data index
-        data_to_insert = new_data.difference(old_data)
-        data_to_delete = old_data.difference(new_data)
-        deferred.defer(self.rebuild_data_index_deferred, data_to_insert, data_to_delete)
+        deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
 
         # update related pages if it's first time
         if self.revision == 1:
@@ -489,7 +498,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 self.update_related_links()
 
         # update itemtype_path
-        self.itemtype_path = schema.get_itemtype_path(self.itemtype)
+        self.itemtype_path = schema.get_itemtype_path(new_md['schema'])
 
         # save
         self.put()
@@ -522,22 +531,35 @@ class WikiPage(ndb.Model, PageOperationMixin):
             i.put().delete()
 
         # insert
-        for name, value in self.data:
-            i = SchemaDataIndex(title=self.title, schema=self.itemtype, name=name, value=value)
+        data = self.data
+        for name, value in self._data_as_pairs(data):
+            i = SchemaDataIndex(title=self.title, name=name, value=value, data=data)
             i.put()
 
-    def rebuild_data_index_deferred(self, inserts, deletes):
+    def _data_as_pairs(self, data):
+        pairs = set([])
+        for key, value in data.items():
+            if type(value) == list:
+                for v in value:
+                    pairs.add((key, v))
+            else:
+                pairs.add((key, value))
+        return pairs
+
+    def rebuild_data_index_deferred(self, old_data, new_data):
+        old_pairs = self._data_as_pairs(old_data)
+        new_pairs = self._data_as_pairs(new_data)
+
+        inserts = new_pairs.difference(old_pairs)
+        deletes = old_pairs.difference(new_pairs)
+
         # insert
         for name, value in inserts:
-            i = SchemaDataIndex(title=self.title, schema=self.itemtype, name=name, value=value)
+            i = SchemaDataIndex(title=self.title, name=name, value=value, data=new_data)
             i.put()
 
-        # delete
         for name, value in deletes:
-            i = SchemaDataIndex.query(SchemaDataIndex.title == self.title,
-                                      SchemaDataIndex.schema == self.itemtype,
-                                      SchemaDataIndex.name == name,
-                                      SchemaDataIndex.value == value).get()
+            i = SchemaDataIndex(title=self.title, name=name, value=value, data=new_data)
             i.put().delete()
 
     @property
@@ -946,48 +968,63 @@ class WikiPage(ndb.Model, PageOperationMixin):
     @classmethod
     def wikiquery(cls, q):
         page_query, attrs = search.parse_wikiquery(q)
-        indices = groupby(cls._evaluate_pages(page_query), lambda i: i.title)
+        datas = cls._evaluate_pages(page_query)
+        results = []
+        for title, data in datas.items():
+            results.append(dict((attr, data[attr]) for attr in attrs))
 
-        result = []
-        for key, group in indices:
-            # collect attrs
-            data = {}
-            group = list(group)
-            for attr in attrs:
-                if attr == 'name':
-                    data[attr] = group[0].title
-                else:
-                    value = [index.value for index in group if index.name == attr]
-                    if len(value) == 0:
-                        value = None
-                    elif len(value) == 1:
-                        value = value[0]
-                    data[attr] = value
-
-            # merge attr values
-            result.append(dict(data))
-
-        if len(result) == 1:
-            return result[0]
+        if len(results) == 1:
+            return results[0]
         else:
-            return result
+            return results
 
     @classmethod
     def _evaluate_pages(cls, q):
-        name, value = q
-
-        indice = None
-        if name == 'name':
-            indice = SchemaDataIndex.query(SchemaDataIndex.title == value)
-        elif name == 'schema':
-            indice = SchemaDataIndex.query(SchemaDataIndex.schema == value)
+        if len(q) == 2:
+            pages = cls._evaluate_page_query_term(q[0], q[1])
+        elif len(q) == 1:
+            pages = cls._evaluate_pages(q[0])
         else:
-            indice = SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value)
+            pages = cls._evaluate_page_query_expr(q[0], q[1], q[2:])
+        return pages
 
-        return indice.fetch()
+    @classmethod
+    def _evaluate_page_query_expr(cls, operand, op, rest):
+        pages1 = cls._evaluate_pages(operand)
+        pages2 = cls._evaluate_pages(rest)
+
+        pages = {}
+
+        if op == '*':
+            keys = set(pages1.keys()).intersection(set(pages2.keys()))
+            for key in keys:
+                if key in pages1:
+                    pages[key] = pages1[key]
+                else:
+                    pages[key] = pages2[key]
+        elif op == '+':
+            pages = dict(pages1.items() + pages2.items())
+
+        return pages
+
+    @classmethod
+    def _evaluate_page_query_term(cls, name, value):
+        if name == 'schema' and value != 'Things' and value.find('/') == -1:
+            value = schema.get_itemtype_path(value)
+
+        pages = {}
+        for index in SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value):
+            pages[index.title] = index.data
+
+        return pages
 
     @classmethod
     def get_by_title(cls, title, follow_redirect=False):
+        if title is None:
+            return None
+        if title[0] == u'=':
+            raise ValueError(u'WikiPage title cannot starts with "="')
+
         key = cls._key()
         page = WikiPage.query(WikiPage.title == title, ancestor=key).get()
         if page is None:
@@ -1120,10 +1157,10 @@ class WikiPageRevision(ndb.Model, PageOperationMixin):
 
 
 class SchemaDataIndex(ndb.Model):
-    schema = ndb.StringProperty()
     title = ndb.StringProperty()
     name = ndb.StringProperty()
     value = ndb.StringProperty()
+    data = ndb.JsonProperty()
 
 
 class TocGenerator(object):

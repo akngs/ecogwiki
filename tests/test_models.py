@@ -74,6 +74,7 @@ class WikiPageMetadataParserTest(unittest.TestCase):
         self.testbed.init_memcache_stub()
         self.default_md = {
             'content-type': 'text/x-markdown',
+            'schema': 'Article',
         }
 
     def tearDown(self):
@@ -142,6 +143,7 @@ class WikiPageWikiLinkParserTest(unittest.TestCase):
 
     def test_wikiquery(self):
         self.assertEqual({}, parse_wikilinks('Article', u'[[="Hello"]]'))
+        self.assertEqual({}, parse_wikilinks('Article', u'[[=schema:"Article"]]'))
 
 
 class WikiPageWikilinkRenderingTest(unittest.TestCase):
@@ -324,6 +326,7 @@ class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -484,6 +487,7 @@ class WikiPageLinksTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -514,6 +518,10 @@ class WikiPageLinksTest(unittest.TestCase):
         self.assertEqual(None, b.updated_at)
         self.assertEqual({u'Article/relatedTo': [u'A']}, b.inlinks)
         self.assertEqual({}, b.outlinks)
+
+    def test_wikiquery(self):
+        a = WikiPage.get_by_title(u'A')
+        a.update_content(u'[[="Article"]]\n[[=schema:"Article"]]', 0, '')
 
     def test_do_not_display_restricted_links(self):
         a = WikiPage.get_by_title(u'A')
@@ -713,6 +721,7 @@ class PageOperationMixinTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.pub X\nHello [[There]]', 0, u'')
