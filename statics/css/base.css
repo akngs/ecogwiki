@@ -87,7 +87,7 @@ div.contents {
 
 .scorebar {
     display: inline-block;
-    width: 40px;
+    width: 3em;
     height: 10px;
     background-color: #DDD;
     margin-right: 5px;
@@ -629,6 +629,12 @@ article .body a.search.neg {
 
 article a.matched-title {
     margin-left: 0.5em;
+}
+
+article .body .noli {
+    list-style-type: none;
+    margin-left: -2em;
+    padding-left: 0;
 }
 
 /* } Content body */

@@ -60,7 +60,7 @@ class PageOperationMixin(object):
         related_links = self.related_links_by_score
         if len(related_links) > 0:
             lines = [u'# Suggested Pages']
-            lines += [u'* {{.score::%.3f}} [[%s]]' % (score, title)
+            lines += [u'* {{.score::%.3f}} [[%s]]\n{.noli}' % (score, title)
                       for title, score in related_links.items()[:10]]
             body_parts.append(u'\n'.join(lines))
 
@@ -68,9 +68,9 @@ class PageOperationMixin(object):
         if self.older_title or self.newer_title:
             lines = [u'# Other Posts']
             if self.newer_title:
-                lines.append(u'* {{.newer::newer}} [[%s]]' % self.newer_title)
+                lines.append(u'* {{.newer::newer}} [[%s]]\n{.noli}' % self.newer_title)
             if self.older_title:
-                lines.append(u'* {{.older::older}} [[%s]]' % self.older_title)
+                lines.append(u'* {{.older::older}} [[%s]]\n{.noli}' % self.older_title)
             body_parts.append(u'\n'.join(lines))
 
         # render to html
