@@ -68,6 +68,12 @@ SUPPORTED_SCHEMA = {
             'relatedTo': (u'Related sites', u'Related to'),
         }
     },
+    'Review': {
+        'parent': 'CreativeWork',
+        'properties': {
+            'relatedTo': (u'Related reviews', u'Related to'),
+        }
+    },
 }
 
 
