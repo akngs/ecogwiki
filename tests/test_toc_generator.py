@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 import unittest
 from models import TocGenerator
 
@@ -103,3 +104,15 @@ class PathTest(unittest.TestCase):
 
     def test_duplicated_path(self):
         self.assertRaises(ValueError, self.t._generate_path, [[u'T1', []], [u'T1', []]])
+
+
+class HTMLGenerationTest(unittest.TestCase):
+    def test_strip_html_in_headings(self):
+        html = """
+        <h1><a href="Blah">Hello 1</a></h1>
+        <h1>Hello 2</h1>
+        <h1>Hello 3</h1>
+        <h1>Hello 4</h1>
+        """
+        t = TocGenerator(html)
+        self.assertEqual(1, len(re.findall(ur'Blah', t.add_toc())))

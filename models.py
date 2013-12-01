@@ -1269,6 +1269,7 @@ class TocGenerator(object):
         parts = [u'<ol>']
         for title, children in outline:
             hashed = TocGenerator.hash_str(path_iter.next())
+            title = re.sub(ur'<[^>]+>', '', title)
             parts.append(u'<li>')
             parts.append(u'<div><a href="#h_%s">%s</a></div>' % (hashed, title))
             parts.append(self._generate_toc(children, path_iter))
