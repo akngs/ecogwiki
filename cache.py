@@ -118,8 +118,21 @@ def set_rendered_body(title, value):
 
 def set_wikiquery(q, email, value):
     key = 'model\twikiquery\t%s\t%s' % (q, email)
+
+    # adaptive expiration time
+    exp_sec = 60
+    if type(value) == list:
+        if len(value) < 2:
+            exp_sec = 60
+        elif len(value) < 10:
+            exp_sec = 60 * 5
+        elif len(value) < 100:
+            exp_sec = 60 * 60
+        elif len(value) < 500:
+            exp_sec = 60 * 60 * 24
+
     try:
-        memcache.set(key, value, 60 * 60)
+        memcache.set(key, value, exp_sec)
         prc.set(key, value)
     except:
         return None
