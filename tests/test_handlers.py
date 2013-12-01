@@ -19,6 +19,7 @@ class ContentTypeTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
+        self.testbed.init_taskqueue_stub()
 
         self.browser = Browser()
 
@@ -57,6 +58,7 @@ class WikiPageHandlerTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
+        self.testbed.init_taskqueue_stub()
 
         self.fixtures = [
             [u'Home', u'Home'],
@@ -176,6 +178,7 @@ class RevisionTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
+        self.testbed.init_taskqueue_stub()
         self.parser = html5parser.HTMLParser(strict=True)
         self.browser = Browser()
 
@@ -232,6 +235,7 @@ class HTML5ValidationTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_user_stub()
+        self.testbed.init_taskqueue_stub()
         self.parser = html5parser.HTMLParser(strict=True)
         self.browser = Browser()
 
@@ -273,6 +277,10 @@ class HTML5ValidationTest(unittest.TestCase):
             self._validate('/sp.index?_type=atom', 'xml')
 
             self._validate('/sp.search?_type=json&format=opensearch', 'json')
+
+            self._validate('/="Home"', 'html')
+            self._validate('/="Home"?_type=body', 'html')
+            self._validate('/="Home"?_type=json', 'json')
 
             self._validate('/sp.titles?_type=json', 'json')
 

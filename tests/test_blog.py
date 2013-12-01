@@ -10,6 +10,7 @@ class DefaultBlogPublishTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -45,6 +46,7 @@ class DefaultBlogUnpublishTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
         page1 = WikiPage.get_by_title(u'Hello 1')
         page1.update_content(u'.pub\nHello 1', 0, '')
@@ -92,6 +94,7 @@ class CustomBlogTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -142,6 +145,7 @@ class MultipleCustomBlogsTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
         self.b1p1 = WikiPage.get_by_title(u'b1p1')
         self.b1p1.update_content(u'.pub B1', 0, '')

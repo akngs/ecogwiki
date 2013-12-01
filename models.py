@@ -7,6 +7,7 @@ import random
 import schema
 import search
 import hashlib
+import logging
 import urllib2
 import markdown
 import operator
@@ -16,13 +17,19 @@ from collections import OrderedDict
 from google.appengine.ext import ndb
 from google.appengine.api import users
 from datetime import datetime, timedelta
+from google.appengine.ext import deferred
 from markdown.extensions.def_list import DefListExtension
+from markdown.extensions.attr_list import AttrListExtension
 from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax
+
+
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 class PageOperationMixin(object):
     re_img = re.compile(ur'<p><img( .+? )/></p>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
+    re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
                                          ur'April|May|June|July|August|'
@@ -53,7 +60,7 @@ class PageOperationMixin(object):
         related_links = self.related_links_by_score
         if len(related_links) > 0:
             lines = [u'# Suggested Pages']
-            lines += [u'* {{.score::%.3f}} [[%s]]' % (score, title)
+            lines += [u'* {{.score::%.3f}} [[%s]]\n{.noli}' % (score, title)
                       for title, score in related_links.items()[:10]]
             body_parts.append(u'\n'.join(lines))
 
@@ -61,9 +68,9 @@ class PageOperationMixin(object):
         if self.older_title or self.newer_title:
             lines = [u'# Other Posts']
             if self.newer_title:
-                lines.append(u'* {{.newer::newer}} [[%s]]' % self.newer_title)
+                lines.append(u'* {{.newer::newer}} [[%s]]\n{.noli}' % self.newer_title)
             if self.older_title:
-                lines.append(u'* {{.older::older}} [[%s]]' % self.older_title)
+                lines.append(u'* {{.older::older}} [[%s]]\n{.noli}' % self.older_title)
             body_parts.append(u'\n'.join(lines))
 
         # render to html
@@ -95,8 +102,27 @@ class PageOperationMixin(object):
         return u'/%s' % WikiPage.title_to_path(self.older_title)
 
     @property
+    def data(self):
+        data = PageOperationMixin.parse_data(self.title, self.itemtype, self.body)
+        for rel, links in self.inlinks.items():
+            if not rel.endswith('/relatedTo'):
+                continue
+            if 'inlinks' not in data:
+                data['inlinks'] = []
+            data['inlinks'] += links
+
+        for rel, links in self.outlinks.items():
+            if not rel.endswith('/relatedTo'):
+                continue
+            if 'outlinks' not in data:
+                data['outlinks'] = []
+            data['outlinks'] += links
+
+        return data
+
+    @property
     def metadata(self):
-        return self.parse_metadata(self.body)
+        return PageOperationMixin.parse_metadata(self.body)
 
     def can_read(self, user, default_acl=None):
         if default_acl is None:
@@ -243,6 +269,24 @@ class PageOperationMixin(object):
             return main.DEFAULT_CONFIG['service']['default_permissions']
 
     @staticmethod
+    def parse_data(title, itemtype, body):
+        matches = {
+            'name': title,
+            'schema': schema.get_itemtype_path(itemtype)
+        }
+        for m in re.finditer(WikiPage.re_data, body):
+            name = m.group('name')
+            value = m.group('value')
+            if name in matches:
+                if type(matches[name]) == list:
+                    matches[name].append(value)
+                else:
+                    matches[name] = [matches[name], value]
+            else:
+                matches[name] = value
+        return matches
+
+    @staticmethod
     def parse_metadata(body):
         matches = []
         for line in body.split(u'\n'):
@@ -254,6 +298,7 @@ class PageOperationMixin(object):
 
         metadata = {
             'content-type': 'text/x-markdown',
+            'schema': 'Article',
         }
 
         for m in matches:
@@ -370,6 +415,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return value
 
     @property
+    def data(self):
+        value = cache.get_data(self.title)
+        if value is None:
+            value = super(WikiPage, self).data
+            cache.set_data(self.title, value)
+        return value
+
+    @property
     def metadata(self):
         value = cache.get_metadata(self.title)
         if value is None:
@@ -393,12 +446,16 @@ class WikiPage(ndb.Model, PageOperationMixin):
         cache.del_rendered_body(self.title)
         cache.del_hashbangs(self.title)
 
-        # update body
+        # get old data amd metadata
         old_md = self.metadata
-        new_md = PageOperationMixin.parse_metadata(new_body)
+        old_data = self.data
+
         cache.del_metadata(self.title)
+        cache.del_data(self.title)
 
         # validate contents
+        new_md = PageOperationMixin.parse_metadata(new_body)
+
         if u'pub' in new_md and u'redirect' in new_md:
             raise ValueError('You cannot use "pub" and "redirect" metadata at '
                              'the same time.')
@@ -455,7 +512,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 self.update_related_links()
 
         # update itemtype_path
-        self.itemtype_path = schema.get_itemtype_path(self.itemtype)
+        self.itemtype_path = schema.get_itemtype_path(new_md['schema'])
 
         # save
         self.put()
@@ -479,7 +536,49 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if self.revision == 1:
             cache.del_titles()
 
+        # deferred update schema data index
+        new_data = self.data
+        deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
+
         return True
+
+    def rebuild_data_index(self):
+        # delete all index for this page
+        index = SchemaDataIndex.query(SchemaDataIndex.title == self.title).fetch()
+        for i in index:
+            i.put().delete()
+
+        # insert
+        data = self.data
+        for name, value in self._data_as_pairs(data):
+            i = SchemaDataIndex(title=self.title, name=name, value=value, data=data)
+            i.put()
+
+    def _data_as_pairs(self, data):
+        pairs = set([])
+        for key, value in data.items():
+            if type(value) == list:
+                for v in value:
+                    pairs.add((key, v))
+            else:
+                pairs.add((key, value))
+        return pairs
+
+    def rebuild_data_index_deferred(self, old_data, new_data):
+        old_pairs = self._data_as_pairs(old_data)
+        new_pairs = self._data_as_pairs(new_data)
+
+        inserts = new_pairs.difference(old_pairs)
+        deletes = old_pairs.difference(new_pairs)
+
+        # insert
+        for name, value in inserts:
+            i = SchemaDataIndex(title=self.title, name=name, value=value, data=new_data)
+            i.put()
+
+        for name, value in deletes:
+            i = SchemaDataIndex(title=self.title, name=name, value=value, data=new_data)
+            i.put().delete()
 
     @property
     def revisions(self):
@@ -828,7 +927,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         email = user.email() if user is not None else u'None'
         titles = cache.get_titles(email)
         if titles is None:
-            titles = [page.title for page in cls.get_index(user)]
+            titles = set([page.title for page in cls.get_index(user)])
             cache.set_titles(email, titles)
 
         return titles
@@ -884,7 +983,73 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return result
 
     @classmethod
+    def wikiquery(cls, q, user=None):
+        email = user.email() if user is not None else 'None'
+        results = cache.get_wikiquery(q, email)
+        if results is None:
+            page_query, attrs = search.parse_wikiquery(q)
+            datas = cls._evaluate_pages(page_query)
+            accessible_titles = WikiPage.get_titles(user)
+
+            results = []
+            for title, data in datas.items():
+                if title in accessible_titles:
+                    results.append(OrderedDict((attr, data[attr] if attr in data else None) for attr in attrs))
+
+            if len(results) == 1:
+                results = results[0]
+
+            cache.set_wikiquery(q, email, results)
+        return results
+
+    @classmethod
+    def _evaluate_pages(cls, q):
+        if len(q) == 1:
+            pages = cls._evaluate_pages(q[0])
+        elif len(q) == 2:
+            pages = cls._evaluate_page_query_term(q[0], q[1])
+        else:
+            pages = cls._evaluate_page_query_expr(q[0], q[1], q[2:])
+        return pages
+
+    @classmethod
+    def _evaluate_page_query_term(cls, name, value):
+        if name == 'schema' and value.find('/') == -1:
+            value = schema.get_itemtype_path(value)
+
+        pages = {}
+
+        for index in SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value):
+            pages[index.title] = index.data
+
+        return pages
+
+    @classmethod
+    def _evaluate_page_query_expr(cls, operand, op, rest):
+        pages1 = cls._evaluate_pages(operand)
+        pages2 = cls._evaluate_pages(rest)
+        pages = {}
+
+        if op == '*':
+            keys = set(pages1.keys()).intersection(set(pages2.keys()))
+            for key in keys:
+                if key in pages1:
+                    pages[key] = pages1[key]
+                else:
+                    pages[key] = pages2[key]
+        elif op == '+':
+            keys = set(pages1.keys()).union(set(pages2.keys()))
+            pages = dict((k, v) for k, v in (pages1.items() + pages2.items()) if k in keys)
+
+        return pages
+
+    @classmethod
     def get_by_title(cls, title, follow_redirect=False):
+        if title is None:
+            return None
+        if title[0] == u'=':
+            raise ValueError(u'WikiPage title cannot starts with "="')
+
         key = cls._key()
         page = WikiPage.query(WikiPage.title == title, ancestor=key).get()
         if page is None:
@@ -973,6 +1138,21 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 if len(titles) == 0:
                     del links[rel]
 
+    @classmethod
+    def rebuild_all_data_index(cls, page_index=0):
+        logging.debug('Rebuilding data index: %d' % page_index)
+
+        batch_size = 20
+        all_pages = list(cls.query().fetch(batch_size, offset=page_index * batch_size))
+        if len(all_pages) == 0:
+            logging.debug('Rebuilding data index: Finished!')
+            return
+
+        for p in all_pages:
+            p.rebuild_data_index()
+
+        deferred.defer(cls.rebuild_all_data_index, page_index + 1)
+
     def _rev_key(self):
         return ndb.Key(u'revision', self.title)
 
@@ -1014,6 +1194,13 @@ class WikiPageRevision(ndb.Model, PageOperationMixin):
     @property
     def newer_title(self):
         return None
+
+
+class SchemaDataIndex(ndb.Model):
+    title = ndb.StringProperty()
+    name = ndb.StringProperty()
+    value = ndb.StringProperty()
+    data = ndb.JsonProperty()
 
 
 class TocGenerator(object):
@@ -1164,6 +1351,7 @@ md = markdown.Markdown(
         md_url.URLExtension(),
         md_mathjax.MathJaxExtension(),
         DefListExtension(),
+        AttrListExtension(),
     ],
     safe_mode=False,
 )

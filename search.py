@@ -2,6 +2,7 @@
 
 import re
 import operator
+import pyparsing as p
 from collections import OrderedDict
 
 
@@ -9,6 +10,7 @@ P_EXP = ur'(?P<sign>[+-])(?P<title>.+?)(?=\s$|\s[+-])'
 
 
 def parse_expression(exp):
+    """parse related page search expression"""
     exp = exp.strip() + ' '
     positives = []
     negatives = []
@@ -28,6 +30,7 @@ def parse_expression(exp):
 
 
 def evaluate(positives, negatives):
+    """evaluate related page search expression"""
     scoretable = {}
     keys = positives.keys() + negatives.keys()
     length = len(keys)
@@ -56,3 +59,27 @@ def evaluate(positives, negatives):
                            reverse=True)
 
     return OrderedDict(sorted_tuples)
+
+
+# Wikiquery grammar
+identifier = p.Regex(r'([a-zA-Z_][.0-9a-zA-Z_]*)')
+double_quote_str = p.dblQuotedString.setParseAction(p.removeQuotes)
+
+page_query_expr = p.Forward()
+attr_expr = p.Forward()
+
+expr = page_query_expr + p.Optional(p.Suppress('>') + attr_expr)
+expr.setParseAction(lambda x: x if len(x) == 2 else [x[0], ['name']])
+
+page_query_term = p.Group(p.Optional(identifier + p.Suppress(':')) + double_quote_str)
+page_query_term.setParseAction(lambda x: x if len(x[0]) == 2 else [['name', x[0][0]]])
+page_query_expr << p.operatorPrecedence(page_query_term, [
+    (p.Literal('*'), 2, p.opAssoc.LEFT),
+    (p.Literal('+'), 2, p.opAssoc.LEFT),
+])
+
+attr_expr << p.Group(p.delimitedList(identifier))
+
+
+def parse_wikiquery(q):
+    return expr.parseString(q).asList()
