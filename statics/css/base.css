@@ -106,6 +106,17 @@ div.contents {
     border: 1px solid #CCF;
 }
 
+.message .close {
+    position: relative;
+    float: right;
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 2px;
+    color: #000;
+    opacity: .3;
+    cursor: pointer;
+}
+
 .error {
     padding: 0.2em 1em;
     margin: 1em 0;

@@ -177,6 +177,13 @@ $(function() {
         });
     })();
 
+    // Close button
+    (function() {
+        $(document).on('click', '.message .close', function() {
+            $(this.parentNode).hide();
+        });
+    })();
+
     // Track outbound links
     (function() {
         var host = window.location.host;

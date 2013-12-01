@@ -135,6 +135,7 @@ window.fbAsyncInit = function() {
     <section class="body" {% if page.itemtype == 'Article' %}itemprop="articleBody"{% endif %}>
         {% if message %}
         <div class="message">
+            <div class="close">x</div>
             <p>{{ message }}</p>
         </div>
         {% endif %}
