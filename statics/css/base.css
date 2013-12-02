@@ -659,6 +659,18 @@ article .body .noli {
     padding-left: 0;
 }
 
+    /* Responsive YouTube video from http://invalid.kr/res-video-youtube/ */
+    /* { */
+    article .body .video {
+        position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+    }
+    article .body .video iframe,
+    article .body .video object,
+    article .body .video embed {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    }
+    /* } */
+
 /* } Content body */
 
 

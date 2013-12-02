@@ -85,6 +85,9 @@ class PageOperationMixin(object):
         # sanitize
         if final:
             cleaner = Cleaner(safe_attrs_only=False)
+            cleaner.host_whitelist = (
+                'www.youtube.com',
+            )
             final = cleaner.clean_html(final)
 
         return final

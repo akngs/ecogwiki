@@ -219,6 +219,7 @@ class WikiPageWikilinkRenderingTest(unittest.TestCase):
             u'codeRepository::http://x.co',
             u'a@x.com',
             u'a@x.kr에',
+            u'http://www.youtube.com/watch?v=w5gmK-ZXIMQ',
         ]
         expecteds = [
             u'<p><a class="plainurl" href="http://x.co">http://x.co</a></p>',
@@ -229,7 +230,9 @@ class WikiPageWikilinkRenderingTest(unittest.TestCase):
             u'itemprop="codeRepository">http://x.co</a></p>',
             u'<p><a class="email" href="mailto:a@x.com">a@x.com</a></p>',
             u'<p><a class="email" href="mailto:a@x.kr">a@x.kr</a>에</p>',
+            u'<p>\n<div class="video">\n<iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe>\n</div>\n</p>',
         ]
+
         for e, a in zip(expecteds, actuals):
             self.assertEqual(e, md.convert(a))
 
