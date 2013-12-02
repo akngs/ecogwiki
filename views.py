@@ -9,13 +9,16 @@ import search
 import urllib2
 import webapp2
 import operator
+import logging
 from pyatom import AtomFeed
 from itertools import groupby
 from collections import OrderedDict
 from google.appengine.api import users
+from google.appengine.api import oauth
 from google.appengine.ext import deferred
 from models import WikiPage, WikiPageRevision, UserPreferences, title_grouper
 
+logger = logging.getLogger(__name__)
 
 JINJA = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -548,6 +551,17 @@ class WikiPageHandler(webapp2.RequestHandler):
     @staticmethod
     def _get_cur_user():
         user = users.get_current_user()
+
+        # try oauth
+        if user is None:
+            try:
+                oauth_user = oauth.get_current_user()
+                logger.info('oauth authorized as: %s', oauth_user)
+                user = oauth_user
+            except oauth.OAuthRequestError as e:
+                logger.info('oauth not authorized: %s', e)
+                pass
+
         if user is not None:
             cache.add_recent_email(user.email())
         return user
