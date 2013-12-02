@@ -319,6 +319,36 @@ class WikiYamlParserTest(unittest.TestCase):
     def test_empty_page(self):
         self.assertEqual(main.DEFAULT_CONFIG, WikiPage.get_config())
 
+class WikiPageGetConfigTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+        
+        #
+        self.config_page = WikiPage.get_by_title(u'.config')
+        self.config_page.update_content(u'''
+          admin:
+            email: janghwan@gmail.com
+          service:
+            default_permissions:
+              read: [all]
+              write: [login]
+        ''', 0, '')
+
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_update_by_dot_config_page(self):
+        config = WikiPage.get_config()
+        self.assertEqual(config['admin']['email'], 'janghwan@gmail.com')
+
+    def test_updates_partial_configurations(self):
+        config = WikiPage.get_config()
+        self.assertEqual(config['service']['title'], '')
 
 class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
     def setUp(self):
@@ -838,3 +868,5 @@ class UserPreferencesTest(unittest.TestCase):
         UserPreferences.save(self.user, u'김경수')
 
         self.assertEquals(u'김경수', UserPreferences.get_by_email('user@example.com').userpage_title)
+
+

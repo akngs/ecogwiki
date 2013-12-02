@@ -972,17 +972,24 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def get_config(cls):
         result = cache.get_config()
         if result is None:
-            page = cls.get_by_title('.config')
-            result = None
+            result = main.DEFAULT_CONFIG
+
+            user_config = {}
             try:
-                result = yaml.load(PageOperationMixin.remove_metadata(page.body))
+                page = cls.get_by_title('.config')
+                user_config = yaml.load(PageOperationMixin.remove_metadata(page.body))
             except:
                 pass
 
-            if result is None:
-                result = main.DEFAULT_CONFIG
-            else:
-                result = dict(main.DEFAULT_CONFIG.items() + result.items())
+            def merge_dict(target_dict, source_dict):
+                for (key,value) in source_dict.iteritems():
+                    if type(value) != dict:
+                        target_dict[key] = value
+                    else:
+                        merge_dict(target_dict.setdefault(key, {}), value)
+
+            merge_dict(result, user_config)
+
             cache.set_config(result)
         return result
 
