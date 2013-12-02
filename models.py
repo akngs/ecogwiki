@@ -413,6 +413,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
             cache.set_rendered_body(self.title, value)
         return value
 
+    def preview_rendered_body(self, body):
+        """Preview rendered body without updating model"""
+        self.body = body
+        return super(WikiPage, self).rendered_body
+
     @property
     def data(self):
         value = cache.get_data(self.title)

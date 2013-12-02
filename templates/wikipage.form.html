@@ -32,19 +32,46 @@
 <header>
     <h1>{{ page.title }}</h1>
 </header>
+
+<article class="preview"><div class="body"></div></article>
+
 <form method="POST" action="{{ page.absolute_url }}" class="editform">
     <input type="hidden" name="revision" value="{{ page.revision }}">
+    <input type="hidden" name="preview" value="0">
 
-    <textarea name="body" placeholder="Body" autofocus=autofocus>{{ page.body }}</textarea>
+    <textarea name="body" placeholder="Body" autofocus="autofocus">{{ page.body }}</textarea>
     <input name="comment" placeholder="Comment" class="comment" value="">
 
     <div class="actions">
         <input type="submit" value="Save" class="btn btn-primary">
-        <input type="reset" value="Reset" class="btn">
+        <input type="button" value="Preview" class="btn btn-preview">
     </div>
 </form>
+
 {% endblock %}
 {% block before_body_close %}
+    <script>
+    $(function() {
+        $('.btn-preview').on('click', function() {
+            $('.preview').show();
+
+            var $form = $('.editform');
+
+            $form.find('input[name="preview"]').val('1');
+            if(window.editor) {
+                // code mirror?
+                $form.find('textarea[name="body"]').val(window.editor.getValue());
+            }
+            var formdata = $form.serialize();
+            $form.find('input[name="preview"]').val(0);
+
+            $.post('', formdata, function(data) {
+                var html = $('<div>').append(jQuery.parseHTML(data)).find('.wrap').html();
+                $('.preview .body').html(html);
+            });
+        });
+    });
+    </script>
     {% if is_mobile %}
     <script>
         // Resize editor to remove nested scrollbar
@@ -62,13 +89,15 @@
             $(window).resize(resize_editor);
             $(window).on('orientationchange', resize_editor);
             $editor.on('input propertychange', resize_editor);
-        })();
+        });
     </script>
     {% else %}
     <script>
         // Enable CodeMirror editor
+        var editor = null;
+
         $(function() {
-            var editor = CodeMirror.fromTextArea(document.querySelector('textarea'), {
+            editor = CodeMirror.fromTextArea(document.querySelector('textarea'), {
                 indentUnit: 4,
                 indentWithTabs: false,
                 lineWrapping: true,

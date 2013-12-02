@@ -82,7 +82,17 @@ class WikiPageHandler(webapp2.RequestHandler):
         user = WikiPageHandler._get_cur_user()
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
         revision = int(self.request.POST['revision'])
+        new_body = self.request.POST['body']
         comment = self.request.POST['comment']
+
+        if self.request.POST['preview'] == '1':
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = self._template('bodyonly.html', {
+                'title': page.title,
+                'body': page.preview_rendered_body(new_body)
+            })
+            self._set_response_body(html, False)
+            return
 
         if not page.can_write(user):
             self.response.status = 403
@@ -92,7 +102,7 @@ class WikiPageHandler(webapp2.RequestHandler):
             return
 
         try:
-            page.update_content(self.request.POST['body'], revision, comment, user)
+            page.update_content(new_body, revision, comment, user)
             self.response.location = page.absolute_url
             self.response.headers['X-Message'] = 'Successfully updated.'
             self.get(path, False)

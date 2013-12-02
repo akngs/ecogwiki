@@ -288,6 +288,10 @@ header .edit_menu {
 
 
 /* Wiki Edit Form { */
+.editform {
+    margin: 2em 0;
+}
+
 .editform textarea {
     box-sizing: border-box;
     width: 100%;
@@ -401,11 +405,18 @@ table.revisions .comment {
 /* } Revision history */
 
 
+/* Preview { */
+article.preview {
+    padding: 10px;
+    border: 1px solid #EEE;
+    display: none;
+}
+/* } Preview */
+
 /* Content body { */
 article .body {
     padding: 0 0 1em 0;
     margin: 0.5em 0;
-    border-bottom: 1px solid #AAA;
     overflow: hidden;
     line-height: 1.8em;
 }
