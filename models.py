@@ -974,12 +974,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if result is None:
             result = main.DEFAULT_CONFIG
 
-            user_config = {}
             try:
                 page = cls.get_by_title('.config')
                 user_config = yaml.load(PageOperationMixin.remove_metadata(page.body))
             except:
-                pass
+                user_config = None
+            user_config = user_config or {}
 
             def merge_dict(target_dict, source_dict):
                 for (key,value) in source_dict.iteritems():

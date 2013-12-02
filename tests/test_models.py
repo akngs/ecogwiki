@@ -15,6 +15,7 @@ class WikiPageUpdateTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -72,6 +73,7 @@ class WikiPageMetadataParserTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
         self.default_md = {
             'content-type': 'text/x-markdown',
             'schema': 'Article',
@@ -291,6 +293,7 @@ class WikiTitleToPathConvertTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -312,6 +315,7 @@ class WikiYamlParserTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -341,6 +345,15 @@ class WikiPageGetConfigTest(unittest.TestCase):
 
     def tearDown(self):
         self.testbed.deactivate()
+
+    def test_empty_config_page(self):
+        config_page = WikiPage.get_by_title(u'.config')
+        config_page.update_content('', 1, '')
+
+        config = WikiPage.get_config()
+        perm = config['service']['default_permissions']
+        self.assertEqual(perm['read'], ['all'])
+        self.assertEqual(perm['write'], ['login'])
 
     def test_update_by_dot_config_page(self):
         config = WikiPage.get_config()
@@ -394,6 +407,7 @@ class WikiPageSimilarTitlesTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -442,6 +456,7 @@ class WikiPageDescriptionTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -468,6 +483,7 @@ class WikiPageSpecialTitlesTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -696,6 +712,7 @@ class WikiPageHashbang(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -826,6 +843,7 @@ class WikiPageBugsTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
