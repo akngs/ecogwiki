@@ -131,7 +131,6 @@ class PageOperationMixin(object):
         acl = self.acl_read.split(',') if self.acl_read is not None and len(self.acl_read) != 0 else []
         if len(acl) == 0:
             acl = default_acl['read']
-
         if user is not None and users.is_current_user_admin():
             return True
         elif u'all' in acl or len(acl) == 0:
@@ -139,8 +138,6 @@ class PageOperationMixin(object):
         elif u'login' in acl and user is not None:
             return True
         elif user is not None and user.email() in acl:
-            return True
-        elif self.can_write(user, default_acl):
             return True
         else:
             return False
@@ -153,7 +150,9 @@ class PageOperationMixin(object):
         if len(acl) == 0:
             acl = default_acl['write']
 
-        if user is not None and users.is_current_user_admin():
+        if not self.can_read(user, default_acl):
+            return False
+        elif user is not None and users.is_current_user_admin():
             return True
         elif 'all' in acl:
             return True

@@ -108,8 +108,8 @@ class InconsistantAclTest(unittest.TestCase):
 
     def test_read_login_write_all(self):
         self.page.update_content(u'.read login\n.write all\nHello', 0, '')
-        self.assertEqual(True, self.page.can_read(None, self.default))
-        self.assertEqual(True, self.page.can_write(None, self.default))
+        self.assertEqual(False, self.page.can_read(None, self.default))
+        self.assertEqual(False, self.page.can_write(None, self.default))
         self.assertEqual(True, self.page.can_read(self.user1, self.default))
         self.assertEqual(True, self.page.can_write(self.user1, self.default))
 
@@ -117,7 +117,7 @@ class InconsistantAclTest(unittest.TestCase):
         self.page.update_content(u'.read user2@example.com\n.write login\nHello', 0, '')
         self.assertEqual(False, self.page.can_read(None, self.default))
         self.assertEqual(False, self.page.can_write(None, self.default))
-        self.assertEqual(True, self.page.can_read(self.user1, self.default))
-        self.assertEqual(True, self.page.can_write(self.user1, self.default))
+        self.assertEqual(False, self.page.can_read(self.user1, self.default))
+        self.assertEqual(False, self.page.can_write(self.user1, self.default))
         self.assertEqual(True, self.page.can_read(self.user2, self.default))
         self.assertEqual(True, self.page.can_write(self.user2, self.default))

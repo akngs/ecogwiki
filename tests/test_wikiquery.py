@@ -2,8 +2,9 @@
 import cache
 import unittest
 from models import WikiPage
-from google.appengine.ext import testbed
+from google.appengine.api import users
 from search import parse_wikiquery as p
+from google.appengine.ext import testbed
 
 
 class WikiqueryParserTest(unittest.TestCase):
@@ -119,3 +120,35 @@ class WikiqueryEvaluationTest(unittest.TestCase):
         self.assertEqual([{u'name': u'The Mind\'s I', u'author': [u'Daniel Dennett', u'Douglas Hofstadter']},
                           {u'author': u'Douglas Hofstadter', u'name': u'GEB'}],
                          WikiPage.wikiquery(u'schema:"Thing/CreativeWork/Book/" > name, author'))
+
+
+class WikiqueryAclEvaluationTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+        cache.prc.flush_all()
+
+        WikiPage.get_by_title(u'A').update_content(u'.schema Book\n.read all\nHello', 0, u'')
+        WikiPage.get_by_title(u'B').update_content(u'.schema Book\n.read a@x.com\nThere', 0, u'')
+        for p in WikiPage.query().fetch():
+            p.rebuild_data_index()
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_anonymous(self):
+        self.assertEqual({u'name': u'A'},
+                         WikiPage.wikiquery(u'schema:"Book"', None))
+
+    def test_user_with_no_permission(self):
+        user = users.User('a@y.com')
+        self.assertEqual({u'name': u'A'},
+                         WikiPage.wikiquery(u'schema:"Book"', user))
+
+    def test_user_with_permission(self):
+        user = users.User('a@x.com')
+        self.assertEqual([{u'name': u'A'}, {u'name': u'B'}],
+                         WikiPage.wikiquery(u'schema:"Book"', user))
