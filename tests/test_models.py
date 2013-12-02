@@ -3,7 +3,7 @@ import main
 import cache
 import unittest
 from itertools import groupby
-    from google.appengine.api import users
+from google.appengine.api import users
 from google.appengine.ext import testbed
 from models import md, WikiPage, UserPreferences, title_grouper
 from markdownext.md_wikilink import parse_wikilinks
