@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import unittest
+import unittest2 as unittest
 from bzrlib.merge3 import Merge3
 
 

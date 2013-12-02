@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-import unittest
+import unittest2 as unittest
 from models import TocGenerator
 
 

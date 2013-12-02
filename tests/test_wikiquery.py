@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import cache
-import unittest
 from models import WikiPage
+import unittest2 as unittest
 from google.appengine.api import users
 from search import parse_wikiquery as p
 from google.appengine.ext import testbed

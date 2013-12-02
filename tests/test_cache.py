@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import unittest
+import unittest2 as unittest
 from models import WikiPage
 from google.appengine.ext import testbed
 from google.appengine.api import memcache

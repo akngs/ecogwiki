@@ -8,6 +8,17 @@
 6.   Done
 
 
+# How to learn tests
+
+Execute following command on projecthome:
+
+    python run_tests.py <APP_ENGINE_SDK_PATH> <TEST_PACKAGE_PATH>
+
+Example:
+
+    python run_tests.py /usr/local/Cellar/google-app-engine/1.8.1/share/google-app-engine ./tests
+
+
 # How to use
 
 See [Ecogwiki Help page](http://www.ecogwiki.com/Help)

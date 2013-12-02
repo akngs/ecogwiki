@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import unittest
 import search
+import unittest2 as unittest
 
 
 class ExpressionParserTest(unittest.TestCase):

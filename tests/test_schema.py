@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import cache
 import schema
-import unittest
+import unittest2 as unittest
 from google.appengine.ext import testbed
 from models import WikiPage, SchemaDataIndex
 

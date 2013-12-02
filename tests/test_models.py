@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import main
 import cache
-import unittest
+import unittest2 as unittest
 from itertools import groupby
 from google.appengine.api import users
 from google.appengine.ext import testbed

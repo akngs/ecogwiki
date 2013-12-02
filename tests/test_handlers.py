@@ -4,9 +4,9 @@ import os
 import json
 import main
 import webapp2
-import unittest
 import lxml.etree
 from models import WikiPage
+import unittest2 as unittest
 import xml.etree.ElementTree as ET
 from google.appengine.ext import testbed
 from lxml.html import html5parser, tostring
