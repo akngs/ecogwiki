@@ -680,7 +680,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     try:
                         page.del_inlink(title)
                         if len(page.inlinks) == 0 and page.revision == 0:
-                            page.key.delete()
+                            if page.key:
+                                page.key.delete()
                         else:
                             page.put()
                         cache.del_rendered_body(page.title)
