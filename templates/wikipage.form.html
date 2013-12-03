@@ -45,6 +45,10 @@
     <div class="actions">
         <input type="submit" value="Save" class="btn btn-primary">
         <input type="button" value="Preview" class="btn btn-preview">
+
+        {% if users.is_current_user_admin() %}
+        <input type="button" value="Delete" class="btn btn-delete">
+        {% endif %}
     </div>
 </form>
 
@@ -52,6 +56,18 @@
 {% block before_body_close %}
     <script>
     $(function() {
+        /* Delete */
+        $('.btn-delete').on('click', function() {
+            if(!window.confirm('Are you sure?')) return false;
+
+            $.post('?_method=DELETE', {}, function() {
+                window.location = window.location.pathname;
+            });
+
+            return false;
+        });
+
+        /* Preview */
         $('.btn-preview').on('click', function() {
             $('.preview').show();
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import main
 import cache
 import unittest2 as unittest
@@ -891,3 +892,89 @@ class UserPreferencesTest(unittest.TestCase):
         self.assertEquals(u'김경수', UserPreferences.get_by_email('user@example.com').userpage_title)
 
 
+class WikiPageDeleteTest(unittest.TestCase):
+    def setUp(self):
+        cache.prc.flush_all()
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pagea.update_content(u'Hello [[B]]', 0, '')
+        self.pageb = WikiPage.get_by_title(u'B')
+        self.pageb.update_content(u'Hello [[A]]', 0, '')
+
+        # reload
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pageb = WikiPage.get_by_title(u'B')
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_should_be_deleted(self):
+        self._login('a@x.com', 'a', is_admin=True)
+        self.pagea.delete(users.get_current_user())
+
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.assertEquals(u'', self.pagea.body)
+        self.assertEquals(0, self.pagea.revision)
+
+    def test_only_admin_can_perform_delete(self):
+        self._login('a@x.com', 'a', is_admin=False)
+        self.assertRaises(RuntimeError, self.pagea.delete, users.get_current_user())
+
+    def test_revisions_should_be_deleted_too(self):
+        self._login('a@x.com', 'a', is_admin=True)
+        self.pagea.delete(users.get_current_user())
+        self.assertEqual(0, self.pagea.revisions.count())
+
+    def test_in_out_links(self):
+        self._login('a@x.com', 'a', is_admin=True)
+
+        self.pagea.delete(users.get_current_user())
+        self.pageb = WikiPage.get_by_title(u'B')
+
+        self.assertEquals(1, len(self.pagea.inlinks))
+        self.assertEquals(0, len(self.pagea.outlinks))
+        self.assertEquals(0, len(self.pageb.inlinks))
+        self.assertEquals(1, len(self.pageb.outlinks))
+
+    def test_delete_twice(self):
+        self._login('a@x.com', 'a', is_admin=True)
+
+        self.pagea.delete(users.get_current_user())
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pagea.delete(users.get_current_user())
+
+    def test_delete_and_create(self):
+        self._login('a@x.com', 'a', is_admin=True)
+
+        self.pagea.delete(users.get_current_user())
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pagea.update_content(u'Hello', 0, '')
+        self.assertEquals(1, self.pagea.revision)
+
+    def test_delete_published_page(self):
+        self._login('a@x.com', 'a', is_admin=True)
+
+        page1 = WikiPage.get_by_title(u'Hello 1')
+        page1.update_content(u'.pub\nHello 1', 0, '')
+        page2 = WikiPage.get_by_title(u'Hello 2')
+        page2.update_content(u'.pub\nHello 2', 0, '')
+        page3 = WikiPage.get_by_title(u'Hello 3')
+        page3.update_content(u'.pub\nHello 3', 0, '')
+
+        middle = WikiPage.get_by_title(u'Hello 2')
+        middle.delete(users.get_current_user())
+
+        newer, older = WikiPage.get_published_posts(None, 20)
+
+        self.assertEqual(u'Hello 3', older.newer_title)
+        self.assertEqual(u'Hello 1', newer.older_title)
+
+    def _login(self, email, user_id, is_admin=False):
+        os.environ['USER_EMAIL'] = email or ''
+        os.environ['USER_ID'] = user_id or ''
+        os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
