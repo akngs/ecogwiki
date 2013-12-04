@@ -63,6 +63,9 @@ def userpage_link(user):
             path = to_path(preferences.userpage_title)
             return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
 
+def has_supported_language(hashbangs):
+    config = WikiPage.get_config()
+    return any(x in config['highlight']['supported_languages'] for x in hashbangs)
 
 JINJA.filters['dt'] = format_datetime
 JINJA.filters['sdt'] = format_short_datetime
@@ -70,6 +73,7 @@ JINJA.filters['isodt'] = format_iso_datetime
 JINJA.filters['to_path'] = to_path
 JINJA.filters['urlencode'] = urlencode
 JINJA.filters['userpage'] = userpage_link
+JINJA.filters['has_supported_language'] = has_supported_language
 
 
 class WikiPageHandler(webapp2.RequestHandler):
