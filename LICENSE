@@ -45,3 +45,6 @@ External libraries:
 
 - pyparsing (MIT License)
   http://pythonhosted.org/pyparsing/
+
+- highlight.js (BSD License - https://github.com/isagalaev/highlight.js/blob/master/LICENSE)
+  http://highlightjs.org
