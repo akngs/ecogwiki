@@ -88,7 +88,7 @@ class WikiPageHandler(webapp2.RequestHandler):
         new_body = self.request.POST['body']
         comment = self.request.POST['comment']
 
-        if self.request.POST['preview'] == '1':
+        if self.request.POST.get('preview') == '1':
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             html = self._template('bodyonly.html', {
                 'title': page.title,
