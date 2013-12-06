@@ -918,6 +918,7 @@ class WikiPageDeleteTest(unittest.TestCase):
         self.pagea.delete(users.get_current_user())
 
         self.pagea = WikiPage.get_by_title(u'A')
+        self.assertEquals(None, self.pagea.modifier)
         self.assertEquals(u'', self.pagea.body)
         self.assertEquals(0, self.pagea.revision)
 

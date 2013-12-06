@@ -451,6 +451,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         self.update_content('', self.revision, None, user, force_update=False, dont_create_rev=True)
         self.related_links = {}
+        self.modifier = None
         self.updated_at = None
         self.revision = 0
         self.put()
