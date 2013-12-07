@@ -11,6 +11,8 @@ import xml.etree.ElementTree as ET
 from google.appengine.ext import testbed
 from lxml.html import html5parser, tostring
 
+from tests.test_auth import OAuthStub
+
 
 class ContentTypeTest(unittest.TestCase):
     def setUp(self):
@@ -381,27 +383,4 @@ class Browser(object):
     def logout(self):
         self.login(None, None)
 
-class OAuthStub(object):
-    def __init__(self, testbed_obj, logout=True):
-        self.user_stub = testbed_obj._test_stub_map.GetStub(testbed.USER_SERVICE_NAME)
-        if logout:
-            self.logout()
-
-    def login(self, email, user_id, is_admin=False):
-        '''
-            UserServiceStub.SetOAuthUser(
-                             email=_OAUTH_EMAIL,
-                             domain=_OAUTH_AUTH_DOMAIN,
-                             user_id=_OAUTH_USER_ID,
-                             is_admin=False,
-                             scopes=None,
-                             client_id=_OAUTH_CLIENT_ID)
-        '''
-        self.user_stub.SetOAuthUser(email=email, user_id=user_id, is_admin=is_admin) # no OAuth login
-        os.environ['OAUTH_EMAIL'] = email or ''
-        os.environ['OAUTH_USER_ID'] = user_id or ''
-        os.environ['OAUTH_IS_ADMIN'] = '1' if is_admin else '0'
-
-    def logout(self):
-        self.login(email=None, user_id=None)
 

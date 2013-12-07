@@ -136,7 +136,7 @@ class PageOperationMixin(object):
         if len(acl) == 0:
             acl = default_acl['read']
 
-        if user_is_admin(user):
+        if is_admin_user(user):
             return True
         elif u'all' in acl or len(acl) == 0:
             return True
@@ -157,7 +157,7 @@ class PageOperationMixin(object):
 
         if (not self.can_read(user, default_acl)) and (user is None or user.email() not in acl):
             return False
-        elif user_is_admin(user):
+        elif is_admin_user(user):
             return True
         elif 'all' in acl:
             return True
@@ -448,7 +448,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return value
 
     def delete(self, user=None):
-        if not user_is_admin(user):
+        if not is_admin_user(user):
             raise RuntimeError('Only admin can delete pages.')
 
         self.update_content('', self.revision, None, user, force_update=False, dont_create_rev=True)
@@ -1382,7 +1382,7 @@ def title_grouper(title):
     return 'Misc'
 
 
-def user_is_admin(user):
+def is_admin_user(user):
     if not user:
         return False
 
