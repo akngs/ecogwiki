@@ -900,6 +900,7 @@ class WikiPageDeleteTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_taskqueue_stub()
+        self.testbed.init_user_stub()
 
         self.pagea = WikiPage.get_by_title(u'A')
         self.pagea.update_content(u'Hello [[B]]', 0, '')
@@ -979,3 +980,4 @@ class WikiPageDeleteTest(unittest.TestCase):
         os.environ['USER_EMAIL'] = email or ''
         os.environ['USER_ID'] = user_id or ''
         os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
+

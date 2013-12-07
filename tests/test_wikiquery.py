@@ -129,6 +129,7 @@ class WikiqueryAclEvaluationTest(unittest.TestCase):
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
         self.testbed.init_taskqueue_stub()
+        self.testbed.init_user_stub()
         cache.prc.flush_all()
 
         WikiPage.get_by_title(u'A').update_content(u'.schema Book\n.read all\nHello', 0, u'')
