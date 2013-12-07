@@ -135,7 +135,8 @@ class PageOperationMixin(object):
         acl = self.acl_read.split(',') if self.acl_read is not None and len(self.acl_read) != 0 else []
         if len(acl) == 0:
             acl = default_acl['read']
-        if user is not None and (users.is_current_user_admin() or oauth.is_current_user_admin()):
+
+        if user_is_admin(user):
             return True
         elif u'all' in acl or len(acl) == 0:
             return True
@@ -156,7 +157,7 @@ class PageOperationMixin(object):
 
         if (not self.can_read(user, default_acl)) and (user is None or user.email() not in acl):
             return False
-        elif user is not None and (users.is_current_user_admin() or oauth.is_current_user_admin()):
+        elif user_is_admin(user):
             return True
         elif 'all' in acl:
             return True
@@ -447,7 +448,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return value
 
     def delete(self, user=None):
-        if user is None or not users.is_current_user_admin():
+        if not user_is_admin(user):
             raise RuntimeError('Only admin can delete pages.')
 
         self.update_content('', self.revision, None, user, force_update=False, dont_create_rev=True)
@@ -1379,6 +1380,22 @@ def title_grouper(title):
             return key
 
     return 'Misc'
+
+
+def user_is_admin(user):
+    if not user:
+        return False
+
+    if users.is_current_user_admin():
+        return True
+
+    try:
+        if oauth.is_current_user_admin():
+            return True
+    except oauth.OAuthRequestError:
+        pass
+
+    return False
 
 
 md = markdown.Markdown(
