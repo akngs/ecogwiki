@@ -16,6 +16,7 @@ from lxml.html.clean import Cleaner
 from collections import OrderedDict
 from google.appengine.ext import ndb
 from google.appengine.api import users
+from google.appengine.api import oauth
 from datetime import datetime, timedelta
 from google.appengine.ext import deferred
 from markdown.extensions.def_list import DefListExtension
@@ -131,7 +132,7 @@ class PageOperationMixin(object):
         acl = self.acl_read.split(',') if self.acl_read is not None and len(self.acl_read) != 0 else []
         if len(acl) == 0:
             acl = default_acl['read']
-        if user is not None and users.is_current_user_admin():
+        if user is not None and (users.is_current_user_admin() or oauth.is_current_user_admin()):
             return True
         elif u'all' in acl or len(acl) == 0:
             return True
@@ -152,7 +153,7 @@ class PageOperationMixin(object):
 
         if not self.can_read(user, default_acl):
             return False
-        elif user is not None and users.is_current_user_admin():
+        elif user is not None and (users.is_current_user_admin() or oauth.is_current_user_admin()):
             return True
         elif 'all' in acl:
             return True

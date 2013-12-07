@@ -10,6 +10,7 @@ import urllib2
 import webapp2
 import operator
 import logging
+#import traceback
 from pyatom import AtomFeed
 from itertools import groupby
 from collections import OrderedDict
@@ -556,10 +557,8 @@ class WikiPageHandler(webapp2.RequestHandler):
         if user is None:
             try:
                 oauth_user = oauth.get_current_user()
-                logger.info('oauth authorized as: %s', oauth_user)
                 user = oauth_user
             except oauth.OAuthRequestError as e:
-                logger.info('oauth not authorized: %s', e)
                 pass
 
         if user is not None:
