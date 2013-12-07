@@ -67,6 +67,9 @@ def userpage_link(user):
             path = to_path(preferences.userpage_title)
             return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
 
+def has_supported_language(hashbangs):
+    config = WikiPage.get_config()
+    return any(x in config['highlight']['supported_languages'] for x in hashbangs)
 
 JINJA.filters['dt'] = format_datetime
 JINJA.filters['sdt'] = format_short_datetime
@@ -74,11 +77,18 @@ JINJA.filters['isodt'] = format_iso_datetime
 JINJA.filters['to_path'] = to_path
 JINJA.filters['urlencode'] = urlencode
 JINJA.filters['userpage'] = userpage_link
+JINJA.filters['has_supported_language'] = has_supported_language
 
 
 class WikiPageHandler(webapp2.RequestHandler):
     def post(self, path):
         cache.create_prc()
+        method = self.request.GET.get('_method', 'POST')
+
+        if method == 'DELETE':
+            return self.delete(path)
+        elif method == 'PUT':
+            return self.put(path)
 
         if path.startswith('sp.'):
             return self.post_sp(path[3:])
@@ -113,7 +123,7 @@ class WikiPageHandler(webapp2.RequestHandler):
         except ValueError as e:
             self.response.status = 406
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = self._template('406.html', {'page': page, 'errors': [e.message]})
+            html = self._template('error_with_messages.html', {'page': page, 'errors': [e.message]})
             self._set_response_body(html, False)
 
     def post_sp(self, title):
@@ -138,6 +148,21 @@ class WikiPageHandler(webapp2.RequestHandler):
         UserPreferences.save(user, userpage_title)
         self.response.headers['X-Message'] = 'Successfully updated.'
         self.get_sp_preferences(user, False)
+
+    def put(self, _):
+        self.response.status = 405
+
+    def delete(self, path):
+        user = WikiPageHandler._get_cur_user()
+        page = WikiPage.get_by_title(WikiPage.path_to_title(path))
+
+        try:
+            page.delete(user)
+            self.response.status = 204
+        except RuntimeError as e:
+            self.response.status = 403
+            html = self._template('error_with_messages.html', {'page': page, 'errors': [e.message]})
+            self._set_response_body(html, False)
 
     def head(self, path):
         return self.get(path, True)

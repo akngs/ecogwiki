@@ -51,7 +51,7 @@ $(function() {
         var url = $('link[rel="canonical"]').attr('href');
         $('strong > em').wrap(function() {
             var text = $(this).text();
-            var twitter = $('meta[name="twitter:site"').attr('content').substring(1);
+            var twitter = $('meta[name="twitter:site"]').attr('content').substring(1);
             return '<a class="quotable" href="https://twitter.com/intent/tweet?via=' + twitter + '&url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text) + '" />';
         });
     })();

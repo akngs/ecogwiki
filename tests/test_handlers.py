@@ -170,6 +170,29 @@ class WikiPageHandlerTest(unittest.TestCase):
         self.assertEqual('http://localhost/Hello_World',
                          self.browser.res.location)
 
+    def test_delete_page(self):
+        self.browser.login('ak@gmailcom', 'ak', is_admin=True)
+        self.browser.post('/New_page', 'body=[[Link!]]&revision=0&comment=&preview=0')
+        self.browser.post('/New_page?_method=DELETE')
+        self.assertEqual(204, self.browser.res.status_code)
+
+        self.browser.get('/sp.index')
+        links = self.browser.query('.//table//a')
+        link_texts = [link.text for link in links]
+        self.assertTrue(u'New page' not in link_texts)
+
+    def test_delete_page_without_permission(self):
+        self.browser.login('ak@gmailcom', 'ak', is_admin=False)
+        self.browser.post('/New_page', 'body=[[Link!]]&revision=0&comment=&preview=0')
+        self.browser.post('/New_page?_method=DELETE')
+
+        self.assertEqual(403, self.browser.res.status_code)
+
+        self.browser.get('/sp.index')
+        links = self.browser.query('.//table//a')
+        link_texts = [link.text for link in links]
+        self.assertTrue(u'New page' in link_texts)
+
 
 class RevisionTest(unittest.TestCase):
     def setUp(self):
@@ -330,7 +353,7 @@ class Browser(object):
         req = webapp2.Request.blank(url)
         self.res = req.get_response(main.app)
 
-    def post(self, url, content):
+    def post(self, url, content=''):
         req = webapp2.Request.blank(url)
         req.method = 'POST'
         req.body = content

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import main
 import cache
 import unittest2 as unittest
@@ -15,6 +16,7 @@ class WikiPageUpdateTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -72,6 +74,7 @@ class WikiPageMetadataParserTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
         self.default_md = {
             'content-type': 'text/x-markdown',
             'schema': 'Article',
@@ -217,6 +220,7 @@ class WikiPageWikilinkRenderingTest(unittest.TestCase):
             u'codeRepository::http://x.co',
             u'a@x.com',
             u'a@x.kr에',
+            u'http://www.youtube.com/watch?v=w5gmK-ZXIMQ',
         ]
         expecteds = [
             u'<p><a class="plainurl" href="http://x.co">http://x.co</a></p>',
@@ -227,7 +231,9 @@ class WikiPageWikilinkRenderingTest(unittest.TestCase):
             u'itemprop="codeRepository">http://x.co</a></p>',
             u'<p><a class="email" href="mailto:a@x.com">a@x.com</a></p>',
             u'<p><a class="email" href="mailto:a@x.kr">a@x.kr</a>에</p>',
+            u'<p>\n<div class="video">\n<iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe>\n</div>\n</p>',
         ]
+
         for e, a in zip(expecteds, actuals):
             self.assertEqual(e, md.convert(a))
 
@@ -291,6 +297,7 @@ class WikiTitleToPathConvertTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -312,6 +319,7 @@ class WikiYamlParserTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -319,6 +327,45 @@ class WikiYamlParserTest(unittest.TestCase):
     def test_empty_page(self):
         self.assertEqual(main.DEFAULT_CONFIG, WikiPage.get_config())
 
+class WikiPageGetConfigTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+        
+        #
+        self.config_page = WikiPage.get_by_title(u'.config')
+        self.config_page.update_content(u'''
+          admin:
+            email: janghwan@gmail.com
+          service:
+            default_permissions:
+              read: [all]
+              write: [login]
+        ''', 0, '')
+
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_empty_config_page(self):
+        config_page = WikiPage.get_by_title(u'.config')
+        config_page.update_content('', 1, '')
+
+        config = WikiPage.get_config()
+        perm = config['service']['default_permissions']
+        self.assertEqual(perm['read'], ['all'])
+        self.assertEqual(perm['write'], ['login'])
+
+    def test_update_by_dot_config_page(self):
+        config = WikiPage.get_config()
+        self.assertEqual(config['admin']['email'], 'janghwan@gmail.com')
+
+    def test_updates_partial_configurations(self):
+        config = WikiPage.get_config()
+        self.assertEqual(config['service']['title'], '')
 
 class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
     def setUp(self):
@@ -364,6 +411,7 @@ class WikiPageSimilarTitlesTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -412,6 +460,7 @@ class WikiPageDescriptionTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -438,6 +487,7 @@ class WikiPageSpecialTitlesTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -666,6 +716,7 @@ class WikiPageHashbang(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -796,6 +847,7 @@ class WikiPageBugsTest(unittest.TestCase):
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -838,3 +890,92 @@ class UserPreferencesTest(unittest.TestCase):
         UserPreferences.save(self.user, u'김경수')
 
         self.assertEquals(u'김경수', UserPreferences.get_by_email('user@example.com').userpage_title)
+
+
+class WikiPageDeleteTest(unittest.TestCase):
+    def setUp(self):
+        cache.prc.flush_all()
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pagea.update_content(u'Hello [[B]]', 0, '')
+        self.pageb = WikiPage.get_by_title(u'B')
+        self.pageb.update_content(u'Hello [[A]]', 0, '')
+
+        # reload
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pageb = WikiPage.get_by_title(u'B')
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_should_be_deleted(self):
+        self._login('a@x.com', 'a', is_admin=True)
+        self.pagea.delete(users.get_current_user())
+
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.assertEquals(None, self.pagea.modifier)
+        self.assertEquals(u'', self.pagea.body)
+        self.assertEquals(0, self.pagea.revision)
+
+    def test_only_admin_can_perform_delete(self):
+        self._login('a@x.com', 'a', is_admin=False)
+        self.assertRaises(RuntimeError, self.pagea.delete, users.get_current_user())
+
+    def test_revisions_should_be_deleted_too(self):
+        self._login('a@x.com', 'a', is_admin=True)
+        self.pagea.delete(users.get_current_user())
+        self.assertEqual(0, self.pagea.revisions.count())
+
+    def test_in_out_links(self):
+        self._login('a@x.com', 'a', is_admin=True)
+
+        self.pagea.delete(users.get_current_user())
+        self.pageb = WikiPage.get_by_title(u'B')
+
+        self.assertEquals(1, len(self.pagea.inlinks))
+        self.assertEquals(0, len(self.pagea.outlinks))
+        self.assertEquals(0, len(self.pageb.inlinks))
+        self.assertEquals(1, len(self.pageb.outlinks))
+
+    def test_delete_twice(self):
+        self._login('a@x.com', 'a', is_admin=True)
+
+        self.pagea.delete(users.get_current_user())
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pagea.delete(users.get_current_user())
+
+    def test_delete_and_create(self):
+        self._login('a@x.com', 'a', is_admin=True)
+
+        self.pagea.delete(users.get_current_user())
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pagea.update_content(u'Hello', 0, '')
+        self.assertEquals(1, self.pagea.revision)
+
+    def test_delete_published_page(self):
+        self._login('a@x.com', 'a', is_admin=True)
+
+        page1 = WikiPage.get_by_title(u'Hello 1')
+        page1.update_content(u'.pub\nHello 1', 0, '')
+        page2 = WikiPage.get_by_title(u'Hello 2')
+        page2.update_content(u'.pub\nHello 2', 0, '')
+        page3 = WikiPage.get_by_title(u'Hello 3')
+        page3.update_content(u'.pub\nHello 3', 0, '')
+
+        middle = WikiPage.get_by_title(u'Hello 2')
+        middle.delete(users.get_current_user())
+
+        newer, older = WikiPage.get_published_posts(None, 20)
+
+        self.assertEqual(u'Hello 3', older.newer_title)
+        self.assertEqual(u'Hello 1', newer.older_title)
+
+    def _login(self, email, user_id, is_admin=False):
+        os.environ['USER_EMAIL'] = email or ''
+        os.environ['USER_ID'] = user_id or ''
+        os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'

@@ -13,6 +13,8 @@ class URLExtension(Extension):
 
         # append to end of inline patterns
         url_re = r'(' \
+                 r'(?P<youtube>https?\://www\.youtube\.com/watch\?v=(?P<vid>[^?]+))' \
+                 r'|' \
                  r'(?P<plainurl>((?P<itemprop>[^\s\:]+)\:\:)?(?P<url>\w+://' \
                  r'[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\-\_\=\+\[\]\\\:\;\"\'\,\.\'' \
                  r'\?/]' \
@@ -41,6 +43,17 @@ class UrlPattern(Pattern):
             if m.group('itemprop'):
                 a.set('itemprop', m.group('itemprop'))
             return a
+        elif m.group('youtube'):
+            vid = m.group('vid')
+            div = etree.Element('div')
+            div.set('class', 'video')
+            iframe = etree.SubElement(div, 'iframe')
+            iframe.set('width', '640')
+            iframe.set('height', '390')
+            iframe.set('frameborder', '0')
+            iframe.set('allowfullscreen', 'true')
+            iframe.set('src', 'http://www.youtube.com/embed/%s' % vid)
+            return div
         elif m.group('email'):
             url = m.group('email')
             a = etree.Element('a')

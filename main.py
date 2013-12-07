@@ -5,7 +5,7 @@ import webapp2
 if 'lib' not in sys.path:
     sys.path[0:0] = ['lib']
 
-VERSION = '0.0.1_20131202_1'
+VERSION = '0.0.1_20131205_1'
 
 DEFAULT_CONFIG = {
     'navigation': [
@@ -38,6 +38,30 @@ DEFAULT_CONFIG = {
             'write': ['login'],
         },
     },
+    'highlight': {
+        'style': 'default',
+        'supported_languages': [
+            'sh',
+            'csharp',
+            'c++',
+            'css',
+            'coffeescript',
+            'diff',
+            'html',
+            'xml',
+            'json',
+            'java',
+            'javascript',
+            'makefile',
+            'markdown',
+            'objectivec',
+            'php',
+            'perl',
+            'python',
+            'ruby',
+            'sql',
+        ]
+    }
 }
 
 app = webapp2.WSGIApplication([

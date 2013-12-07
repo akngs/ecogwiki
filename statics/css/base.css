@@ -63,6 +63,18 @@ a:hover {
     border-color: #138;
 }
 
+.btn-delete {
+    float: right;
+    color: #ffffff;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    background-color: #da4f49;
+}
+.btn-delete:hover,
+.btn-delete:focus,
+.btn-delete:active {
+    background-color: #bd362f;
+}
+
 .vcaret-parent {
     transition: background-color 0.3s;
     transition-timing-function: ease;
@@ -304,14 +316,14 @@ header .edit_menu {
 }
 
 .editform input.comment {
-    width: 90%;
+    width: 100%;
     margin: 10px 0;
+    box-sizing: border-box;
 }
 .editform .actions {
     margin: 0.5em 0;
 }
 .editform .actions input {
-    margin-right: 0.5em;
 }
 /* } Wiki Edit Form */
 
@@ -658,6 +670,18 @@ article .body .noli {
     margin-left: -2em;
     padding-left: 0;
 }
+
+    /* Responsive YouTube video from http://invalid.kr/res-video-youtube/ */
+    /* { */
+    article .body .video {
+        position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+    }
+    article .body .video iframe,
+    article .body .video object,
+    article .body .video embed {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    }
+    /* } */
 
 /* } Content body */
 

@@ -10,6 +10,9 @@
     {% if ('uml' in page.hashbangs) %}
     <link rel="stylesheet" href="/statics/css/jumly.css?ver={{ app.version }}">
     {% endif %}
+    {% if (page.hashbangs|has_supported_language) %}
+    <link rel="stylesheet" href="/statics/css/highlight/{{ config.highlight.style }}.css?ver={{ app.version }}">
+    {% endif %}
 
     <meta name="description" content="{{ page.description|e }}" />
 
@@ -271,6 +274,12 @@ window.fbAsyncInit = function() {
     {% if ('mathjax' in page.hashbangs) %}
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     {% endif %}
+
+    {% if (page.hashbangs|has_supported_language) %}
+    <script src="/statics/js/highlight.pack.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script src="/statics/js/highlight-run.js?ver={{ app.version }}" type="text/javascript"></script>
+    {% endif %}
+
 
     {% if page.revision == 0 %}
     <script>

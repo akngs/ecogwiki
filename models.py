@@ -86,6 +86,9 @@ class PageOperationMixin(object):
         # sanitize
         if final:
             cleaner = Cleaner(safe_attrs_only=False)
+            cleaner.host_whitelist = (
+                'www.youtube.com',
+            )
             final = cleaner.clean_html(final)
 
         return final
@@ -138,7 +141,7 @@ class PageOperationMixin(object):
             return True
         elif u'login' in acl and user is not None:
             return True
-        elif user is not None and user.email() in acl:
+        elif user is not None and (user.email() in acl or user.email() in self.acl_write.split(',')):
             return True
         else:
             return False
@@ -151,7 +154,7 @@ class PageOperationMixin(object):
         if len(acl) == 0:
             acl = default_acl['write']
 
-        if not self.can_read(user, default_acl):
+        if (not self.can_read(user, default_acl)) and (user is None or user.email() not in acl):
             return False
         elif user is not None and (users.is_current_user_admin() or oauth.is_current_user_admin()):
             return True
@@ -443,7 +446,23 @@ class WikiPage(ndb.Model, PageOperationMixin):
             cache.set_hashbangs(self.title, value)
         return value
 
-    def update_content(self, new_body, base_revision, comment, user=None, force_update=False):
+    def delete(self, user=None):
+        if user is None or not users.is_current_user_admin():
+            raise RuntimeError('Only admin can delete pages.')
+
+        self.update_content('', self.revision, None, user, force_update=False, dont_create_rev=True)
+        self.related_links = {}
+        self.modifier = None
+        self.updated_at = None
+        self.revision = 0
+        self.put()
+
+        keys = [r.key for r in self.revisions]
+        ndb.delete_multi(keys)
+
+        cache.del_titles()
+
+    def update_content(self, new_body, base_revision, comment, user=None, force_update=False, dont_create_rev=False):
         if not force_update and self.body == new_body:
             return False
 
@@ -486,7 +505,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         self.acl_read = new_md.get('read', '')
         self.acl_write = new_md.get('write', '')
         self.comment = comment
-        self.revision += 1
+        if not dont_create_rev:
+            self.revision += 1
 
         if not force_update:
             self.updated_at = datetime.now()
@@ -523,12 +543,13 @@ class WikiPage(ndb.Model, PageOperationMixin):
         self.put()
 
         # create revision
-        rev_key = self._rev_key()
-        rev = WikiPageRevision(parent=rev_key, title=self.title, body=self.body,
-                               created_at=self.updated_at, revision=self.revision,
-                               comment=self.comment, modifier=self.modifier,
-                               acl_read=self.acl_read, acl_write=self.acl_write)
-        rev.put()
+        if not dont_create_rev:
+            rev_key = self._rev_key()
+            rev = WikiPageRevision(parent=rev_key, title=self.title, body=self.body,
+                                   created_at=self.updated_at, revision=self.revision,
+                                   comment=self.comment, modifier=self.modifier,
+                                   acl_read=self.acl_read, acl_write=self.acl_write)
+            rev.put()
 
         # update inlinks and outlinks
         old_redir = old_md.get('redirect')
@@ -550,8 +571,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def rebuild_data_index(self):
         # delete all index for this page
         index = SchemaDataIndex.query(SchemaDataIndex.title == self.title).fetch()
-        for i in index:
-            i.put().delete()
+
+        keys = [i.key for i in index]
+        ndb.delete_multi(keys)
 
         # insert
         data = self.data
@@ -581,9 +603,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
             i = SchemaDataIndex(title=self.title, name=name, value=value, data=new_data)
             i.put()
 
-        for name, value in deletes:
-            i = SchemaDataIndex(title=self.title, name=name, value=value, data=new_data)
-            i.put().delete()
+        # delete
+        keys = [SchemaDataIndex(title=self.title, name=name, value=value, data=new_data).key for name, value in deletes]
+        ndb.delete_multi(keys)
 
     @property
     def revisions(self):
@@ -660,7 +682,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     try:
                         page.del_inlink(title)
                         if len(page.inlinks) == 0 and page.revision == 0:
-                            page.put().delete()
+                            if page.key:
+                                page.key.delete()
                         else:
                             page.put()
                         cache.del_rendered_body(page.title)
@@ -695,7 +718,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     try:
                         page.del_inlink(self.title, rel)
                         if page.inlinks == {} and page.revision == 0:
-                            page.put().delete()
+                            if page.key:
+                                page.key.delete()
                         else:
                             page.put()
                         cache.del_rendered_body(page.title)
@@ -973,17 +997,24 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def get_config(cls):
         result = cache.get_config()
         if result is None:
-            page = cls.get_by_title('.config')
-            result = None
-            try:
-                result = yaml.load(PageOperationMixin.remove_metadata(page.body))
-            except:
-                pass
+            result = main.DEFAULT_CONFIG
 
-            if result is None:
-                result = main.DEFAULT_CONFIG
-            else:
-                result = dict(main.DEFAULT_CONFIG.items() + result.items())
+            try:
+                page = cls.get_by_title('.config')
+                user_config = yaml.load(PageOperationMixin.remove_metadata(page.body))
+            except:
+                user_config = None
+            user_config = user_config or {}
+
+            def merge_dict(target_dict, source_dict):
+                for (key,value) in source_dict.iteritems():
+                    if type(value) != dict:
+                        target_dict[key] = value
+                    else:
+                        merge_dict(target_dict.setdefault(key, {}), value)
+
+            merge_dict(result, user_config)
+
             cache.set_config(result)
         return result
 

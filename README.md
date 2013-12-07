@@ -10,7 +10,7 @@
 
 # How to learn tests
 
-Execute following command on projecthome:
+Execute following command on project home:
 
     python run_tests.py <APP_ENGINE_SDK_PATH> <TEST_PACKAGE_PATH>
 

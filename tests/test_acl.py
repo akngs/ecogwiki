@@ -89,6 +89,15 @@ class PageLevelAclTest(unittest.TestCase):
         self.assertEqual(True, self.page.can_read(self.user1, self.default))
         self.assertEqual(True, self.page.can_write(self.user1, self.default))
 
+    def test_different_read_and_write(self):
+        self.page.update_content(u'.write user1@example.com\n.read user2@example.com\nHello', 0, '')
+        self.assertEqual(False, self.page.can_write(None, self.default))
+        self.assertEqual(False, self.page.can_read(None, self.default))
+        self.assertEqual(True, self.page.can_write(self.user1, self.default))
+        self.assertEqual(True, self.page.can_read(self.user1, self.default))
+        self.assertEqual(False, self.page.can_write(self.user2, self.default))
+        self.assertEqual(True, self.page.can_read(self.user2, self.default))
+
 
 class InconsistantAclTest(unittest.TestCase):
     def setUp(self):
