@@ -673,8 +673,11 @@ article .body .noli {
 
     /* Responsive YouTube video from http://invalid.kr/res-video-youtube/ */
     /* { */
-    article .body .video {
+    article .body .video.youtube {
         position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+    }
+    article .body .video.vimeo {
+        position: relative; padding-bottom: 60.93%; height: 0; overflow: hidden;
     }
     article .body .video iframe,
     article .body .video object,

@@ -13,7 +13,9 @@ class URLExtension(Extension):
 
         # append to end of inline patterns
         url_re = r'(' \
-                 r'(?P<youtube>https?\://www\.youtube\.com/watch\?v=(?P<vid>[^?]+))' \
+                 r'(?P<youtube>https?\://www\.youtube\.com/watch\?v=(?P<youtube_vid>[^?]+))' \
+                 r'|' \
+                 r'(?P<vimeo>https?\://vimeo\.com/(?P<vimeo_vid>\d+))' \
                  r'|' \
                  r'(?P<plainurl>((?P<itemprop>[^\s\:]+)\:\:)?(?P<url>\w+://' \
                  r'[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\-\_\=\+\[\]\\\:\;\"\'\,\.\'' \
@@ -44,15 +46,26 @@ class UrlPattern(Pattern):
                 a.set('itemprop', m.group('itemprop'))
             return a
         elif m.group('youtube'):
-            vid = m.group('vid')
+            vid = m.group('youtube_vid')
             div = etree.Element('div')
-            div.set('class', 'video')
+            div.set('class', 'video youtube')
             iframe = etree.SubElement(div, 'iframe')
             iframe.set('width', '640')
             iframe.set('height', '390')
             iframe.set('frameborder', '0')
             iframe.set('allowfullscreen', 'true')
             iframe.set('src', 'http://www.youtube.com/embed/%s' % vid)
+            return div
+        elif m.group('vimeo'):
+            vid = m.group('vimeo_vid')
+            div = etree.Element('div')
+            div.set('class', 'video vimeo')
+            iframe = etree.SubElement(div, 'iframe')
+            iframe.set('width', '500')
+            iframe.set('height', '281')
+            iframe.set('frameborder', '0')
+            iframe.set('allowfullscreen', 'true')
+            iframe.set('src', 'http://player.vimeo.com/video/%s' % vid)
             return div
         elif m.group('email'):
             url = m.group('email')

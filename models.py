@@ -88,6 +88,7 @@ class PageOperationMixin(object):
             cleaner = Cleaner(safe_attrs_only=False)
             cleaner.host_whitelist = (
                 'www.youtube.com',
+                'player.vimeo.com',
             )
             final = cleaner.clean_html(final)
 
