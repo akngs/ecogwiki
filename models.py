@@ -601,9 +601,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         deletes = old_pairs.difference(new_pairs)
 
         # insert
-        for name, value in inserts:
-            i = SchemaDataIndex(title=self.title, name=name, value=value, data=new_data)
-            i.put()
+        indice = [SchemaDataIndex(title=self.title, name=name, value=value, data=new_data) for name, value in inserts]
+        ndb.put_multi(indice)
 
         # delete
         keys = [SchemaDataIndex(title=self.title, name=name, value=value, data=new_data).key for name, value in deletes]
