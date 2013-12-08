@@ -28,7 +28,7 @@ class SchemaPathTest(unittest.TestCase):
             self.assertEqual('Thing/', schema.get_itemtype_path(item)[:6])
 
 
-class SchemaDataTest(unittest.TestCase):
+class EmbeddedSchemaDataTest(unittest.TestCase):
     def setUp(self):
         self.testbed = testbed.Testbed()
         self.testbed.activate()
@@ -42,31 +42,51 @@ class SchemaDataTest(unittest.TestCase):
 
     def test_no_data(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello', 0)
         self.assertEquals({'name': u'Hello', 'schema': u'Thing/CreativeWork/Article/'}, page.data)
 
     def test_author_and_isbn(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}', 0, '')
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}', 0)
         self.assertEqual(u'AK', page.data['author'])
         self.assertEqual(u'123456789', page.data['isbn'])
 
     def test_multiple_authors(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n[[author::AK]] and [[author::TK]]', 0, '')
+        page.update_content(u'.schema Book\n[[author::AK]] and [[author::TK]]', 0)
         self.assertEqual([u'AK', u'TK'], page.data['author'])
 
     def test_normal_links(self):
         page_a = WikiPage.get_by_title(u'A')
-        page_a.update_content(u'[[B]]', 0, '')
+        page_a.update_content(u'[[B]]', 0)
         page_b = WikiPage.get_by_title(u'B')
 
         self.assertEqual([u'A'], page_b.data['inlinks'])
         self.assertEqual([u'B'], page_a.data['outlinks'])
 
+
+class YamlSchemaDataTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+        cache.prc.flush_all()
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_yaml(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: ["Richard Dawkins"]\n\nHello', 0)
+        self.assertEquals({'name': u'Hello', 'schema': u'Thing/CreativeWork/Article/'}, page.data)
+
+
+class SchemaIndexTest(unittest.TestCase):
     def test_schema_index_create(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0, '')
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0)
         page.rebuild_data_index()
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'author', SchemaDataIndex.value == u'AK').count())
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456789').count())
@@ -74,8 +94,8 @@ class SchemaDataTest(unittest.TestCase):
 
     def test_schema_index_update(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0, '')
-        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456780}}\n[[dateModified::2013]]', 1, '')
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0)
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456780}}\n[[dateModified::2013]]', 1)
         page.rebuild_data_index()
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'author', SchemaDataIndex.value == u'AK').count())
         self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456789').count())

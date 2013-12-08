@@ -23,18 +23,18 @@ class WikiPageUpdateTest(unittest.TestCase):
 
     def test_should_update_acls(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.read test1\n.write test2\nHello', 0, '')
+        page.update_content(u'.read test1\n.write test2\nHello', 0)
         self.assertEqual(u'test1', page.acl_read)
         self.assertEqual(u'test2', page.acl_write)
 
-        page.update_content(u'Hello', 1, '')
+        page.update_content(u'Hello', 1)
         self.assertEqual(u'', page.acl_read)
         self.assertEqual(u'', page.acl_write)
 
     def test_should_create_revision(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0, '')
-        page.update_content(u'Hello 2', 1, '')
+        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello 2', 1)
 
         revs = list(page.revisions)
         self.assertEqual(2, len(revs))
@@ -43,8 +43,8 @@ class WikiPageUpdateTest(unittest.TestCase):
 
     def test_should_not_create_revision_if_content_is_not_changed(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0, '')
-        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello', 0)
 
         revs = list(page.revisions)
         self.assertEqual(1, len(revs))
@@ -52,12 +52,12 @@ class WikiPageUpdateTest(unittest.TestCase):
 
     def test_automerge(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'A\nB\nC', 0, '')
+        page.update_content(u'A\nB\nC', 0)
 
         # remove B
-        page.update_content(u'A\nC', 1, '')
+        page.update_content(u'A\nC', 1)
         # append D
-        page.update_content(u'A\nB\nC\nD', 1, '')
+        page.update_content(u'A\nB\nC\nD', 1)
 
         # should be merged
         page = WikiPage.get_by_title(u'Hello')
@@ -346,7 +346,7 @@ class WikiPageGetConfigTest(unittest.TestCase):
             default_permissions:
               read: [all]
               write: [login]
-        ''', 0, '')
+        ''', 0)
 
 
     def tearDown(self):
@@ -354,7 +354,7 @@ class WikiPageGetConfigTest(unittest.TestCase):
 
     def test_empty_config_page(self):
         config_page = WikiPage.get_by_title(u'.config')
-        config_page.update_content('', 1, '')
+        config_page.update_content('', 1)
 
         config = WikiPage.get_config()
         perm = config['service']['default_permissions']
@@ -382,26 +382,26 @@ class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
 
     def test_update_related_links(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[B]], [[C]], [[D]]', 0, '')
+        a.update_content(u'[[B]], [[C]], [[D]]', 0)
 
         b = WikiPage.get_by_title(u'B')
-        b.update_content(u'[[D]], [[E]]', 0, '')
+        b.update_content(u'[[D]], [[E]]', 0)
 
         c = WikiPage.get_by_title(u'C')
-        c.update_content(u'[[A]]', 0, '')
+        c.update_content(u'[[A]]', 0)
 
         for _ in range(10):
             a.update_related_links()
 
     def test_redirect(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[B]]', 0, '')
+        a.update_content(u'[[B]]', 0)
         b = WikiPage.get_by_title(u'B')
-        b.update_content(u'.redirect C', 0, '')
+        b.update_content(u'.redirect C', 0)
         c = WikiPage.get_by_title(u'C')
-        c.update_content(u'[[D]]', 0, '')
+        c.update_content(u'[[D]]', 0)
         d = WikiPage.get_by_title(u'D')
-        d.update_content(u'Destination', 0, '')
+        d.update_content(u'Destination', 0)
 
         a.update_related_links()
         self.assertTrue(u'D' in a.related_links)
@@ -469,17 +469,17 @@ class WikiPageDescriptionTest(unittest.TestCase):
 
     def test_try_newline(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello\nWorld', 0, '')
+        page.update_content(u'Hello\nWorld', 0)
         self.assertEqual(u'Hello', page.make_description(20))
 
     def test_try_period(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hi. Hello. World. Sentences.', 0, '')
+        page.update_content(u'Hi. Hello. World. Sentences.', 0)
         self.assertEqual(u'Hi. Hello. World.', page.make_description(20))
 
     def test_cut_off(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hi Hello World Sentences.', 0, '')
+        page.update_content(u'Hi Hello World Sentences.', 0)
         self.assertEqual(u'Hi Hello World Se...', page.make_description(20))
 
 
@@ -551,7 +551,7 @@ class WikiPageLinksTest(unittest.TestCase):
 
     def test_no_links(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'Hello', 0, '')
+        a.update_content(u'Hello', 0)
 
         a = WikiPage.get_by_title(u'A')
         self.assertEqual({}, a.inlinks)
@@ -559,7 +559,7 @@ class WikiPageLinksTest(unittest.TestCase):
 
     def test_links(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[B]]', 0, '')
+        a.update_content(u'[[B]]', 0)
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')
@@ -573,11 +573,11 @@ class WikiPageLinksTest(unittest.TestCase):
 
     def test_wikiquery(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[="Article"]]\n[[=schema:"Article"]]', 0, '')
+        a.update_content(u'[[="Article"]]\n[[=schema:"Article"]]', 0)
 
     def test_do_not_display_restricted_links(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'.read a@x.com\n[[B]]', 0, '')
+        a.update_content(u'.read a@x.com\n[[B]]', 0)
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')
@@ -591,13 +591,13 @@ class WikiPageLinksTest(unittest.TestCase):
 
     def test_get_outlinks(self):
         page = WikiPage.get_by_title(u'Test')
-        page.update_content(u'[[A]], [[A]], [[Hello World]]', 0, '')
+        page.update_content(u'[[A]], [[A]], [[Hello World]]', 0)
         links = page.outlinks
         self.assertEquals({u'Article/relatedTo': [u'A', u'Hello World']}, links)
 
     def test_adding_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, '')
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, '')
+        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0)
+        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0)
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')
@@ -608,9 +608,9 @@ class WikiPageLinksTest(unittest.TestCase):
         self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
 
     def test_removing_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, '')
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, '')
-        WikiPage.get_by_title(u'B').update_content(u'Hello [[D]]', 1, '')
+        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0)
+        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0)
+        WikiPage.get_by_title(u'B').update_content(u'Hello [[D]]', 1)
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')
@@ -623,9 +623,9 @@ class WikiPageLinksTest(unittest.TestCase):
         self.assertEqual({u'Article/relatedTo': [u'B']}, d.inlinks)
 
     def test_changing_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, '')
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, '')
-        WikiPage.get_by_title(u'B').update_content(u'.redirect D', 1, '')
+        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0)
+        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0)
+        WikiPage.get_by_title(u'B').update_content(u'.redirect D', 1)
 
         # flush thread-local cache
         cache.prc.flush_all()
@@ -641,32 +641,32 @@ class WikiPageLinksTest(unittest.TestCase):
         self.assertEqual({u'Article/relatedTo': [u'A']}, d.inlinks)
 
     def test_two_aliases(self):
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, '')
-        WikiPage.get_by_title(u'A').update_content(u'B, [[C]]', 0, '')
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 1, '')
+        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0)
+        WikiPage.get_by_title(u'A').update_content(u'B, [[C]]', 0)
+        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 1)
         a = WikiPage.get_by_title(u'A')
         c = WikiPage.get_by_title(u'C')
         self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
         self.assertEqual({u'Article/relatedTo': [u'C']}, a.outlinks)
 
     def test_rel(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[birthDate::1979]]', 0, '')
+        WikiPage.get_by_title(u'A').update_content(u'[[birthDate::1979]]', 0)
         a = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
         self.assertEqual({u'Article/birthDate': [u'1979']}, a.outlinks)
         self.assertEqual({u'Article/birthDate': [u'A']}, year.inlinks)
 
     def test_update_rel(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 0, '')
-        WikiPage.get_by_title(u'A').update_content(u'[[birthDate::1979]]', 1, '')
+        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 0)
+        WikiPage.get_by_title(u'A').update_content(u'[[birthDate::1979]]', 1)
         a = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
         self.assertEqual({u'Article/birthDate': [u'1979']}, a.outlinks)
         self.assertEqual({u'Article/birthDate': [u'A']}, year.inlinks)
 
     def test_add_schema(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 0, '')
-        WikiPage.get_by_title(u'A').update_content(u'.schema Book\n[[1979]]', 1, '')
+        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 0)
+        WikiPage.get_by_title(u'A').update_content(u'.schema Book\n[[1979]]', 1)
 
         a = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
@@ -674,8 +674,8 @@ class WikiPageLinksTest(unittest.TestCase):
         self.assertEqual({u'Book/relatedTo': [u'A']}, year.inlinks)
 
     def test_change_schema(self):
-        WikiPage.get_by_title(u'A').update_content(u'.schema Code\n[[1979]]', 0, '')
-        WikiPage.get_by_title(u'A').update_content(u'.schema Book\n[[1979]]', 1, '')
+        WikiPage.get_by_title(u'A').update_content(u'.schema Code\n[[1979]]', 0)
+        WikiPage.get_by_title(u'A').update_content(u'.schema Book\n[[1979]]', 1)
 
         a = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
@@ -683,8 +683,8 @@ class WikiPageLinksTest(unittest.TestCase):
         self.assertEqual({u'Book/relatedTo': [u'A']}, year.inlinks)
 
     def test_remove_schema(self):
-        WikiPage.get_by_title(u'A').update_content(u'.schema Code\n[[1979]]', 0, '')
-        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 1, '')
+        WikiPage.get_by_title(u'A').update_content(u'.schema Code\n[[1979]]', 0)
+        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 1)
 
         a = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
@@ -693,20 +693,20 @@ class WikiPageLinksTest(unittest.TestCase):
 
     def test_unknown_schema(self):
         page = WikiPage.get_by_title(u'A')
-        self.assertRaises(ValueError, page.update_content, u'.schema WhatTheHell\n[[1979]]', 0, '')
+        self.assertRaises(ValueError, page.update_content, u'.schema WhatTheHell\n[[1979]]', 0)
 
     def test_link_scoretable(self):
         page = WikiPage.get_by_title(u'A')
 
         # create outlink
-        page.update_content(u'[[B]]', 0, '')
+        page.update_content(u'[[B]]', 0)
 
         # create related link
         page.related_links = {u'D': 0.0}
         page.put()
 
         # create inlink
-        WikiPage.get_by_title(u'C').update_content(u'[[A]]', 0, '')
+        WikiPage.get_by_title(u'C').update_content(u'[[A]]', 0)
 
         scoretable = WikiPage.get_by_title(u'A').link_scoretable
         self.assertEqual([u'C', u'B', u'D'], scoretable.keys())
@@ -725,22 +725,22 @@ class WikiPageHashbang(unittest.TestCase):
 
     def test_no_hashbang(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'    print 1', 0, '')
+        a.update_content(u'    print 1', 0)
         self.assertEqual([], a.hashbangs)
 
     def test_single_hashbang(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'    #!python\n    print 1', 0, '')
+        a.update_content(u'    #!python\n    print 1', 0)
         self.assertEqual(['python'], a.hashbangs)
 
     def test_multiple_hashbang(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'    #!python\n    print 1\n\n2\n\n    #!java\n    ;', 0, '')
+        a.update_content(u'    #!python\n    print 1\n\n2\n\n    #!java\n    ;', 0)
         self.assertEqual(['python', 'java'], a.hashbangs)
 
     def test_inline_hashbang(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'*   Hello ``#!dot/s;There``!', 0, '')
+        a.update_content(u'*   Hello ``#!dot/s;There``!', 0)
         self.assertEqual(['dot/s'], a.hashbangs)
 
 
@@ -856,8 +856,8 @@ class WikiPageBugsTest(unittest.TestCase):
 
     def test_remove_acl_and_link_at_once_caused_an_error(self):
         WikiPage.get_by_title(u'A').update_content(u'.read jania902@gmail.com\n'
-                                                   u'[[B]]', 0, '')
-        WikiPage.get_by_title(u'A').update_content(u'Hello', 1, '')
+                                                   u'[[B]]', 0)
+        WikiPage.get_by_title(u'A').update_content(u'Hello', 1)
 
 
 class UserPreferencesTest(unittest.TestCase):
@@ -905,9 +905,9 @@ class WikiPageDeleteTest(unittest.TestCase):
         self.testbed.init_user_stub()
 
         self.pagea = WikiPage.get_by_title(u'A')
-        self.pagea.update_content(u'Hello [[B]]', 0, '')
+        self.pagea.update_content(u'Hello [[B]]', 0)
         self.pageb = WikiPage.get_by_title(u'B')
-        self.pageb.update_content(u'Hello [[A]]', 0, '')
+        self.pageb.update_content(u'Hello [[A]]', 0)
 
         # reload
         self.pagea = WikiPage.get_by_title(u'A')
@@ -957,18 +957,18 @@ class WikiPageDeleteTest(unittest.TestCase):
 
         self.pagea.delete(users.get_current_user())
         self.pagea = WikiPage.get_by_title(u'A')
-        self.pagea.update_content(u'Hello', 0, '')
+        self.pagea.update_content(u'Hello', 0)
         self.assertEquals(1, self.pagea.revision)
 
     def test_delete_published_page(self):
         self._login('a@x.com', 'a', is_admin=True)
 
         page1 = WikiPage.get_by_title(u'Hello 1')
-        page1.update_content(u'.pub\nHello 1', 0, '')
+        page1.update_content(u'.pub\nHello 1', 0)
         page2 = WikiPage.get_by_title(u'Hello 2')
-        page2.update_content(u'.pub\nHello 2', 0, '')
+        page2.update_content(u'.pub\nHello 2', 0)
         page3 = WikiPage.get_by_title(u'Hello 3')
-        page3.update_content(u'.pub\nHello 3', 0, '')
+        page3.update_content(u'.pub\nHello 3', 0)
 
         middle = WikiPage.get_by_title(u'Hello 2')
         middle.delete(users.get_current_user())

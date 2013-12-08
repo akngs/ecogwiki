@@ -15,7 +15,7 @@ class DefaultAclTest(unittest.TestCase):
         self.testbed.init_user_stub()
 
         self.page = WikiPage.get_by_title(u'Hello')
-        self.page.update_content(u'Hello', 0, '')
+        self.page.update_content(u'Hello', 0)
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
 
@@ -71,28 +71,28 @@ class PageLevelAclTest(unittest.TestCase):
         self.testbed.deactivate()
 
     def test_default(self):
-        self.page.update_content(u'Hello', 0, '')
+        self.page.update_content(u'Hello', 0)
         self.assertEqual(True, self.page.can_read(None, self.default))
         self.assertEqual(False, self.page.can_write(None, self.default))
         self.assertEqual(True, self.page.can_read(self.user1, self.default))
         self.assertEqual(True, self.page.can_write(self.user1, self.default))
 
     def test_stricter_read(self):
-        self.page.update_content(u'.read login\nHello', 0, '')
+        self.page.update_content(u'.read login\nHello', 0)
         self.assertEqual(False, self.page.can_read(None, self.default))
         self.assertEqual(False, self.page.can_write(None, self.default))
         self.assertEqual(True, self.page.can_read(self.user1, self.default))
         self.assertEqual(True, self.page.can_write(self.user1, self.default))
 
     def test_looser_write(self):
-        self.page.update_content(u'.write all\nHello', 0, '')
+        self.page.update_content(u'.write all\nHello', 0)
         self.assertEqual(True, self.page.can_read(None, self.default))
         self.assertEqual(True, self.page.can_write(None, self.default))
         self.assertEqual(True, self.page.can_read(self.user1, self.default))
         self.assertEqual(True, self.page.can_write(self.user1, self.default))
 
     def test_different_read_and_write(self):
-        self.page.update_content(u'.write user1@example.com\n.read user2@example.com\nHello', 0, '')
+        self.page.update_content(u'.write user1@example.com\n.read user2@example.com\nHello', 0)
         self.assertEqual(False, self.page.can_write(None, self.default))
         self.assertEqual(False, self.page.can_read(None, self.default))
         self.assertEqual(True, self.page.can_write(self.user1, self.default))
@@ -119,14 +119,14 @@ class InconsistantAclTest(unittest.TestCase):
         self.testbed.deactivate()
 
     def test_read_login_write_all(self):
-        self.page.update_content(u'.read login\n.write all\nHello', 0, '')
+        self.page.update_content(u'.read login\n.write all\nHello', 0)
         self.assertEqual(False, self.page.can_read(None, self.default))
         self.assertEqual(False, self.page.can_write(None, self.default))
         self.assertEqual(True, self.page.can_read(self.user1, self.default))
         self.assertEqual(True, self.page.can_write(self.user1, self.default))
 
     def test_read_specified_user_write_login(self):
-        self.page.update_content(u'.read user2@example.com\n.write login\nHello', 0, '')
+        self.page.update_content(u'.read user2@example.com\n.write login\nHello', 0)
         self.assertEqual(False, self.page.can_read(None, self.default))
         self.assertEqual(False, self.page.can_write(None, self.default))
         self.assertEqual(False, self.page.can_read(self.user1, self.default))

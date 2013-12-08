@@ -31,26 +31,26 @@ class ContentTypeTest(unittest.TestCase):
 
     def test_get_default_content_type(self):
         p = WikiPage.get_by_title(u'Test')
-        p.update_content(u'Hello', 0, '')
+        p.update_content(u'Hello', 0)
         self.browser.get('/Test')
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_get_custom_content_type(self):
         p = WikiPage.get_by_title(u'Test')
-        p.update_content(u'.content-type text/plain\nHello', 0, '')
+        p.update_content(u'.content-type text/plain\nHello', 0)
         self.browser.get('/Test')
         self.assertEqual('text/plain; charset=utf-8', self.browser.res.headers['Content-type'])
         self.assertEqual('Hello', self.browser.res.body)
 
     def test_get_custom_content_type_with_type_param(self):
         p = WikiPage.get_by_title(u'Test')
-        p.update_content(u'.content-type text/plain\nHello', 0, '')
+        p.update_content(u'.content-type text/plain\nHello', 0)
         self.browser.get('/Test?_type=form')
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_should_not_restrict_read_access_to_custom_content_type(self):
         p = WikiPage.get_by_title(u'Test')
-        self.assertRaises(ValueError, p.update_content, u'.read blah\n.content-type text/plain\nHello', 0, '')
+        self.assertRaises(ValueError, p.update_content, u'.read blah\n.content-type text/plain\nHello', 0)
 
 
 class WikiPageHandlerTest(unittest.TestCase):
@@ -166,7 +166,7 @@ class WikiPageHandlerTest(unittest.TestCase):
 
     def test_redirect_metadata(self):
         page = WikiPage.get_by_title(u'Hi')
-        page.update_content(u'.redirect Hello World', 0, '')
+        page.update_content(u'.redirect Hello World', 0)
 
         self.browser.get('/Hi')
         self.assertEqual(303, self.browser.res.status_code)
@@ -213,8 +213,8 @@ class RevisionTest(unittest.TestCase):
 
     def test_rev(self):
         page = WikiPage.get_by_title(u'A')
-        page.update_content(u'Hello', 0, '')
-        page.update_content(u'Hello there', 1, '')
+        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello there', 1)
 
         self.browser.get('/A?rev=1')
         self.assertEqual(200, self.browser.res.status_code)
@@ -227,8 +227,8 @@ class RevisionTest(unittest.TestCase):
 
     def test_rev_param(self):
         page = WikiPage.get_by_title(u'A')
-        page.update_content(u'Hello', 0, '')
-        page.update_content(u'Hello there', 1, '')
+        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello there', 1)
 
         self.browser.get('/A?_type=rawbody&rev=1')
         self.assertEqual(u'Hello', self.browser.res.body)
@@ -242,8 +242,8 @@ class RevisionTest(unittest.TestCase):
     def test_rev_acl(self):
         self.browser.login('a@x.com', 'a')
         page = WikiPage.get_by_title(u'A')
-        page.update_content(u'Hello', 0, '')
-        page.update_content(u'.read a@x.com\nHello there', 1, '')
+        page.update_content(u'Hello', 0)
+        page.update_content(u'.read a@x.com\nHello there', 1)
 
         self.browser.get('/A?_type=rawbody&rev=1')
         self.assertEqual(200, self.browser.res.status_code)

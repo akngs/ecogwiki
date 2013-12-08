@@ -18,7 +18,7 @@ class WikiPageUpdateTest(unittest.TestCase):
 
     def test_rendered_body_should_be_cached(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello', 0)
         self.assertIsNone(memcache.get(u'model\trendered_body\tHello'))
 
         _ = page.rendered_body
@@ -28,16 +28,16 @@ class WikiPageUpdateTest(unittest.TestCase):
         memcache.set(u'model\trendered_body\tHello', u'value')
 
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello 2', 0, '')
+        page.update_content(u'Hello 2', 0)
 
         self.assertIsNone(memcache.get(u'model\trendered_body\tHello'))
 
     def test_should_not_invalidate_cache_if_content_is_same(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello', 0)
 
         memcache.set(u'model\trendered_body\tHello', u'value')
-        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello', 0)
 
         self.assertIsNotNone(memcache.get(u'model\trendered_body\tHello'))
 
@@ -51,7 +51,7 @@ class WikiPageUpdateTest(unittest.TestCase):
 
         # invalidate cache by adding new page
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello', 0)
         self.assertIsNone(memcache.get(cache_key))
 
         # populate cache again
@@ -60,5 +60,5 @@ class WikiPageUpdateTest(unittest.TestCase):
 
         # Should not be invalidated because it's just an update
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello 2', 1, '')
+        page.update_content(u'Hello 2', 1)
         self.assertIsNotNone(memcache.get(cache_key))

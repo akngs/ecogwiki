@@ -464,7 +464,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         cache.del_titles()
 
-    def update_content(self, new_body, base_revision, comment, user=None, force_update=False, dont_create_rev=False):
+    def update_content(self, new_body, base_revision, comment='', user=None, force_update=False, dont_create_rev=False):
         if not force_update and self.body == new_body:
             return False
 

@@ -17,10 +17,10 @@ class DefaultBlogPublishTest(unittest.TestCase):
 
     def test_first_publish(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0, '')
+        page.update_content(u'Hello', 0)
         self.assertEqual(0, len(WikiPage.get_published_posts(None, 20)))
 
-        page.update_content(u'.pub\nHello', 1, '')
+        page.update_content(u'.pub\nHello', 1)
 
         self.assertIsNotNone(page.published_at)
         self.assertIsNone(page.published_to)
@@ -28,10 +28,10 @@ class DefaultBlogPublishTest(unittest.TestCase):
 
     def test_second_publish(self):
         page1 = WikiPage.get_by_title(u'Hello 1')
-        page1.update_content(u'.pub\nHello 1', 0, '')
+        page1.update_content(u'.pub\nHello 1', 0)
 
         page2 = WikiPage.get_by_title(u'Hello 2')
-        page2.update_content(u'.pub\nHello 2', 0, '')
+        page2.update_content(u'.pub\nHello 2', 0)
 
         posts = WikiPage.get_published_posts(None, 20)
 
@@ -49,20 +49,20 @@ class DefaultBlogUnpublishTest(unittest.TestCase):
         self.testbed.init_taskqueue_stub()
 
         page1 = WikiPage.get_by_title(u'Hello 1')
-        page1.update_content(u'.pub\nHello 1', 0, '')
+        page1.update_content(u'.pub\nHello 1', 0)
 
         page2 = WikiPage.get_by_title(u'Hello 2')
-        page2.update_content(u'.pub\nHello 2', 0, '')
+        page2.update_content(u'.pub\nHello 2', 0)
 
         page3 = WikiPage.get_by_title(u'Hello 3')
-        page3.update_content(u'.pub\nHello 3', 0, '')
+        page3.update_content(u'.pub\nHello 3', 0)
 
     def tearDown(self):
         self.testbed.deactivate()
 
     def test_unpublish_middle(self):
         middle = WikiPage.get_by_title(u'Hello 2')
-        middle.update_content(u'Hello 2', 1, '')
+        middle.update_content(u'Hello 2', 1)
 
         newer, older = WikiPage.get_published_posts(None, 20)
 
@@ -71,7 +71,7 @@ class DefaultBlogUnpublishTest(unittest.TestCase):
 
     def test_unpublish_oldest(self):
         oldest = WikiPage.get_by_title(u'Hello 1')
-        oldest.update_content(u'Hello 1', 1, '')
+        oldest.update_content(u'Hello 1', 1)
 
         newer, older = WikiPage.get_published_posts(None, 20)
 
@@ -80,7 +80,7 @@ class DefaultBlogUnpublishTest(unittest.TestCase):
 
     def test_unpublish_newest(self):
         newest = WikiPage.get_by_title(u'Hello 3')
-        newest.update_content(u'Hello 3', 1, '')
+        newest.update_content(u'Hello 3', 1)
 
         newer, older = WikiPage.get_published_posts(None, 20)
 
@@ -101,7 +101,7 @@ class CustomBlogTest(unittest.TestCase):
 
     def test_publish(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub Posts\nHello', 0, '')
+        page.update_content(u'.pub Posts\nHello', 0)
         self.assertIsNotNone(page.published_at)
         self.assertEqual('Posts', page.published_to)
         self.assertEqual(1, len(WikiPage.get_published_posts('Posts', 20)))
@@ -109,32 +109,32 @@ class CustomBlogTest(unittest.TestCase):
     def test_specify_page_to_published_page(self):
         # .pub -> .pub BBS
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub\nHello', 0, '')
-        page.update_content(u'.pub BBS\nHello', 1, '')
+        page.update_content(u'.pub\nHello', 0)
+        page.update_content(u'.pub BBS\nHello', 1)
         self.assertIsNotNone(page.published_at)
         self.assertEqual('BBS', page.published_to)
 
     def test_change_page_of_published_page(self):
         # .pub BBS1 -> .pub BBS2
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub BBS1\nHello', 0, '')
-        page.update_content(u'.pub BBS2\nHello', 1, '')
+        page.update_content(u'.pub BBS1\nHello', 0)
+        page.update_content(u'.pub BBS2\nHello', 1)
         self.assertIsNotNone(page.published_at)
         self.assertEqual('BBS2', page.published_to)
 
     def test_remove_page_of_published_page(self):
         # .pub BBS -> .pub
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub BBS\nHello', 0, '')
-        page.update_content(u'.pub\nHello', 1, '')
+        page.update_content(u'.pub BBS\nHello', 0)
+        page.update_content(u'.pub\nHello', 1)
         self.assertIsNotNone(page.published_at)
         self.assertEqual(None, page.published_to)
 
     def test_unpublish_published_page(self):
         # .pub BBS -> (null)
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub BBS\nHello', 0, '')
-        page.update_content(u'Hello', 1, '')
+        page.update_content(u'.pub BBS\nHello', 0)
+        page.update_content(u'Hello', 1)
         self.assertIsNone(page.published_at)
         self.assertEqual(None, page.published_to)
 
@@ -148,13 +148,13 @@ class MultipleCustomBlogsTest(unittest.TestCase):
         self.testbed.init_taskqueue_stub()
 
         self.b1p1 = WikiPage.get_by_title(u'b1p1')
-        self.b1p1.update_content(u'.pub B1', 0, '')
+        self.b1p1.update_content(u'.pub B1', 0)
         self.b2p1 = WikiPage.get_by_title(u'b2p1')
-        self.b2p1.update_content(u'.pub B2', 0, '')
+        self.b2p1.update_content(u'.pub B2', 0)
         self.b1p2 = WikiPage.get_by_title(u'b1p2')
-        self.b1p2.update_content(u'.pub B1', 0, '')
+        self.b1p2.update_content(u'.pub B1', 0)
         self.b2p2 = WikiPage.get_by_title(u'b2p2')
-        self.b2p2.update_content(u'.pub B2', 0, '')
+        self.b2p2.update_content(u'.pub B2', 0)
 
     def tearDown(self):
         self.testbed.deactivate()
