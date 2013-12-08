@@ -47,6 +47,10 @@ def to_path(title):
     return '/' + WikiPage.title_to_path(title)
 
 
+def to_pluspath(title):
+    return '/%2B' + WikiPage.title_to_path(title)
+
+
 def urlencode(s):
     return urllib2.quote(s.encode('utf-8'))
 
@@ -76,6 +80,7 @@ JINJA.filters['dt'] = format_datetime
 JINJA.filters['sdt'] = format_short_datetime
 JINJA.filters['isodt'] = format_iso_datetime
 JINJA.filters['to_path'] = to_path
+JINJA.filters['to_pluspath'] = to_pluspath
 JINJA.filters['urlencode'] = urlencode
 JINJA.filters['userpage'] = userpage_link
 JINJA.filters['has_supported_language'] = has_supported_language

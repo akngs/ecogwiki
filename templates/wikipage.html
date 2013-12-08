@@ -91,7 +91,7 @@ window.fbAsyncInit = function() {
             {% endif %}
 
             <br>
-            <a href="%2B{{ page.title|e }}" rel="nofollow" class="search pos">Related pages</a>
+            <a href="{{ page.title|to_pluspath }}" rel="nofollow" class="search pos">Related pages</a>
         </h1>
 
         <ul class="info">
