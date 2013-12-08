@@ -607,6 +607,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # delete
         keys = [SchemaDataIndex(title=self.title, name=name, value=value, data=new_data).key for name, value in deletes]
+        keys = [key for key in keys if key is not None]
         ndb.delete_multi(keys)
 
     @property
