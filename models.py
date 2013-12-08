@@ -31,6 +31,7 @@ class PageOperationMixin(object):
     re_img = re.compile(ur'<p><img( .+? )/></p>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
+    re_yaml_schema = re.compile(ur'\s{4}#!yaml/schema\n((\s{4}.+\n)+)')
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
                                          ur'April|May|June|July|August|'
@@ -74,8 +75,12 @@ class PageOperationMixin(object):
                 lines.append(u'* {{.older::older}} [[%s]]\n{.noli}' % self.older_title)
             body_parts.append(u'\n'.join(lines))
 
+        # remove yaml/schema block
+        joined = u'\n'.join(body_parts)
+        joined = re.sub(PageOperationMixin.re_yaml_schema, u'\n', joined)
+
         # render to html
-        rendered = md.convert(u'\n'.join(body_parts))
+        rendered = md.convert(joined)
 
         # add table of contents
         final = TocGenerator(rendered).add_toc()
@@ -279,14 +284,29 @@ class PageOperationMixin(object):
             'name': title,
             'schema': schema.get_itemtype_path(itemtype)
         }
+
+        # parse data in yaml/schema section
+        m = re.search(PageOperationMixin.re_yaml_schema, body)
+        if m:
+            for name, value in yaml.load(m.group(1)).items():
+                if name in matches:
+                    if type(matches[name]) != list:
+                        matches[name] = [matches[name]]
+                    if type(value) == list:
+                        matches[name] += value
+                    else:
+                        matches[name].append(value)
+                else:
+                    matches[name] = value
+
+        # parse data embedded in body text
         for m in re.finditer(WikiPage.re_data, body):
             name = m.group('name')
             value = m.group('value')
             if name in matches:
-                if type(matches[name]) == list:
-                    matches[name].append(value)
-                else:
-                    matches[name] = [matches[name], value]
+                if type(matches[name]) != list:
+                    matches[name] = [matches[name]]
+                matches[name].append(value)
             else:
                 matches[name] = value
         return matches

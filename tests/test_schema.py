@@ -79,11 +79,37 @@ class YamlSchemaDataTest(unittest.TestCase):
 
     def test_yaml(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: ["Richard Dawkins"]\n\nHello', 0)
-        self.assertEquals({'name': u'Hello', 'schema': u'Thing/CreativeWork/Article/'}, page.data)
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "123456789"\n\nHello', 0)
+        self.assertEquals({'name': u'Hello', 'isbn': u'123456789', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'}, page.data)
+
+    def test_list_value(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\nHello', 0)
+        self.assertEquals([u'AK', u'TK'], page.data['author'])
+
+    def test_mix_with_embedded_data(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::123456789}}\n\n[[author::JK]]', 0)
+        self.assertEquals({'name': u'Hello', 'isbn': u'123456789', 'schema': u'Thing/CreativeWork/Book/', 'author': [u'AK', u'TK', u'JK']}, page.data)
+
+    def test_yaml_block_should_not_be_rendered(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "123456789"\n\nHello', 0)
+        self.assertEquals(u'<p>Hello</p>', page.rendered_body)
 
 
 class SchemaIndexTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+        cache.prc.flush_all()
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
     def test_schema_index_create(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0)
