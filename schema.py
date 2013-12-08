@@ -23,7 +23,7 @@ SUPPORTED_SCHEMA = {
     'Code': {
         'parent': 'CreativeWork',
         'properties': {
-            'programmingLanguage': (u'Codes, snippiets or libraries', u'Codes'),
+            'programmingLanguage': (u'Codes, snippiets or libraries', u'Programming language'),
             'relatedTo': (u'Related codes', u'Related to'),
         }
     },
@@ -53,7 +53,7 @@ SUPPORTED_SCHEMA = {
         'parent': 'CreativeWork',
         'properties': {
             'relatedTo': (u'Related softwares', u'Related to'),
-            'operatingSystem': (u'Related softwares', u'Related to'),
+            'operatingSystem': (u'Related softwares', u'Operating system'),
         }
     },
     'Thing': {
