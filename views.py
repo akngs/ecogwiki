@@ -94,6 +94,33 @@ class WikiPageHandler(webapp2.RequestHandler):
         if path.startswith('sp.'):
             return self.post_sp(path[3:])
 
+        self.abort(405)
+
+    def post_sp(self, title):
+        user = WikiPageHandler._get_cur_user()
+        if title == 'preferences':
+            self.post_sp_preferences(user)
+        else:
+            self.abort(404)
+
+    def post_sp_preferences(self, user):
+        if user is None:
+            self.response.status = 403
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = self._template('403.html', {'page': {
+                'absolute_url': '/sp.preferences',
+                'title': 'User preferences',
+            }})
+            self._set_response_body(html, False)
+            return
+
+        userpage_title = self.request.POST['userpage_title']
+        UserPreferences.save(user, userpage_title)
+        self.response.headers['X-Message'] = 'Successfully updated.'
+        self.get_sp_preferences(user, False)
+
+    def put(self, path):
+        cache.create_prc()
         user = WikiPageHandler._get_cur_user()
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
         revision = int(self.request.POST['revision'])
@@ -127,33 +154,6 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             html = self._template('error_with_messages.html', {'page': page, 'errors': [e.message]})
             self._set_response_body(html, False)
-
-    def post_sp(self, title):
-        user = WikiPageHandler._get_cur_user()
-        if title == 'preferences':
-            self.post_sp_preferences(user)
-        else:
-            self.abort(404)
-
-    def post_sp_preferences(self, user):
-        if user is None:
-            self.response.status = 403
-            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = self._template('403.html', {'page': {
-                'absolute_url': '/sp.preferences',
-                'title': 'User preferences',
-            }})
-            self._set_response_body(html, False)
-            return
-
-        userpage_title = self.request.POST['userpage_title']
-        UserPreferences.save(user, userpage_title)
-        self.response.headers['X-Message'] = 'Successfully updated.'
-        self.get_sp_preferences(user, False)
-
-    def put(self, _):
-        cache.create_prc()
-        self.response.status = 405
 
     def delete(self, path):
         cache.create_prc()

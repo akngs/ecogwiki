@@ -35,7 +35,7 @@
 
 <article class="preview"><div class="body"></div></article>
 
-<form method="POST" action="{{ page.absolute_url }}" class="editform">
+<form method="POST" action="{{ page.absolute_url }}?_type=PUT" class="editform">
     <input type="hidden" name="revision" value="{{ page.revision }}">
     <input type="hidden" name="preview" value="0">
 

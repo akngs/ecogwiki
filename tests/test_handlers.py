@@ -119,7 +119,7 @@ class WikiPageHandlerTest(unittest.TestCase):
 
     def test_post_new_page(self):
         self.browser.login('ak@gmailcom', 'ak')
-        self.browser.post('/New_page', 'body=[[Link!]]&revision=0')
+        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
         for _ in range(2):
             self.browser.get('/New_page')
@@ -129,8 +129,8 @@ class WikiPageHandlerTest(unittest.TestCase):
 
     def test_post_updated_page(self):
         self.browser.login('ak@gmailcom', 'ak')
-        self.browser.post('/New_page', 'body=[[Link!]]&revision=0')
-        self.browser.post('/New_page', 'body=[[Link!!]]&revision=1')
+        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
+        self.browser.post('/New_page?_method=PUT', 'body=[[Link!!]]&revision=1')
 
         for _ in range(2):
             self.browser.get('/New_page')
@@ -139,12 +139,12 @@ class WikiPageHandlerTest(unittest.TestCase):
             self.assertEqual([u'Link!!'], link_texts)
 
     def test_post_new_page_should_fail_if_user_is_none(self):
-        self.browser.post('/New_page', 'body=[[Link!]]&revision=0')
+        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.assertEqual(403, self.browser.res.status_code)
 
     def test_new_page_should_be_shown_in_sp_changes(self):
         self.browser.login('ak@gmailcom', 'ak')
-        self.browser.post('/New_page', 'body=[[Link!]]&revision=0&comment=&preview=0')
+        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
         for _ in range(2):
             self.browser.get('/sp.changes')
@@ -155,7 +155,7 @@ class WikiPageHandlerTest(unittest.TestCase):
 
     def test_new_page_should_be_shown_in_sp_index(self):
         self.browser.login('ak@gmailcom', 'ak')
-        self.browser.post('/New_page', 'body=[[Link!]]&revision=0')
+        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
         for _ in range(2):
             self.browser.get('/sp.index')
@@ -175,7 +175,7 @@ class WikiPageHandlerTest(unittest.TestCase):
 
     def test_delete_page(self):
         self.browser.login('ak@gmailcom', 'ak', is_admin=True)
-        self.browser.post('/New_page', 'body=[[Link!]]&revision=0&comment=&preview=0')
+        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0&comment=&preview=0')
         self.browser.post('/New_page?_method=DELETE')
         self.assertEqual(204, self.browser.res.status_code)
 
@@ -186,7 +186,7 @@ class WikiPageHandlerTest(unittest.TestCase):
 
     def test_delete_page_without_permission(self):
         self.browser.login('ak@gmailcom', 'ak', is_admin=False)
-        self.browser.post('/New_page', 'body=[[Link!]]&revision=0')
+        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.browser.post('/New_page?_method=DELETE')
 
         self.assertEqual(403, self.browser.res.status_code)
