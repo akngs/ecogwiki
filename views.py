@@ -10,7 +10,6 @@ import urllib2
 import webapp2
 import operator
 import logging
-#import traceback
 from pyatom import AtomFeed
 from itertools import groupby
 from collections import OrderedDict
@@ -84,7 +83,6 @@ JINJA.filters['has_supported_language'] = has_supported_language
 
 class WikiPageHandler(webapp2.RequestHandler):
     def post(self, path):
-        cache.create_prc()
         method = self.request.GET.get('_method', 'POST')
 
         if method == 'DELETE':
@@ -92,6 +90,7 @@ class WikiPageHandler(webapp2.RequestHandler):
         elif method == 'PUT':
             return self.put(path)
 
+        cache.create_prc()
         if path.startswith('sp.'):
             return self.post_sp(path[3:])
 
@@ -99,9 +98,10 @@ class WikiPageHandler(webapp2.RequestHandler):
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
         revision = int(self.request.POST['revision'])
         new_body = self.request.POST['body']
-        comment = self.request.POST['comment']
+        comment = self.request.POST.get('comment') or ''
+        preview = self.request.POST.get('preview') or '0'
 
-        if self.request.POST.get('preview') == '1':
+        if preview == '1':
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             html = self._template('bodyonly.html', {
                 'title': page.title,
@@ -152,9 +152,11 @@ class WikiPageHandler(webapp2.RequestHandler):
         self.get_sp_preferences(user, False)
 
     def put(self, _):
+        cache.create_prc()
         self.response.status = 405
 
     def delete(self, path):
+        cache.create_prc()
         user = WikiPageHandler._get_cur_user()
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
 
