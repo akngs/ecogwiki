@@ -89,7 +89,7 @@ def humane_property(itemtype, prop, inlink):
     try:
         return SUPPORTED_SCHEMA[itemtype]['properties'][prop][0 if inlink else 1]
     except KeyError:
-        return prop
+        return prop.capitalize()
 
 
 def get_itemtype_path(itemtype):
