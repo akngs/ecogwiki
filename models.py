@@ -40,7 +40,10 @@ class PageOperationMixin(object):
 
     @property
     def rendered_data(self):
-        data = [(n, v) for n, v in self.data.items() if n not in ['schema', 'inlinks', 'outlinks']]
+        data = [(n, v, schema.humane_property(self.itemtype, n, False))
+                for n, v in self.data.items()
+                if n not in ['schema', 'inlinks', 'outlinks']]
+
         if len(data) == 1:
             # only name and schema?
             return ''
@@ -51,10 +54,9 @@ class PageOperationMixin(object):
             u'<dl>',
         ]
 
-        data = sorted(data, key=operator.itemgetter(0))
+        data = sorted(data, key=operator.itemgetter(2))
 
-        for name, value in data:
-            humane_name = schema.humane_property(self.itemtype, name, False)
+        for name, value, humane_name in data:
             html.append(u'<dt class="key key-%s">%s</dt>' % (name, humane_name))
             if type(value) == list:
                 for v in value:
