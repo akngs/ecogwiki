@@ -900,25 +900,23 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     def _parse_outlinks(self):
         unique_links = {}
+        itemtype = self.itemtype
 
         # Add links in body
-        links = md_wikilink.parse_wikilinks(self.itemtype, WikiPage.remove_metadata(self.body))
+        links = md_wikilink.parse_wikilinks(itemtype, WikiPage.remove_metadata(self.body))
         for rel, titles in links.items():
             unique_links[rel] = set(titles)
 
         # Add links in structured data
-        itemtype = self.itemtype
         for name, value in self.data.items():
             if not self._is_schema_item_link(name):
                 continue
 
-            rel = '%s/%s' % (itemtype, name)
-            if rel not in unique_links:
-                unique_links[rel] = set([])
-            if type(value) == list:
-                unique_links[rel].update(value)
-            else:
-                unique_links[rel].add(value)
+            links = md_wikilink.parse_wikilinks(itemtype, u'[[%s::%s]]' % (name, value))
+            for rel, titles in links.items():
+                if rel not in unique_links:
+                    unique_links[rel] = set([])
+                unique_links[rel].update(titles)
 
         # turn sets into lists
         for key in unique_links.keys():

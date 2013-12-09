@@ -722,6 +722,15 @@ class WikiPageLinksTest(unittest.TestCase):
         rd = WikiPage.get_by_title(u'Richard Dawkins')
         self.assertEqual({u'Book/author': [u'A']}, rd.inlinks)
 
+    def test_compare_yaml_and_embedded_data(self):
+        page1 = WikiPage.get_by_title(u'A')
+        page1.update_content(u'.schema Book\n    #!yaml/schema\n    datePublished: "1979-03-01"\n', 0)
+        page2 = WikiPage.get_by_title(u'B')
+        page2.update_content(u'.schema Book\n\n[[datePublished::1979-03-01]]', 0)
+
+        self.assertEqual(page1.data['datePublished'], page2.data['datePublished'])
+        self.assertEqual(page1.outlinks, page2.outlinks)
+
     def test_update_link_in_yaml_schema_block(self):
         page = WikiPage.get_by_title(u'A')
         page.update_content(u'.schema Book\n    #!yaml/schema\n    author: Richard Dawkins\n', 0)
