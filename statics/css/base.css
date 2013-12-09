@@ -325,6 +325,8 @@ header .edit_menu {
 }
 .editform .actions input {
 }
+
+.deleteform {display: none;}
 /* } Wiki Edit Form */
 
 

@@ -52,6 +52,10 @@
     </div>
 </form>
 
+<form method="POST" action="{{ page.absolute_url }}?_method=DELETE" class="deleteform">
+    <input type="submit" />
+</form>
+
 {% endblock %}
 {% block before_body_close %}
     <script>
@@ -60,7 +64,7 @@
         $('.btn-delete').on('click', function() {
             if(!window.confirm('Are you sure?')) return false;
 
-            $.post('?_method=DELETE', {}, function() {
+            $.post($('.deleteform').attr('action'), {}, function() {
                 window.location = window.location.pathname;
             });
 

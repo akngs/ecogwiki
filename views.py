@@ -610,12 +610,13 @@ class WikiPageHandler(webapp2.RequestHandler):
     @staticmethod
     def _get_cur_user():
         user = users.get_current_user()
-
         # try oauth
         if user is None:
             try:
                 oauth_user = oauth.get_current_user()
-                user = oauth_user
+                is_local_dummy_user = oauth_user.user_id() == '0' and oauth_user.email() == 'example@example.com'
+                if not is_local_dummy_user:
+                    user = oauth_user
             except oauth.OAuthRequestError as e:
                 pass
 

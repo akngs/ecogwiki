@@ -3,14 +3,12 @@ import re
 import os
 import json
 import main
-import cache
 import webapp2
 import lxml.etree
 from models import WikiPage
 import unittest2 as unittest
-import xml.etree.ElementTree as ET
 from google.appengine.ext import testbed
-from lxml.html import html5parser, tostring
+from lxml.html import html5parser
 
 from tests.test_auth import OAuthStub
 
@@ -43,7 +41,7 @@ class ContentTypeTest(unittest.TestCase):
         self.assertEqual('text/plain; charset=utf-8', self.browser.res.headers['Content-type'])
         self.assertEqual('Hello', self.browser.res.body)
 
-    def test_get_custom_content_type_with_type_param(self):
+    def test_type_param_should_override_custom_content_type(self):
         p = WikiPage.get_by_title(u'Test')
         p.update_content(u'.content-type text/plain\nHello', 0)
         self.browser.get('/Test?_type=form')
@@ -366,10 +364,13 @@ class Browser(object):
     def __init__(self):
         self.parser = html5parser.HTMLParser(strict=True)
         self.res = None
+        self.tree = None
 
     def get(self, url):
         req = webapp2.Request.blank(url)
         self.res = req.get_response(main.app)
+        if len(self.res.body) > 0 and self.res.headers['content-type'].split(';')[0].strip() == 'text/html':
+            self.tree = html5parser.fromstring(self.res.body, parser=self.parser)
 
     def post(self, url, content=''):
         req = webapp2.Request.blank(url)
@@ -378,11 +379,8 @@ class Browser(object):
         self.res = req.get_response(main.app)
 
     def query(self, path):
-        html = self.res.body
-        p = html5parser.fromstring(html, parser=self.parser)
-        xml = ET.fromstring(tostring(p))
-        path = re.sub(r'/(\w+\d?)', r'/{http://www.w3.org/1999/xhtml}\1', path)
-        return xml.findall(path)
+        path = re.sub(r'/(\w+\d?)', r'/html:\1', path)
+        return self.tree.findall(path, namespaces={'html': 'http://www.w3.org/1999/xhtml'})
 
     def login(self, email, user_id, is_admin=False):
         os.environ['USER_EMAIL'] = email or ''
@@ -391,5 +389,3 @@ class Browser(object):
 
     def logout(self):
         self.login(None, None)
-
-
