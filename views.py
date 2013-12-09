@@ -130,8 +130,8 @@ class WikiPageHandler(webapp2.RequestHandler):
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
         revision = int(self.request.POST['revision'])
         new_body = self.request.POST['body']
-        comment = self.request.POST.get('comment') or ''
-        preview = self.request.POST.get('preview') or '0'
+        comment = self.request.POST.get('comment', '')
+        preview = self.request.POST.get('preview', '0')
 
         if preview == '1':
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -153,7 +153,10 @@ class WikiPageHandler(webapp2.RequestHandler):
             page.update_content(new_body, revision, comment, user)
             self.response.location = page.absolute_url
             self.response.headers['X-Message'] = 'Successfully updated.'
-            self.get(path, False)
+            # redirect
+            self.response.headers['Location'] = '/' + path
+            self.response.status = 303
+            return
         except ValueError as e:
             self.response.status = 406
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
