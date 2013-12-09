@@ -562,10 +562,16 @@ article .body dd {
 }
 
 article .body .structured-data {
+    max-width: 45%;
     float: right;
     margin: 0em 0 1em 1em;
     padding: 1em;
     border: 1px solid #CCC;
+}
+@media (min-width:550px) {
+    article .body .structured-data {
+        max-width: 30%;
+    }
 }
 
 article .body .structured-data h1 {
@@ -629,6 +635,12 @@ article .body .toc {
     background-color: #F8F8F8;
     padding: 0.5em 1em;
     margin: 1.5em 0;
+}
+
+@media (min-width:550px) {
+    article .body .toc {
+        max-width: 60%;
+    }
 }
 
 article .body .toc h1 {
