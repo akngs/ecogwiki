@@ -31,66 +31,75 @@ class WikiLinks(Pattern):
         super(WikiLinks, self).__init__(pattern)
         self.config = []
 
-    def build_url(self, label, base, end):
-        quoted_label = urllib2.quote(label.replace(' ', '_').encode('utf-8'))
-        return '%s%s%s' % (base, quoted_label, end)
-
     def handleMatch(self, m):
-        if m.group('plain'):
-            text = plain_link(m)
-            if text[0] == '=':
-                # treat it as a wikiquery link
-                url = self.build_url(text, '/', '')
-                a = etree.Element('a')
-                a.text = text
-                a.set('href', url)
-                a.set('class', 'wikiquery')
-            else:
-                url = self.build_url(text, '/', '')
-                a = etree.Element('a')
-                a.text = text
-                a.set('href', url)
-                a.set('class', 'wikipage')
+        return _render_match(m)
 
-                if m.group('rel'):
-                    a.set('itemprop', m.group('rel'))
-        elif m.group('date'):
-            links = date_links(m)
 
-            # handle year
-            year = links[0]
-            a = etree.Element('time')
-            a.set('datetime', m.group('date'))
-            year_a = etree.SubElement(a, 'a')
-            year_a.text = year[0]
-            year_a.set('href', self.build_url(year[1], '/', ''))
-            year_a.set('class', 'wikipage')
+def render_wikilink(linktext):
+    m = re.match(RE_WIKILINK, u'[[%s]]' % linktext)
+    return etree.tostring(_render_match(m), 'utf-8')
 
-            hyphen = etree.SubElement(a, 'span')
-            hyphen.text = '-'
 
-            # handle month and date
-            if len(links) > 1:
-                date = links[1]
-                rest_a = etree.SubElement(a, 'a')
-                rest_a.text = date[0]
-                rest_a.set('href', self.build_url(date[1], '/', ''))
-                rest_a.set('class', 'wikipage')
-            else:
-                unknown_date = etree.SubElement(a, 'span')
-                unknown_date.text = '??-??'
+def _build_url(label):
+    return '/%s' % urllib2.quote(label.replace(' ', '_').encode('utf-8'))
 
-            # handle BCE
-            if year[2]:
-                bce = etree.SubElement(a, 'span')
-                bce.text = ' BCE'
+
+def _render_match(m):
+    if m.group('plain'):
+        text = plain_link(m)
+        if text[0] == '=':
+            # treat it as a wikiquery link
+            url = _build_url(text)
+            a = etree.Element('a')
+            a.text = text
+            a.set('href', url)
+            a.set('class', 'wikiquery')
+        else:
+            url = _build_url(text)
+            a = etree.Element('a')
+            a.text = text
+            a.set('href', url)
+            a.set('class', 'wikipage')
 
             if m.group('rel'):
                 a.set('itemprop', m.group('rel'))
-        else:
-            a = ''
+    elif m.group('date'):
+        links = date_links(m)
 
-        return a
+        # handle year
+        year = links[0]
+        a = etree.Element('time')
+        a.set('datetime', m.group('date'))
+        year_a = etree.SubElement(a, 'a')
+        year_a.text = year[0]
+        year_a.set('href', _build_url(year[1]))
+        year_a.set('class', 'wikipage')
+
+        hyphen = etree.SubElement(a, 'span')
+        hyphen.text = '-'
+
+        # handle month and date
+        if len(links) > 1:
+            date = links[1]
+            rest_a = etree.SubElement(a, 'a')
+            rest_a.text = date[0]
+            rest_a.set('href', _build_url(date[1]))
+            rest_a.set('class', 'wikipage')
+        else:
+            unknown_date = etree.SubElement(a, 'span')
+            unknown_date.text = '??-??'
+
+        # handle BCE
+        if year[2]:
+            bce = etree.SubElement(a, 'span')
+            bce.text = ' BCE'
+
+        if m.group('rel'):
+            a.set('itemprop', m.group('rel'))
+    else:
+        a = ''
+
+    return a
 
 
 def parse_wikilinks(itemtype, text):

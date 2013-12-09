@@ -39,6 +39,38 @@ class PageOperationMixin(object):
                                          ur'December)( (?P<date>[0123]?\d))?)$')
 
     @property
+    def rendered_data(self):
+        data = [(n, v) for n, v in self.data.items() if n not in ['schema', 'inlinks', 'outlinks']]
+        if len(data) == 1:
+            # only name and schema?
+            return ''
+
+        html = [
+            u'<section class="structured-data">',
+            u'<h1>Structured data</h1>',
+            u'<dl>',
+        ]
+
+        data = sorted(data, key=operator.itemgetter(0))
+
+        for name, value in data:
+            humane_name = schema.humane_property(self.itemtype, name, False)
+            html.append(u'<dt class="key key-%s">%s</dt>' % (name, humane_name))
+            if type(value) == list:
+                for v in value:
+                    html.append(u'<dd class="value value-%s">%s</dd>' % (name, self._render_data_item(name, v)))
+            else:
+                html.append(u'<dd class="value value-%s">%s</dd>' % (name, self._render_data_item(name, value)))
+        html.append(u'</dl></section>')
+        return '\n'.join(html)
+
+    def _render_data_item(self, name, value):
+        if self._is_schema_item_link(name):
+            return u'<span itemprop="%s">%s</span>' % (name, md_wikilink.render_wikilink(value))
+        else:
+            return u'<span itemprop="%s">%s</span>' % (name, value)
+
+    @property
     def rendered_body(self):
         # body
         body_parts = [PageOperationMixin.remove_metadata(self.body)]
@@ -87,6 +119,9 @@ class PageOperationMixin(object):
 
         # add class for embedded image
         rendered = PageOperationMixin.re_img.sub(u'<p class="img-container"><img \\1/></p>', rendered)
+
+        # add structured data block
+        rendered = self.rendered_data + rendered
 
         # sanitize
         if rendered:
@@ -271,6 +306,14 @@ class PageOperationMixin(object):
 
         ss[u'dates'] = range(1, max_date + 1)
         return ss
+
+    def _is_schema_item_link(self, name):
+        if name in ['name', 'schema', 'inlinks', 'outlinks']:
+            return False
+        elif self.itemtype == 'Book' and name in ['isbn']:
+            return False
+        else:
+            return True
 
     @staticmethod
     def get_default_permission():
@@ -866,9 +909,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # Add links in structured data
         itemtype = self.itemtype
         for name, value in self.data.items():
-            if name in ['name', 'schema', 'inlinks', 'outlinks']:
-                continue
-            if itemtype == 'Book' and name in ['isbn']:
+            if not self._is_schema_item_link(name):
                 continue
 
             rel = '%s/%s' % (itemtype, name)

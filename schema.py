@@ -15,6 +15,7 @@ SUPPORTED_SCHEMA = {
         'parent': 'CreativeWork',
         'properties': {
             'author': (u'Author of', u'Author'),
+            'isbn': (u'ISBN', u'ISBN'),
             'datePublished': (u'Publications', u'Published date'),
             'dateModified': (u'Publications (revised)', u'Revised date'),
             'relatedTo': (u'Related books', u'Related to'),
