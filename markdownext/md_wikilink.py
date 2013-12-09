@@ -37,7 +37,7 @@ class WikiLinks(Pattern):
 
 def render_wikilink(linktext):
     m = re.match(RE_WIKILINK, u'[[%s]]' % linktext)
-    return etree.tostring(_render_match(m), 'utf-8')
+    return etree.tostring(_render_match(m))
 
 
 def _build_url(label):
