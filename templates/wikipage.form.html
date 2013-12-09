@@ -81,7 +81,7 @@
             var formdata = $form.serialize();
             $form.find('input[name="preview"]').val(0);
 
-            $.post('', formdata, function(data) {
+            $.post('?_method=PUT', formdata, function(data) {
                 var html = $('<div>').append(jQuery.parseHTML(data)).find('.wrap').html();
                 $('.preview .body').html(html);
             });
