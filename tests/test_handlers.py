@@ -3,6 +3,7 @@ import re
 import os
 import json
 import main
+import cache
 import webapp2
 import lxml.etree
 from models import WikiPage
@@ -117,7 +118,7 @@ class WikiPageHandlerTest(unittest.TestCase):
             link_texts = [link.text for link in links]
             self.assertEqual(['Home'], link_texts)
 
-    def test_post_new_page(self):
+    def test_put_new_page(self):
         self.browser.login('ak@gmailcom', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
@@ -127,7 +128,7 @@ class WikiPageHandlerTest(unittest.TestCase):
             link_texts = [link.text for link in links]
             self.assertEqual([u'Link!'], link_texts)
 
-    def test_post_updated_page(self):
+    def test_put_updated_page(self):
         self.browser.login('ak@gmailcom', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!!]]&revision=1')
@@ -138,9 +139,17 @@ class WikiPageHandlerTest(unittest.TestCase):
             link_texts = [link.text for link in links]
             self.assertEqual([u'Link!!'], link_texts)
 
-    def test_post_new_page_should_fail_if_user_is_none(self):
+    def test_put_new_page_should_fail_if_user_is_none(self):
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.assertEqual(403, self.browser.res.status_code)
+
+    def test_send_http_post_to_append(self):
+        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.post('/New_page', 'body=Hello&revision=0')
+        self.browser.post('/New_page', 'body=There&revision=1')
+
+        page = WikiPage.get_by_title('New page')
+        self.assertEqual('HelloThere', page.body)
 
     def test_new_page_should_be_shown_in_sp_changes(self):
         self.browser.login('ak@gmailcom', 'ak')

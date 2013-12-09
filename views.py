@@ -99,7 +99,30 @@ class WikiPageHandler(webapp2.RequestHandler):
         if path.startswith('sp.'):
             return self.post_sp(path[3:])
 
-        self.abort(405)
+        user = WikiPageHandler._get_cur_user()
+        page = WikiPage.get_by_title(WikiPage.path_to_title(path))
+        revision = int(self.request.POST['revision'])
+        new_body = self.request.POST['body']
+        comment = self.request.POST.get('comment', '')
+
+        if not page.can_write(user):
+            self.response.status = 403
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = self._template('403.html', {'page': page})
+            self._set_response_body(html, False)
+            return
+
+        try:
+            page.update_content(page.body + new_body, revision, comment, user)
+            self.response.location = page.absolute_url
+            self.response.headers['X-Message'] = 'Successfully updated.'
+            self.response.headers['Location'] = '/%s' % urllib2.quote(path.replace(' ', '_'))
+            self.response.status = 303
+        except ValueError as e:
+            self.response.status = 406
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = self._template('error_with_messages.html', {'page': page, 'errors': [e.message]})
+            self._set_response_body(html, False)
 
     def post_sp(self, title):
         user = WikiPageHandler._get_cur_user()
