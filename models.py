@@ -46,7 +46,7 @@ class PageOperationMixin(object):
             return ''
 
         html = [
-            u'<section class="structured-data">',
+            u'<div class="structured-data">',
             u'<h1>Structured data</h1>',
             u'<dl>',
         ]
@@ -61,7 +61,7 @@ class PageOperationMixin(object):
                     html.append(u'<dd class="value value-%s">%s</dd>' % (name, self._render_data_item(name, v)))
             else:
                 html.append(u'<dd class="value value-%s">%s</dd>' % (name, self._render_data_item(name, value)))
-        html.append(u'</dl></section>')
+        html.append(u'</dl></div>')
         return '\n'.join(html)
 
     def _render_data_item(self, name, value):

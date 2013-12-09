@@ -563,7 +563,7 @@ article .body dd {
 
 article .body .structured-data {
     float: right;
-    margin: 1.5em 0 1em 1em;
+    margin: 0em 0 1em 1em;
     padding: 1em;
     border: 1px solid #CCC;
 }
