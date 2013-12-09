@@ -95,7 +95,7 @@ class YamlSchemaDataTest(unittest.TestCase):
     def test_yaml_block_should_not_be_rendered(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "123456789"\n\nHello', 0)
-        self.assertEquals(u'<p>Hello</p>', page.rendered_body)
+        self.assertEqual(-1, page.rendered_body.find(u'#!yaml/schema'))
 
 
 class SchemaIndexTest(unittest.TestCase):

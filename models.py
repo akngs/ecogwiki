@@ -31,7 +31,7 @@ class PageOperationMixin(object):
     re_img = re.compile(ur'<p><img( .+? )/></p>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
-    re_yaml_schema = re.compile(ur'\s{4}#!yaml/schema\n((\s{4}.+\n)+)')
+    re_yaml_schema = re.compile(ur'(?:\s{4}|\t)#!yaml/schema[\n\r]+(((?:\s{4}|\t).+[\n\r]+?)+)')
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
                                          ur'April|May|June|July|August|'
@@ -83,21 +83,21 @@ class PageOperationMixin(object):
         rendered = md.convert(joined)
 
         # add table of contents
-        final = TocGenerator(rendered).add_toc()
+        rendered = TocGenerator(rendered).add_toc()
 
         # add class for embedded image
-        final = PageOperationMixin.re_img.sub(u'<p class="img-container"><img \\1/></p>', final)
+        rendered = PageOperationMixin.re_img.sub(u'<p class="img-container"><img \\1/></p>', rendered)
 
         # sanitize
-        if final:
+        if rendered:
             cleaner = Cleaner(safe_attrs_only=False)
             cleaner.host_whitelist = (
                 'www.youtube.com',
                 'player.vimeo.com',
             )
-            final = cleaner.clean_html(final)
+            rendered = cleaner.clean_html(rendered)
 
-        return final
+        return rendered
 
     @property
     def absolute_url(self):
@@ -114,6 +114,7 @@ class PageOperationMixin(object):
     @property
     def data(self):
         data = PageOperationMixin.parse_data(self.title, self.itemtype, self.body)
+
         for rel, links in self.inlinks.items():
             if not rel.endswith('/relatedTo'):
                 continue
@@ -553,11 +554,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             else:
                 self._unpublish(save=False)
 
-        # update related pages if it's first time
-        if self.revision == 1:
-            for _ in range(5):
-                self.update_related_links()
-
         # update itemtype_path
         self.itemtype_path = schema.get_itemtype_path(new_md['schema'])
 
@@ -573,6 +569,10 @@ class WikiPage(ndb.Model, PageOperationMixin):
                                    acl_read=self.acl_read, acl_write=self.acl_write)
             rev.put()
 
+        # deferred update schema data index
+        new_data = self.data
+        deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
+
         # update inlinks and outlinks
         old_redir = old_md.get('redirect')
         new_redir = new_md.get('redirect')
@@ -583,10 +583,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             cache.del_config()
         if self.revision == 1:
             cache.del_titles()
-
-        # deferred update schema data index
-        new_data = self.data
-        deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
 
         return True
 
@@ -654,7 +650,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                                    reverse=True)
         return OrderedDict(sorted_scoretable)
 
-    def update_links(self, old_redir=None, new_redir=None):
+    def update_links(self, old_redir, new_redir):
         """Updates outlinks of this page and inlinks of target pages"""
         # 1. process "redirect" metadata
         if old_redir != new_redir:
@@ -704,8 +700,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     try:
                         page.del_inlink(title)
                         if len(page.inlinks) == 0 and page.revision == 0:
-                            if page.key:
-                                page.key.delete()
+                            page.put().delete()
                         else:
                             page.put()
                         cache.del_rendered_body(page.title)
@@ -740,8 +735,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     try:
                         page.del_inlink(self.title, rel)
                         if page.inlinks == {} and page.revision == 0:
-                            if page.key:
-                                page.key.delete()
+                            page.put().delete()
                         else:
                             page.put()
                         cache.del_rendered_body(page.title)
@@ -862,11 +856,33 @@ class WikiPage(ndb.Model, PageOperationMixin):
         self.related_links = related_links
 
     def _parse_outlinks(self):
-        body = WikiPage.remove_metadata(self.body)
-        links = md_wikilink.parse_wikilinks(self.itemtype, body)
         unique_links = {}
+
+        # Add links in body
+        links = md_wikilink.parse_wikilinks(self.itemtype, WikiPage.remove_metadata(self.body))
         for rel, titles in links.items():
-            unique_links[rel] = list(set(titles))
+            unique_links[rel] = set(titles)
+
+        # Add links in structured data
+        itemtype = self.itemtype
+        for name, value in self.data.items():
+            if name in ['name', 'schema', 'inlinks', 'outlinks']:
+                continue
+            if itemtype == 'Book' and name in ['isbn']:
+                continue
+
+            rel = '%s/%s' % (itemtype, name)
+            if rel not in unique_links:
+                unique_links[rel] = set([])
+            if type(value) == list:
+                unique_links[rel].update(value)
+            else:
+                unique_links[rel].add(value)
+
+        # turn sets into lists
+        for key in unique_links.keys():
+            unique_links[key] = list(unique_links[key])
+
         return unique_links
 
     def add_inlinks(self, titles, rel):

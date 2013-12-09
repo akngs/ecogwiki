@@ -329,6 +329,7 @@ class WikiYamlParserTest(unittest.TestCase):
     def test_empty_page(self):
         self.assertEqual(main.DEFAULT_CONFIG, WikiPage.get_config())
 
+
 class WikiPageGetConfigTest(unittest.TestCase):
     def setUp(self):
         self.testbed = testbed.Testbed()
@@ -347,7 +348,6 @@ class WikiPageGetConfigTest(unittest.TestCase):
               read: [all]
               write: [login]
         ''', 0)
-
 
     def tearDown(self):
         self.testbed.deactivate()
@@ -368,6 +368,7 @@ class WikiPageGetConfigTest(unittest.TestCase):
     def test_updates_partial_configurations(self):
         config = WikiPage.get_config()
         self.assertEqual(config['service']['title'], '')
+
 
 class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
     def setUp(self):
@@ -711,6 +712,37 @@ class WikiPageLinksTest(unittest.TestCase):
         scoretable = WikiPage.get_by_title(u'A').link_scoretable
         self.assertEqual([u'C', u'B', u'D'], scoretable.keys())
 
+    def test_link_in_yaml_schema_block(self):
+        page = WikiPage.get_by_title(u'A')
+        page.update_content(u'.schema Book\n    #!yaml/schema\n    author: Richard Dawkins\n', 0)
+
+        page = WikiPage.get_by_title(u'A')
+        self.assertEqual({u'Book/author': [u'Richard Dawkins']}, page.outlinks)
+
+        rd = WikiPage.get_by_title(u'Richard Dawkins')
+        self.assertEqual({u'Book/author': [u'A']}, rd.inlinks)
+
+    def test_update_link_in_yaml_schema_block(self):
+        page = WikiPage.get_by_title(u'A')
+        page.update_content(u'.schema Book\n    #!yaml/schema\n    author: Richard Dawkins\n', 0)
+        page.update_content(u'.schema Book\n    #!yaml/schema\n    author: Edward Wilson\n', 1)
+
+        page = WikiPage.get_by_title(u'A')
+        self.assertEqual({u'Book/author': [u'Edward Wilson']}, page.outlinks)
+
+        rd = WikiPage.get_by_title(u'Richard Dawkins')
+        self.assertEqual({}, rd.inlinks)
+
+        ew = WikiPage.get_by_title(u'Edward Wilson')
+        self.assertEqual({u'Book/author': [u'A']}, ew.inlinks)
+
+    def test_should_not_treat_isbn_in_schema_block_as_a_link(self):
+        page = WikiPage.get_by_title(u'A')
+        page.update_content(u'.schema Book\n    #!yaml/schema\n    isbn: "123456789"\n', 0)
+
+        page = WikiPage.get_by_title(u'A')
+        self.assertEqual({}, page.outlinks)
+
 
 class WikiPageHashbang(unittest.TestCase):
     def setUp(self):
@@ -789,10 +821,8 @@ class PageOperationMixinTest(unittest.TestCase):
         self.testbed.deactivate()
 
     def test_rendered_body(self):
-        self.assertEqual(u'<div><p>Hello <a class="wikipage" href="/There">There</a></p>\n<h1>Incoming Links <a id="h_ea3d40041db650b8c49e9a81fb17e208" href="#h_ea3d40041db650b8c49e9a81fb17e208" class="caret-target">#</a></h1>\n<h2>Related pages <a id="h_466b0df4e8bf6d9144017ce2e7321748" href="#h_466b0df4e8bf6d9144017ce2e7321748" class="caret-target">#</a></h2>\n<ul>\n<li><a class="wikipage" href="/Other">Other</a></li>\n</ul></div>',
-                         self.page.rendered_body)
-        self.assertEqual(u'<p>Hello <a class="wikipage" href="/There">There</a></p>',
-                         self.revision.rendered_body)
+        self.assertTrue(self.page.rendered_body.startswith(u'<div><p>Hello <a class="wikipage" href="/There">There</a></p>\n<h1>Incoming Links <a id="h_ea3d40041db650b8c49e9a81fb17e208" href="#h_ea3d40041db650b8c49e9a81fb17e208" class="caret-target">#</a></h1>\n<h2>Related pages <a id="h_466b0df4e8bf6d9144017ce2e7321748" href="#h_466b0df4e8bf6d9144017ce2e7321748" class="caret-target">#</a></h2>\n<ul>\n<li><a class="wikipage" href="/Other">Other</a></li>\n</ul>'))
+        self.assertTrue(self.revision.rendered_body.startswith(u'<p>Hello <a class="wikipage" href="/There">There</a></p>'))
 
     def test_is_old_revision(self):
         self.assertEqual(False, self.page.is_old_revision)
@@ -939,7 +969,6 @@ class WikiPageDeleteTest(unittest.TestCase):
 
         self.pagea.delete(users.get_current_user())
         self.pageb = WikiPage.get_by_title(u'B')
-
         self.assertEquals(1, len(self.pagea.inlinks))
         self.assertEquals(0, len(self.pagea.outlinks))
         self.assertEquals(0, len(self.pageb.inlinks))
