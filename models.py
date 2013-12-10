@@ -405,29 +405,29 @@ class PageOperationMixin(object):
     def make_description(self, max_length=200):
         # remove yaml/schema block and metadata
         body = re.sub(PageOperationMixin.re_yaml_schema, u'\n', self.body)
-        head = PageOperationMixin.remove_metadata(body)[:max_length].strip()
+        body = PageOperationMixin.remove_metadata(body).strip()
 
         # try newline
-        index = head.find(u'\n')
+        index = body.find(u'\n')
         if index != -1:
-            return head[:index].strip()
+            body = body[:index].strip()
 
         # try period
         index = 0
         while index < max_length:
-            next_index = head.find(u'. ', index)
+            next_index = body.find(u'. ', index)
             if next_index == -1:
                 break
             index = next_index + 1
 
         if index > 3:
-            return head[:index].strip()
+            return body[:index].strip()
 
-        if len(head) <= max_length:
-            return head
+        if len(body) <= max_length:
+            return body
 
         # just cut-off
-        return head[:max_length - 3].strip() + u'...'
+        return body[:max_length - 3].strip() + u'...'
 
 
 class UserPreferences(ndb.Model):
