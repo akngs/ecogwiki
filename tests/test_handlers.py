@@ -3,6 +3,7 @@ import re
 import os
 import json
 import main
+import cache
 import webapp2
 import lxml.etree
 from models import WikiPage
@@ -116,17 +117,7 @@ class WikiPageHandlerTest(unittest.TestCase):
             link_texts = [link.text for link in links]
             self.assertEqual(['Home'], link_texts)
 
-    def test_put_new_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
-        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
-
-        for _ in range(2):
-            self.browser.get('/New_page')
-            links = self.browser.query('.//article//a[@class=\'wikipage\']')
-            link_texts = [link.text for link in links]
-            self.assertEqual([u'Link!'], link_texts)
-
-    def test_put_updated_page(self):
+    def test_put_to_updated_existing_page(self):
         self.browser.login('ak@gmailcom', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!!]]&revision=1')
@@ -137,14 +128,14 @@ class WikiPageHandlerTest(unittest.TestCase):
             link_texts = [link.text for link in links]
             self.assertEqual([u'Link!!'], link_texts)
 
-    def test_put_new_page_should_fail_if_user_is_none(self):
+    def test_put_without_permission(self):
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.assertEqual(403, self.browser.res.status_code)
 
-    def test_send_http_post_to_append(self):
+    def test_post_to_append_to_existing_page(self):
         self.browser.login('ak@gmailcom', 'ak')
-        self.browser.post('/New_page', 'body=Hello&revision=0')
-        self.browser.post('/New_page', 'body=There&revision=1')
+        self.browser.post('/New_page', 'body=Hello')
+        self.browser.post('/New_page', 'body=There')
 
         page = WikiPage.get_by_title('New page')
         self.assertEqual('HelloThere', page.body)
@@ -360,6 +351,67 @@ class HTML5ValidationTest(unittest.TestCase):
             self.assertEqual('text/plain', res.content_type)
 
 
+# TODO: Complete this test cases and remove redundent tests
+class RESTfulAPITest(unittest.TestCase):
+    def setUp(self):
+        cache.prc.flush_all()
+
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+        self.testbed.init_user_stub()
+        self.oauth_stub = OAuthStub(self.testbed, logout=True)
+        self.browser = Browser()
+
+    def tearDown(self):
+        self.testbed.deactivate()
+        self.browser.logout()
+
+    def test_create_new_page(self):
+        self.browser.login('ak@gmailcom', 'ak')
+
+        # GET "New page"
+        self.browser.get('/New_page')
+
+        # GET edit form and check fields
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+        self.assertEqual(['body', 'preview', 'revision'],
+                         self.browser.query_formfields(".//form[@class='editform']"))
+
+        # PUT "New page"
+        link = self.browser.query(".//form[@class='editform']")[0].attrib['action']
+        self.browser.post(link, 'body=Hello&revision=0')
+        self.assertEqual(303, self.browser.res.status_code)
+        self.assertEqual('http://localhost/New_page', self.browser.res.headers['Location'])
+
+        # Check
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'Hello', page.body)
+
+    def test_update_existing_page(self):
+        self.browser.login('ak@gmailcom', 'ak')
+
+        page = WikiPage.get_by_title(u'New page')
+        page.update_content(u'Hello', 0)
+
+        # GET "New page"
+        self.browser.get('/New_page')
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+
+        # POST
+        link = self.browser.query(".//form[@class='editform']")[0].attrib['action']
+        self.browser.post(link, 'body=Hello there&revision=1')
+        self.assertEqual(303, self.browser.res.status_code)
+        self.assertEqual('http://localhost/New_page', self.browser.res.headers['Location'])
+
+        # Check
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'Hello there', page.body)
+        self.assertEqual(2, page.revision)
+
+
 class Browser(object):
     def __init__(self):
         self.parser = html5parser.HTMLParser(strict=True)
@@ -379,8 +431,28 @@ class Browser(object):
         self.res = req.get_response(main.app)
 
     def query(self, path):
+        return self._query(self.tree, path)
+
+    def query_link(self, path):
+        return self.query(path)[0].attrib['href']
+
+    def query_formfields(self, path):
+        form = self.query(path)[0]
+        field_path = [
+            ".//input[@type='text']",
+            ".//input[@type='hidden']",
+            ".//input[@type='radio']",
+            ".//input[@type='checkbox']",
+            ".//textarea",
+            ".//select",
+        ]
+        elements = reduce(lambda a, b: a + b, [self._query(form, p) for p in field_path], [])
+        names = [e.attrib['name'] for e in elements]
+        return sorted(names)
+
+    def _query(self, element, path):
         path = re.sub(r'/(\w+\d?)', r'/html:\1', path)
-        return self.tree.findall(path, namespaces={'html': 'http://www.w3.org/1999/xhtml'})
+        return element.findall(path, namespaces={'html': 'http://www.w3.org/1999/xhtml'})
 
     def login(self, email, user_id, is_admin=False):
         os.environ['USER_EMAIL'] = email or ''

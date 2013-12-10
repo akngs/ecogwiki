@@ -130,7 +130,7 @@ window.fbAsyncInit = function() {
 
             {% if page.can_write(user) %}
             <li class="edit_menu">
-                <a href="?_type=form" id="edit" {% if 'pt' not in page.metadata %}class='btn btn-primary'{% endif %}>Edit</a>
+                <a href="{{ page.absolute_url|e }}?_type=form" id="edit" {% if 'pt' not in page.metadata %}class='btn btn-primary'{% endif %}>Edit</a>
             </li>
             {% endif %}
         </ul>
