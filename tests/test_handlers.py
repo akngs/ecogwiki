@@ -400,7 +400,7 @@ class RESTfulAPITest(unittest.TestCase):
         self.browser.get('/New_page')
         self.browser.get(self.browser.query_link(".//a[@id='edit']"))
 
-        # POST
+        # PUT
         link = self.browser.query(".//form[@class='editform']")[0].attrib['action']
         self.browser.post(link, 'body=Hello there&revision=1')
         self.assertEqual(303, self.browser.res.status_code)
@@ -409,6 +409,29 @@ class RESTfulAPITest(unittest.TestCase):
         # Check
         page = WikiPage.get_by_title(u'New page')
         self.assertEqual(u'Hello there', page.body)
+        self.assertEqual(2, page.revision)
+
+    def test_append_to_existing_page(self):
+        self.browser.login('ak@gmailcom', 'ak')
+
+        page = WikiPage.get_by_title(u'New page')
+        page.update_content(u'Hello', 0)
+
+        # GET "New page"
+        self.browser.get('/New_page')
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+        self.assertEqual(['body'],
+                         self.browser.query_formfields(".//form[@class='appendform']"))
+
+        # POST
+        link = self.browser.query(".//form[@class='appendform']")[0].attrib['action']
+        self.browser.post(link, 'body=\nThere')
+        self.assertEqual(303, self.browser.res.status_code)
+        self.assertEqual('http://localhost/New_page', self.browser.res.headers['Location'])
+
+        # Check
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'Hello\nThere', page.body)
         self.assertEqual(2, page.revision)
 
 
