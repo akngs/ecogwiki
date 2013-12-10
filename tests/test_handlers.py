@@ -6,6 +6,7 @@ import main
 import cache
 import webapp2
 import lxml.etree
+import urllib
 from models import WikiPage
 import unittest2 as unittest
 from google.appengine.ext import testbed
@@ -117,28 +118,9 @@ class WikiPageHandlerTest(unittest.TestCase):
             link_texts = [link.text for link in links]
             self.assertEqual(['Home'], link_texts)
 
-    def test_put_to_updated_existing_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
-        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
-        self.browser.post('/New_page?_method=PUT', 'body=[[Link!!]]&revision=1')
-
-        for _ in range(2):
-            self.browser.get('/New_page')
-            links = self.browser.query('.//article//a[@class=\'wikipage\']')
-            link_texts = [link.text for link in links]
-            self.assertEqual([u'Link!!'], link_texts)
-
     def test_put_without_permission(self):
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.assertEqual(403, self.browser.res.status_code)
-
-    def test_post_to_append_to_existing_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
-        self.browser.post('/New_page', 'body=Hello')
-        self.browser.post('/New_page', 'body=There')
-
-        page = WikiPage.get_by_title('New page')
-        self.assertEqual('HelloThere', page.body)
 
     def test_new_page_should_be_shown_in_sp_changes(self):
         self.browser.login('ak@gmailcom', 'ak')
@@ -170,17 +152,6 @@ class WikiPageHandlerTest(unittest.TestCase):
         self.assertEqual(303, self.browser.res.status_code)
         self.assertEqual('http://localhost/Hello_World',
                          self.browser.res.location)
-
-    def test_delete_page(self):
-        self.browser.login('ak@gmailcom', 'ak', is_admin=True)
-        self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0&comment=&preview=0')
-        self.browser.post('/New_page?_method=DELETE')
-        self.assertEqual(204, self.browser.res.status_code)
-
-        self.browser.get('/sp.index')
-        links = self.browser.query('.//table//a')
-        link_texts = [link.text for link in links]
-        self.assertTrue(u'New page' not in link_texts)
 
     def test_delete_page_without_permission(self):
         self.browser.login('ak@gmailcom', 'ak', is_admin=False)
@@ -372,17 +343,12 @@ class RESTfulAPITest(unittest.TestCase):
     def test_create_new_page(self):
         self.browser.login('ak@gmailcom', 'ak')
 
-        # GET "New page"
+        # GET edit form of "New page"
         self.browser.get('/New_page')
-
-        # GET edit form and check fields
         self.browser.get(self.browser.query_link(".//a[@id='edit']"))
-        self.assertEqual(['body', 'preview', 'revision'],
-                         self.browser.query_formfields(".//form[@class='editform']"))
 
         # PUT "New page"
-        link = self.browser.query(".//form[@class='editform']")[0].attrib['action']
-        self.browser.post(link, 'body=Hello&revision=0')
+        self.browser.submit(".//form[@class='editform']", {'body': 'Hello', 'revision': '0', 'preview': '0'})
         self.assertEqual(303, self.browser.res.status_code)
         self.assertEqual('http://localhost/New_page', self.browser.res.headers['Location'])
 
@@ -393,16 +359,16 @@ class RESTfulAPITest(unittest.TestCase):
     def test_update_existing_page(self):
         self.browser.login('ak@gmailcom', 'ak')
 
+        # Create page
         page = WikiPage.get_by_title(u'New page')
         page.update_content(u'Hello', 0)
 
-        # GET "New page"
+        # GET edit form of "New page"
         self.browser.get('/New_page')
         self.browser.get(self.browser.query_link(".//a[@id='edit']"))
 
-        # PUT
-        link = self.browser.query(".//form[@class='editform']")[0].attrib['action']
-        self.browser.post(link, 'body=Hello there&revision=1')
+        # PUT "New page"
+        self.browser.submit(".//form[@class='editform']", {'body': 'Hello there', 'revision': '1', 'preview': '0'})
         self.assertEqual(303, self.browser.res.status_code)
         self.assertEqual('http://localhost/New_page', self.browser.res.headers['Location'])
 
@@ -411,28 +377,99 @@ class RESTfulAPITest(unittest.TestCase):
         self.assertEqual(u'Hello there', page.body)
         self.assertEqual(2, page.revision)
 
-    def test_append_to_existing_page(self):
+    def test_preview(self):
         self.browser.login('ak@gmailcom', 'ak')
 
+        # Create page
         page = WikiPage.get_by_title(u'New page')
         page.update_content(u'Hello', 0)
 
-        # GET "New page"
+        # GET edit form of "New page"
         self.browser.get('/New_page')
         self.browser.get(self.browser.query_link(".//a[@id='edit']"))
-        self.assertEqual(['body'],
-                         self.browser.query_formfields(".//form[@class='appendform']"))
 
-        # POST
-        link = self.browser.query(".//form[@class='appendform']")[0].attrib['action']
-        self.browser.post(link, 'body=\nThere')
+        # PUT "New page" with preview="1"
+        self.browser.submit(".//form[@class='editform']", {'body': 'Hello there', 'revision': '1', 'preview': '1'})
+        self.assertEqual(200, self.browser.res.status_code)
+        self.assertEqual(u'<!DOCTYPE html><html lang="ko">\n<head><meta charset="utf-8"><title>New page</title></head>\n<body><div class="wrap">\n<p>Hello there</p>\n</div></body>\n</html>', self.browser.res.body)
+
+        # Check if not changed
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'Hello', page.body)
+        self.assertEqual(1, page.revision)
+
+    def test_append_to_non_existing_page(self):
+        self.browser.login('ak@gmailcom', 'ak')
+
+        # GET edit form of "New page"
+        self.browser.get('/New_page')
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+
+        # POST to "New page"
+        self.browser.submit(".//form[@class='appendform']", {'body': 'Hello'})
         self.assertEqual(303, self.browser.res.status_code)
         self.assertEqual('http://localhost/New_page', self.browser.res.headers['Location'])
 
         # Check
         page = WikiPage.get_by_title(u'New page')
-        self.assertEqual(u'Hello\nThere', page.body)
+        self.assertEqual(u'Hello', page.body)
+
+    def test_append_to_existing_page(self):
+        self.browser.login('ak@gmailcom', 'ak')
+
+        # Create page
+        page = WikiPage.get_by_title(u'New page')
+        page.update_content(u'Hello', 0)
+
+        # GET edit form of "New page"
+        self.browser.get('/New_page')
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+
+        # POST to "New page"
+        self.browser.submit(".//form[@class='appendform']", {'body': ' there'})
+        self.assertEqual(303, self.browser.res.status_code)
+        self.assertEqual('http://localhost/New_page', self.browser.res.headers['Location'])
+
+        # Check
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'Hello there', page.body)
         self.assertEqual(2, page.revision)
+
+    def test_delete_non_existing_page(self):
+        self.browser.login('ak@gmailcom', 'ak', is_admin=True)
+
+        # GET edit form of "New page"
+        self.browser.get('/New_page')
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+
+        # DELETE "New page"
+        self.browser.submit(".//form[@class='deleteform']")
+        self.assertEqual(204, self.browser.res.status_code)
+
+        # Check
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'', page.body)
+        self.assertEqual(0, page.revision)
+
+    def test_delete_existing_page(self):
+        self.browser.login('ak@gmailcom', 'ak', is_admin=True)
+
+        # Create page
+        page = WikiPage.get_by_title(u'New page')
+        page.update_content(u'Hello', 0)
+
+        # GET edit form of "New page"
+        self.browser.get('/New_page')
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+
+        # DELETE "New page"
+        self.browser.submit(".//form[@class='deleteform']")
+        self.assertEqual(204, self.browser.res.status_code)
+
+        # Check
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'', page.body)
+        self.assertEqual(0, page.revision)
 
 
 class Browser(object):
@@ -459,7 +496,16 @@ class Browser(object):
     def query_link(self, path):
         return self.query(path)[0].attrib['href']
 
-    def query_formfields(self, path):
+    def submit(self, form_path, fields={}):
+        action_link = self.query(form_path)[0].attrib['action']
+        supplied_names = set(fields.keys())
+        form_names = set(self._query_formfields(form_path))
+        if supplied_names != form_names:
+            raise ValueError('Names do not match. Form: [%s], Supplied: [%s]' % (','.join(form_names), ','.join(supplied_names)))
+
+        self.post(action_link, urllib.urlencode(fields))
+
+    def _query_formfields(self, path):
         form = self.query(path)[0]
         field_path = [
             ".//input[@type='text']",
