@@ -101,7 +101,6 @@ class WikiPageHandler(webapp2.RequestHandler):
 
         user = WikiPageHandler._get_cur_user()
         page = WikiPage.get_by_title(WikiPage.path_to_title(path))
-        revision = int(self.request.POST['revision'])
         new_body = self.request.POST['body']
         comment = self.request.POST.get('comment', '')
 
@@ -113,7 +112,7 @@ class WikiPageHandler(webapp2.RequestHandler):
             return
 
         try:
-            page.update_content(page.body + new_body, revision, comment, user)
+            page.update_content(page.body + new_body, page.revision, comment, user)
             self.response.location = page.absolute_url
             self.response.headers['X-Message'] = 'Successfully updated.'
             self.response.headers['Location'] = '/%s' % urllib2.quote(path.replace(' ', '_'))
