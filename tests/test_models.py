@@ -483,6 +483,16 @@ class WikiPageDescriptionTest(unittest.TestCase):
         page.update_content(u'Hi Hello World Sentences.', 0)
         self.assertEqual(u'Hi Hello World Se...', page.make_description(20))
 
+    def test_should_ignore_metadata(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.pub\n\nHello', 0)
+        self.assertEqual(u'Hello', page.make_description(20))
+
+    def test_should_ignore_yaml_schema_block(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n    #!yaml/schema\n    author: A\n\nHello', 0)
+        self.assertEqual(u'Hello', page.make_description(20))
+
 
 class WikiPageSpecialTitlesTest(unittest.TestCase):
     def setUp(self):

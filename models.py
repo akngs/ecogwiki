@@ -403,7 +403,9 @@ class PageOperationMixin(object):
         return matches
 
     def make_description(self, max_length=200):
-        head = PageOperationMixin.remove_metadata(self.body)[:max_length].strip()
+        # remove yaml/schema block and metadata
+        body = re.sub(PageOperationMixin.re_yaml_schema, u'\n', self.body)
+        head = PageOperationMixin.remove_metadata(body)[:max_length].strip()
 
         # try newline
         index = head.find(u'\n')
@@ -420,6 +422,9 @@ class PageOperationMixin(object):
 
         if index > 3:
             return head[:index].strip()
+
+        if len(head) <= max_length:
+            return head
 
         # just cut-off
         return head[:max_length - 3].strip() + u'...'
