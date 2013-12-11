@@ -36,6 +36,12 @@ class ContentTypeTest(unittest.TestCase):
         self.browser.get('/Test')
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['Content-type'])
 
+    def test_get_json_content_type(self):
+        p = WikiPage.get_by_title(u'Test')
+        p.update_content(u'Hello', 0)
+        self.browser.get('/Test?_type=json')
+        self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['Content-type'])
+
     def test_get_custom_content_type(self):
         p = WikiPage.get_by_title(u'Test')
         p.update_content(u'.content-type text/plain\nHello', 0)
@@ -118,9 +124,29 @@ class WikiPageHandlerTest(unittest.TestCase):
             link_texts = [link.text for link in links]
             self.assertEqual(['Home'], link_texts)
 
+    def test_post_in_json(self):
+        self.browser.logout()
+        self.oauth_stub.login('jh@gmail.com', 'jh')
+
+        self.browser.post('/New_page?&_type=json', 'body=[[Link!]]&revision=0')
+        if self.browser.res.status_code % 100 == 3:
+            self.browser.get(self.browser.res.location)
+        self.assertEqual(self.browser.res.status_code, 200)
+        self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['Content-type'])
+
     def test_put_without_permission(self):
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.assertEqual(403, self.browser.res.status_code)
+
+    def test_put_in_json(self):
+        self.browser.logout()
+        self.oauth_stub.login('jh@gmail.com', 'jh')
+
+        self.browser.post('/New_page?_method=PUT&_type=json', 'body=[[Link!]]&revision=0')
+        if self.browser.res.status_code % 100 == 3:
+            self.browser.get(self.browser.res.location)
+        self.assertEqual(self.browser.res.status_code, 200)
+        self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_new_page_should_be_shown_in_sp_changes(self):
         self.browser.login('ak@gmailcom', 'ak')

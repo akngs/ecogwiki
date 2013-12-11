@@ -115,8 +115,11 @@ class WikiPageHandler(webapp2.RequestHandler):
             page.update_content(page.body + new_body, page.revision, comment, user)
             self.response.location = page.absolute_url
             self.response.headers['X-Message'] = 'Successfully updated.'
-            self.response.headers['Location'] = '/%s' % urllib2.quote(path.replace(' ', '_'))
+            quoted_path = urllib2.quote(path.replace(' ', '_'))
+            restype = self._get_restype()
+            self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
             self.response.status = 303
+
         except ValueError as e:
             self.response.status = 406
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -175,7 +178,9 @@ class WikiPageHandler(webapp2.RequestHandler):
             page.update_content(new_body, revision, comment, user)
             self.response.location = page.absolute_url
             self.response.headers['X-Message'] = 'Successfully updated.'
-            self.response.headers['Location'] = '/%s' % urllib2.quote(path.replace(' ', '_'))
+            quoted_path = urllib2.quote(path.replace(' ', '_'))
+            restype = self._get_restype()
+            self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
             self.response.status = 303
         except ConflictError as e:
             self.response.status = 409
@@ -597,7 +602,7 @@ class WikiPageHandler(webapp2.RequestHandler):
 
     def _get_restype(self):
         restype = self.request.GET.get('_type', 'default')
-        return restype
+        return str(restype)
 
     def _set_response_body(self, resbody, head):
         if head:
