@@ -84,6 +84,16 @@ class WikiPageUpdateTest(unittest.TestCase):
 
         revs = list(page.revisions)
         self.assertEqual(2, len(revs))
+    #
+    # def test_malformed_yaml_schema(self):
+    #     page = WikiPage.get_by_title(u'Hello')
+    #     page.update_content(u'.schema Book\n\n    #!yaml/schema\n    y: [1, 2\n', 0)
+    #     self.fail()
+    #
+    # def test_invalid_yaml_schema(self):
+    #     page = WikiPage.get_by_title(u'Hello')
+    #     page.update_content(u'.schema Book\n\n    #!yaml/schema\n    y\n', 0)
+    #     self.fail()
 
 
 class WikiPageMetadataParserTest(unittest.TestCase):
@@ -165,6 +175,13 @@ class WikiPageWikiLinkParserTest(unittest.TestCase):
     def test_wikiquery(self):
         self.assertEqual({}, parse_wikilinks('Article', u'[[="Hello"]]'))
         self.assertEqual({}, parse_wikilinks('Article', u'[[=schema:"Article"]]'))
+
+
+class WikiPageRenderingTest(unittest.TestCase):
+    def test_strikethrough(self):
+        actual = md.convert(u'Hello ~~AK~~?')
+        expected = u'<p>Hello <strike>AK</strike>?</p>'
+        self.assertEqual(expected, actual)
 
 
 class WikiPageWikilinkRenderingTest(unittest.TestCase):
