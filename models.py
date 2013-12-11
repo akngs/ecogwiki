@@ -339,7 +339,11 @@ class PageOperationMixin(object):
         # parse data in yaml/schema section
         m = re.search(PageOperationMixin.re_yaml_schema, body)
         if m:
-            for name, value in yaml.load(m.group(1)).items():
+            parsed_yaml = yaml.load(m.group(1))
+            if type(parsed_yaml) != dict:
+                raise ValueError('YAML must be a dictionary')
+
+            for name, value in parsed_yaml.items():
                 if name in matches:
                     if type(matches[name]) != list:
                         matches[name] = [matches[name]]
@@ -549,8 +553,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
         old_data = self.data
 
         # validate contents
+        ## validate schema data
         new_md = PageOperationMixin.parse_metadata(new_body)
+        try:
+            PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
+        except Exception:
+            raise ValueError('Invalid schema data')
 
+        ## validate metadata
         if u'pub' in new_md and u'redirect' in new_md:
             raise ValueError('You cannot use "pub" and "redirect" metadata at '
                              'the same time.')
@@ -559,8 +569,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
                              'content.')
         if u'read' in new_md and new_md['content-type'] != 'text/x-markdown':
             raise ValueError('You cannot restrict read access of custom content-typed page.')
+
+        ## validate revision
         if self.revision < base_revision:
             raise ValueError('Invalid revision number: %d' % base_revision)
+
+        ## validate ToC
+        if not TocGenerator(md.convert(new_body)).validate():
+            raise ValueError("Duplicate paths not allowed")
 
         if self.revision != base_revision:
             # perform 3-way merge if needed
@@ -1336,6 +1352,15 @@ class TocGenerator(object):
     def __init__(self, html):
         self._html = html
         self._index = 0
+
+    def validate(self):
+        try:
+            headings = TocGenerator.extract_headings(self._html)
+            outlines = self._generate_outline(headings)
+            self._generate_path(outlines)
+            return True
+        except ValueError:
+            return False
 
     def add_toc(self):
         """Add table of contents to HTML"""

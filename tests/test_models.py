@@ -84,16 +84,18 @@ class WikiPageUpdateTest(unittest.TestCase):
 
         revs = list(page.revisions)
         self.assertEqual(2, len(revs))
-    #
-    # def test_malformed_yaml_schema(self):
-    #     page = WikiPage.get_by_title(u'Hello')
-    #     page.update_content(u'.schema Book\n\n    #!yaml/schema\n    y: [1, 2\n', 0)
-    #     self.fail()
-    #
-    # def test_invalid_yaml_schema(self):
-    #     page = WikiPage.get_by_title(u'Hello')
-    #     page.update_content(u'.schema Book\n\n    #!yaml/schema\n    y\n', 0)
-    #     self.fail()
+
+    def test_duplicated_headings(self):
+        page = WikiPage.get_by_title(u'Hello')
+        self.assertRaises(ValueError, page.update_content, u'# A\n# A', 0)
+
+    def test_malformed_yaml_schema(self):
+        page = WikiPage.get_by_title(u'Hello')
+        self.assertRaises(ValueError, page.update_content, u'.schema Book\n\n    #!yaml/schema\n    y: [1, 2\n', 0)
+
+    def test_invalid_yaml_schema(self):
+        page = WikiPage.get_by_title(u'Hello')
+        self.assertRaises(ValueError, page.update_content, u'.schema Book\n\n    #!yaml/schema\n    y\n', 0)
 
 
 class WikiPageMetadataParserTest(unittest.TestCase):
@@ -373,7 +375,6 @@ class WikiPageGetConfigTest(unittest.TestCase):
         self.testbed.init_memcache_stub()
         self.testbed.init_taskqueue_stub()
         
-        #
         self.config_page = WikiPage.get_by_title(u'.config')
         self.config_page.update_content(u'''
           admin:
