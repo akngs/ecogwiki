@@ -6,7 +6,7 @@ import unittest2 as unittest
 from itertools import groupby
 from google.appengine.api import users
 from google.appengine.ext import testbed
-from models import md, WikiPage, UserPreferences, title_grouper
+from models import md, WikiPage, UserPreferences, title_grouper, ConflictError
 from markdownext.md_wikilink import parse_wikilinks
 
 
@@ -66,6 +66,24 @@ class WikiPageUpdateTest(unittest.TestCase):
 
         revs = list(page.revisions)
         self.assertEqual(3, len(revs))
+
+    def test_conflict(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'A\nB\nC', 0)
+
+        # update second line
+        page.update_content(u'A\nD\nC', 1)
+
+        # update second line concurrently
+        self.assertRaises(ConflictError, page.update_content, u'A\nE\nC', 1)
+
+        # page should not be updated
+        page = WikiPage.get_by_title(u'Hello')
+        self.assertEqual(u'A\nD\nC', page.body)
+        self.assertEqual(2, page.revision)
+
+        revs = list(page.revisions)
+        self.assertEqual(2, len(revs))
 
 
 class WikiPageMetadataParserTest(unittest.TestCase):

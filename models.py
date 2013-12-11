@@ -32,6 +32,7 @@ class PageOperationMixin(object):
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
     re_yaml_schema = re.compile(ur'(?:\s{4}|\t)#!yaml/schema[\n\r]+(((?:\s{4}|\t).+[\n\r]+?)+)')
+    re_conflicted = re.compile(ur'<<<<<<<.+=======.+>>>>>>>', re.DOTALL)
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
                                          ur'April|May|June|July|August|'
@@ -543,16 +544,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if not force_update and self.body == new_body:
             return False
 
-        # delete rendered body cache
-        cache.del_rendered_body(self.title)
-        cache.del_hashbangs(self.title)
-
         # get old data amd metadata
         old_md = self.metadata
         old_data = self.data
-
-        cache.del_metadata(self.title)
-        cache.del_data(self.title)
 
         # validate contents
         new_md = PageOperationMixin.parse_metadata(new_body)
@@ -568,15 +562,24 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if self.revision < base_revision:
             raise ValueError('Invalid revision number: %d' % base_revision)
 
-        # update model fields
         if self.revision != base_revision:
             # perform 3-way merge if needed
             base = WikiPageRevision.query(WikiPageRevision.title == self.title, WikiPageRevision.revision == base_revision).get().body
             merged = ''.join(Merge3(base, self.body, new_body).merge_lines())
-            self.body = merged
-        else:
-            self.body = new_body
+            conflicted = len(re.findall(PageOperationMixin.re_conflicted, merged)) > 0
+            if conflicted:
+                raise ConflictError('Conflicted', base, new_body, merged)
+            else:
+                new_body = merged
 
+        # delete rendered body, metadata, data cache
+        cache.del_rendered_body(self.title)
+        cache.del_hashbangs(self.title)
+        cache.del_metadata(self.title)
+        cache.del_data(self.title)
+
+        # update model fields
+        self.body = new_body
         self.modifier = user
         self.description = self.make_description(200)
         self.acl_read = new_md.get('read', '')
@@ -632,7 +635,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         new_redir = new_md.get('redirect')
         self.update_links(old_redir, new_redir)
 
-        # invalidate cache
+        # delete config and tittle cache
         if self.title == '.config':
             cache.del_config()
         if self.revision == 1:
@@ -1436,6 +1439,14 @@ class TocGenerator(object):
                 cur_path = h
             result.append(cur_path)
             self._generate_children_path(result, cur_path, children)
+
+
+class ConflictError(ValueError):
+    def __init__(self, message, base, provided, merged):
+        Exception.__init__(self, message)
+        self.base = base
+        self.provided = provided
+        self.merged = merged
 
 
 regions = {

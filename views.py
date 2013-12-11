@@ -16,7 +16,7 @@ from collections import OrderedDict
 from google.appengine.api import users
 from google.appengine.api import oauth
 from google.appengine.ext import deferred
-from models import WikiPage, WikiPageRevision, UserPreferences, title_grouper
+from models import WikiPage, WikiPageRevision, UserPreferences, title_grouper, ConflictError
 
 logger = logging.getLogger(__name__)
 
@@ -177,6 +177,11 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.headers['X-Message'] = 'Successfully updated.'
             self.response.headers['Location'] = '/%s' % urllib2.quote(path.replace(' ', '_'))
             self.response.status = 303
+        except ConflictError as e:
+            self.response.status = 409
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = self._template('wikipage.form.html', {'page': page, 'conflict': e})
+            self._set_response_body(html, False)
         except ValueError as e:
             self.response.status = 406
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -267,7 +272,7 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/xml; charset=utf-8'
             self._set_response_body(rendered, head)
         elif restype == 'form':
-            html = self._template('wikipage.form.html', {'page': page})
+            html = self._template('wikipage.form.html', {'page': page, 'conflict': None})
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             self._set_response_body(html, head)
         elif restype == 'rawbody':
