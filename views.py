@@ -117,7 +117,10 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.headers['X-Message'] = 'Successfully updated.'
             quoted_path = urllib2.quote(path.replace(' ', '_'))
             restype = self._get_restype()
-            self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
+            if restype == 'default':
+                self.response.headers['Location'] = quoted_path
+            else:
+                self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
             self.response.status = 303
 
         except ValueError as e:
@@ -180,7 +183,10 @@ class WikiPageHandler(webapp2.RequestHandler):
             self.response.headers['X-Message'] = 'Successfully updated.'
             quoted_path = urllib2.quote(path.replace(' ', '_'))
             restype = self._get_restype()
-            self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
+            if restype == 'default':
+                self.response.headers['Location'] = quoted_path
+            else:
+                self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
             self.response.status = 303
         except ConflictError as e:
             self.response.status = 409
