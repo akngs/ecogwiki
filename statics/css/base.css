@@ -527,7 +527,7 @@ article .body pre {
 }
 
 article .body blockquote {
-    margin: 2em 0;
+    margin: 1em 0 1.5em;
     padding-left: 1em;
     border-left: 3px solid #CCC;
 }
@@ -535,7 +535,7 @@ article .body blockquote {
 article .body > ol,
 article .body > ul,
 article .body > dl {
-    margin: 1.5em 0;
+    margin: 1em 0;
 }
 
 article .body li > p:first-child {

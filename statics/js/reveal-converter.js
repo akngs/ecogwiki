@@ -2,7 +2,7 @@ $(function() {
     // converts plain markdown markup into reveal.js recognizible one
 
     // find top level elements
-    var $tops = $('article .body > div > *');
+    var $tops = $('article .body > *');
 
     // prepare containers
     $('body').append('<div class="reveal">');

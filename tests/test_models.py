@@ -840,7 +840,7 @@ class PageOperationMixinTest(unittest.TestCase):
         self.testbed.deactivate()
 
     def test_rendered_body(self):
-        self.assertTrue(self.page.rendered_body.startswith(u'<div><p>Hello <a class="wikipage" href="/There">There</a></p>\n<h1>Incoming Links <a id="h_ea3d40041db650b8c49e9a81fb17e208" href="#h_ea3d40041db650b8c49e9a81fb17e208" class="caret-target">#</a></h1>\n<h2>Related pages <a id="h_466b0df4e8bf6d9144017ce2e7321748" href="#h_466b0df4e8bf6d9144017ce2e7321748" class="caret-target">#</a></h2>\n<ul>\n<li><a class="wikipage" href="/Other">Other</a></li>\n</ul>'))
+        self.assertTrue(self.page.rendered_body.startswith(u'<p>Hello <a class="wikipage" href="/There">There</a></p>\n<h1>Incoming Links <a id="h_ea3d40041db650b8c49e9a81fb17e208" href="#h_ea3d40041db650b8c49e9a81fb17e208" class="caret-target">#</a></h1>\n<h2>Related pages <a id="h_466b0df4e8bf6d9144017ce2e7321748" href="#h_466b0df4e8bf6d9144017ce2e7321748" class="caret-target">#</a></h2>\n<ul>\n<li><a class="wikipage" href="/Other">Other</a></li>\n</ul>'))
         self.assertTrue(self.revision.rendered_body.startswith(u'<p>Hello <a class="wikipage" href="/There">There</a></p>'))
 
     def test_is_old_revision(self):

@@ -134,6 +134,10 @@ class PageOperationMixin(object):
             )
             rendered = cleaner.clean_html(rendered)
 
+            # remove div wrapper if there is one
+            if rendered.startswith('<div>'):
+                rendered = rendered[5:-6]
+
         return rendered
 
     @property
