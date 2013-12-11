@@ -185,6 +185,9 @@ div.contents {
     border-radius: 0;
     vertical-align: middle;
 }
+.top-bar li.search input[type="submit"] {
+    display: none;
+}
 
 @media (max-width:320px) {
     .top-bar .preferences {
