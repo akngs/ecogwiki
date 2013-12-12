@@ -497,6 +497,19 @@ class RESTfulAPITest(unittest.TestCase):
         self.assertEqual(u'', page.body)
         self.assertEqual(0, page.revision)
 
+    def test_redirect_in_absolute_path(self):
+        self.browser.login('ak@gmailcom', 'ak')
+
+        # GET edit form of "New/page"
+        self.browser.get('/New/page')
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+
+        # PUT "New page"
+        self.browser.submit(".//form[@class='editform']", {'body': 'Hello', 'revision': '0', 'preview': '0'})
+
+        self.assertEqual(303, self.browser.res.status_code)
+        self.assertEqual('http://localhost/New/page', self.browser.res.headers['Location'])
+
 
 class Browser(object):
     def __init__(self):
