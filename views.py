@@ -322,7 +322,7 @@ class WikiPageHandler(webapp2.RequestHandler):
 
     def get_wikiquery_result(self, path, head):
         user = WikiPageHandler._get_cur_user()
-        q = path[1:].replace('_', ' ')
+        q = WikiPage.path_to_title(path)[1:]
         result = WikiPage.wikiquery(q, user)
         restype = self._get_restype()
         if restype == 'default' or restype == 'html':
