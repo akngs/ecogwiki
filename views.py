@@ -259,7 +259,14 @@ class PageHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.response, html, head)
         elif restype == 'json':
-            revisions = [{'url': rev.absolute_url, 'title': rev.title} for rev in revisions]
+            revisions = [
+                {
+                    'revision': rev.revision,
+                    'url': rev.absolute_url,
+                    'created_at': format_iso_datetime(rev.created_at),
+                }
+                for rev in revisions
+            ]
             self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
             set_response_body(self.response, json.dumps(revisions), head)
         else:
