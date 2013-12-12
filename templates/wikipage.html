@@ -97,7 +97,7 @@ window.fbAsyncInit = function() {
         <ul class="info">
             {% if page.updated_at %}
             <li class="updated_at">
-                <a href="{{ page.absolute_url|e }}?_type=history">
+                <a href="{{ page.absolute_url|e }}?rev=list">
                 <time
                     {% if page.itemtype == 'Article' %}itemprop="dateModified"{% endif %}
                     datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|dt }}
@@ -130,7 +130,7 @@ window.fbAsyncInit = function() {
 
             {% if page.can_write(user) %}
             <li class="edit_menu">
-                <a href="{{ page.absolute_url|e }}?_type=form" id="edit" {% if 'pt' not in page.metadata %}class='btn btn-primary'{% endif %}>Edit</a>
+                <a href="{{ page.absolute_url|e }}?view=edit" id="edit" {% if 'pt' not in page.metadata %}class='btn btn-primary'{% endif %}>Edit</a>
             </li>
             {% endif %}
         </ul>

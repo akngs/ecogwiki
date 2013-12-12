@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from views import WikiPageHandler
+from views import get_cur_user
 from models import is_admin_user
 import unittest2 as unittest
 from google.appengine.ext import testbed
@@ -16,12 +16,8 @@ def user_logout():
     user_login(None, None)
 
 
-def get_current_user():
-    return WikiPageHandler._get_cur_user()
-
-
 def current_user_is_admin():
-    user = get_current_user()
+    user = get_cur_user()
     return is_admin_user(user)
 
 
@@ -37,17 +33,17 @@ class CurrentUserTest(unittest.TestCase):
         user_logout()
 
     def test_none_on_logout(self):
-        user = get_current_user()
+        user = get_cur_user()
         self.assertIsNone(user)
 
     def test_users_first(self):
         user_login('ak@gmail.com', 'ak')
         self.oauth_stub.login('jh@gmail.com', 'jh')
-        self.assertEquals(get_current_user().email(), 'ak@gmail.com')
+        self.assertEquals(get_cur_user().email(), 'ak@gmail.com')
 
     def test_oauth_only_when_user_is_not_logged_in(self):
         self.oauth_stub.login('jh@gmail.com', 'jh')
-        self.assertEquals(get_current_user().email(), 'jh@gmail.com')
+        self.assertEquals(get_cur_user().email(), 'jh@gmail.com')
 
 
 class AdminUserTest(unittest.TestCase):

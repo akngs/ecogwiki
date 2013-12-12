@@ -4,6 +4,7 @@ import os
 import json
 import main
 import cache
+import views
 import webapp2
 import lxml.etree
 import urllib
@@ -49,10 +50,10 @@ class ContentTypeTest(unittest.TestCase):
         self.assertEqual('text/plain; charset=utf-8', self.browser.res.headers['Content-type'])
         self.assertEqual('Hello', self.browser.res.body)
 
-    def test_type_param_should_override_custom_content_type(self):
+    def test_view_should_override_custom_content_type(self):
         p = WikiPage.get_by_title(u'Test')
         p.update_content(u'.content-type text/plain\nHello', 0)
-        self.browser.get('/Test?_type=form')
+        self.browser.get('/Test?view=edit')
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_should_not_restrict_read_access_to_custom_content_type(self):
@@ -60,7 +61,7 @@ class ContentTypeTest(unittest.TestCase):
         self.assertRaises(ValueError, p.update_content, u'.read blah\n.content-type text/plain\nHello', 0)
 
 
-class WikiPageHandlerTest(unittest.TestCase):
+class PageHandlerTest(unittest.TestCase):
     def setUp(self):
         self.testbed = testbed.Testbed()
         self.testbed.activate()
@@ -128,7 +129,7 @@ class WikiPageHandlerTest(unittest.TestCase):
         self.browser.logout()
         self.oauth_stub.login('jh@gmail.com', 'jh')
 
-        self.browser.post('/New_page?&_type=json', 'body=[[Link!]]&revision=0')
+        self.browser.post('/New_page?_type=json', 'body=[[Link!]]&revision=0')
         if self.browser.res.status_code % 100 == 3:
             self.browser.get(self.browser.res.location)
         self.assertEqual(self.browser.res.status_code, 200)
@@ -174,7 +175,7 @@ class WikiPageHandlerTest(unittest.TestCase):
         page = WikiPage.get_by_title(u'Hi')
         page.update_content(u'.redirect Hello World', 0)
 
-        self.browser.get('/Hi')
+        self.browser.get('/Hi', follow_redir=False)
         self.assertEqual(303, self.browser.res.status_code)
         self.assertEqual('http://localhost/Hello_World',
                          self.browser.res.location)
@@ -214,10 +215,10 @@ class RevisionTest(unittest.TestCase):
         self.browser.get('/A?rev=1')
         self.assertEqual(200, self.browser.res.status_code)
 
-        self.browser.get('/A?_type=rawbody&rev=1')
+        self.browser.get('/A?_type=txt&rev=1')
         self.assertEqual(200, self.browser.res.status_code)
 
-        self.browser.get('/A?_type=body&rev=1')
+        self.browser.get('/A?view=bodyonly&rev=1')
         self.assertEqual(200, self.browser.res.status_code)
 
     def test_rev_param(self):
@@ -225,13 +226,13 @@ class RevisionTest(unittest.TestCase):
         page.update_content(u'Hello', 0)
         page.update_content(u'Hello there', 1)
 
-        self.browser.get('/A?_type=rawbody&rev=1')
+        self.browser.get('/A?_type=txt&rev=1')
         self.assertEqual(u'Hello', self.browser.res.body)
 
-        self.browser.get('/A?_type=rawbody&rev=2')
+        self.browser.get('/A?_type=txt&rev=2')
         self.assertEqual(u'Hello there', self.browser.res.body)
 
-        self.browser.get('/A?_type=rawbody&rev=latest')
+        self.browser.get('/A?_type=txt&rev=latest')
         self.assertEqual(u'Hello there', self.browser.res.body)
 
     def test_rev_acl(self):
@@ -240,15 +241,15 @@ class RevisionTest(unittest.TestCase):
         page.update_content(u'Hello', 0)
         page.update_content(u'.read a@x.com\nHello there', 1)
 
-        self.browser.get('/A?_type=rawbody&rev=1')
+        self.browser.get('/A?_type=txt&rev=1')
         self.assertEqual(200, self.browser.res.status_code)
-        self.browser.get('/A?_type=rawbody&rev=2')
+        self.browser.get('/A?_type=txt&rev=2')
         self.assertEqual(200, self.browser.res.status_code)
 
         self.browser.logout()
-        self.browser.get('/A?_type=rawbody&rev=1')
+        self.browser.get('/A?_type=txt&rev=1')
         self.assertEqual(200, self.browser.res.status_code)
-        self.browser.get('/A?_type=rawbody&rev=2')
+        self.browser.get('/A?_type=txt&rev=2')
         self.assertEqual(403, self.browser.res.status_code)
 
 
@@ -286,14 +287,11 @@ class HTML5ValidationTest(unittest.TestCase):
 
     def test_normal_pages(self):
         for title, _ in self.fixtures:
-            self._validate('/%s' % WikiPage.title_to_path(title),
-                           'html')
-            self._validate('/%s?rev=1' % WikiPage.title_to_path(title),
-                           'html')
-            self._validate('/%s?_type=body' % WikiPage.title_to_path(title),
-                           'html')
-            self._validate('/%s?_type=form' % WikiPage.title_to_path(title),
-                           'html')
+            path = WikiPage.title_to_path(title)
+            self._validate('/%s' % path, 'html')
+            self._validate('/%s?rev=1' % path, 'html')
+            self._validate('/%s?view=bodyonly' % path, 'html')
+            self._validate('/%s?view=edit' % path, 'html')
 
     def test_special_pages(self):
         def validate():
@@ -303,10 +301,10 @@ class HTML5ValidationTest(unittest.TestCase):
             self._validate('/sp.index', 'html')
             self._validate('/sp.index?_type=atom', 'xml')
 
-            self._validate('/sp.search?_type=json&format=opensearch', 'json')
+            self._validate('/sp.search?_type=json&view=opensearch', 'json')
 
             self._validate('/="Home"', 'html')
-            self._validate('/="Home"?_type=body', 'html')
+            self._validate('/="Home"?view=bodyonly', 'html')
             self._validate('/="Home"?_type=json', 'json')
 
             self._validate('/sp.titles?_type=json', 'json')
@@ -349,7 +347,7 @@ class HTML5ValidationTest(unittest.TestCase):
 
 
 # TODO: Complete this test cases and remove redundent tests
-class RESTfulAPITest(unittest.TestCase):
+class PageResourceTest(unittest.TestCase):
     def setUp(self):
         cache.prc.flush_all()
 
@@ -497,6 +495,35 @@ class RESTfulAPITest(unittest.TestCase):
         self.assertEqual(u'', page.body)
         self.assertEqual(0, page.revision)
 
+    def test_root(self):
+        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.get('/', follow_redir=False)
+        self.assertEqual('http://localhost/Home', self.browser.res.headers['location'])
+        self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
+
+    def test_root_with_querystring(self):
+        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.get('/?_type=txt', follow_redir=False)
+        self.assertEqual('http://localhost/Home?_type=txt', self.browser.res.headers['location'])
+
+    def test_response_representations(self):
+        # Create page
+        page = WikiPage.get_by_title(u'New page')
+        page.update_content(u'Hello', 0)
+
+        self.browser.get('/New page')
+        self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
+        self.browser.get('/New page?_type=txt')
+        self.assertEqual('text/plain; charset=utf-8', self.browser.res.headers['content-type'])
+        self.browser.get('/New page?_type=json')
+        self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
+
+    def test_revision_history(self):
+        self.browser.get('/New page?rev=list')
+        self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
+        self.browser.get('/New page?rev=list&_type=json')
+        self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
+
 
 class Browser(object):
     def __init__(self):
@@ -504,11 +531,13 @@ class Browser(object):
         self.res = None
         self.tree = None
 
-    def get(self, url):
+    def get(self, url, follow_redir=True):
         req = webapp2.Request.blank(url)
         self.res = req.get_response(main.app)
         if len(self.res.body) > 0 and self.res.headers['content-type'].split(';')[0].strip() == 'text/html':
             self.tree = html5parser.fromstring(self.res.body, parser=self.parser)
+        if follow_redir and self.res.status_code in [301, 302, 303, 304, 307] and 'location' in self.res.headers:
+            self.get(self.res.headers['location'][16:], follow_redir=True)
 
     def post(self, url, content=''):
         req = webapp2.Request.blank(url)
@@ -531,6 +560,14 @@ class Browser(object):
 
         self.post(action_link, urllib.urlencode(fields))
 
+    def login(self, email, user_id, is_admin=False):
+        os.environ['USER_EMAIL'] = email or ''
+        os.environ['USER_ID'] = user_id or ''
+        os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
+
+    def logout(self):
+        self.login(None, None)
+
     def _query_formfields(self, path):
         form = self.query(path)[0]
         field_path = [
@@ -548,11 +585,3 @@ class Browser(object):
     def _query(self, element, path):
         path = re.sub(r'/(\w+\d?)', r'/html:\1', path)
         return element.findall(path, namespaces={'html': 'http://www.w3.org/1999/xhtml'})
-
-    def login(self, email, user_id, is_admin=False):
-        os.environ['USER_EMAIL'] = email or ''
-        os.environ['USER_ID'] = user_id or ''
-        os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
-
-    def logout(self):
-        self.login(None, None)
