@@ -259,7 +259,7 @@ class PageHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.response, html, head)
         elif restype == 'json':
-            revisions = [{'url': rev.absolute_url, 'title': rev.title, 'modifier': rev.modifier} for rev in revisions]
+            revisions = [{'url': rev.absolute_url, 'title': rev.title} for rev in revisions]
             self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
             set_response_body(self.response, json.dumps(revisions), head)
         else:
@@ -295,7 +295,7 @@ class PageHandler(webapp2.RequestHandler):
             quoted_path = urllib2.quote(path.replace(' ', '_'))
             restype = get_restype(self.request)
             if restype == 'default':
-                self.response.headers['Location'] = quoted_path
+                self.response.headers['Location'] = str('/' + quoted_path)
             else:
                 self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
             self.response.status = 303
@@ -340,7 +340,7 @@ class PageHandler(webapp2.RequestHandler):
             quoted_path = urllib2.quote(path.replace(' ', '_'))
             restype = get_restype(self.request)
             if restype == 'default':
-                self.response.headers['Location'] = '/%s' % quoted_path
+                self.response.headers['Location'] = str('/' + quoted_path)
             else:
                 self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
             self.response.status = 303

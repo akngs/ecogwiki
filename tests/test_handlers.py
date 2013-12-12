@@ -150,7 +150,7 @@ class PageHandlerTest(unittest.TestCase):
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_new_page_should_be_shown_in_sp_changes(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
         for _ in range(2):
@@ -161,7 +161,7 @@ class PageHandlerTest(unittest.TestCase):
                              link_texts)
 
     def test_new_page_should_be_shown_in_sp_index(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
         for _ in range(2):
@@ -181,7 +181,7 @@ class PageHandlerTest(unittest.TestCase):
                          self.browser.res.location)
 
     def test_delete_page_without_permission(self):
-        self.browser.login('ak@gmailcom', 'ak', is_admin=False)
+        self.browser.login('ak@gmail.com', 'ak', is_admin=False)
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.browser.post('/New_page?_method=DELETE')
 
@@ -365,7 +365,7 @@ class PageResourceTest(unittest.TestCase):
         self.browser.logout()
 
     def test_create_new_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -381,7 +381,7 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual(u'Hello', page.body)
 
     def test_update_existing_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -402,7 +402,7 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual(2, page.revision)
 
     def test_preview(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -423,7 +423,7 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual(1, page.revision)
 
     def test_append_to_non_existing_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -439,7 +439,7 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual(u'Hello', page.body)
 
     def test_append_to_existing_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -460,7 +460,7 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual(2, page.revision)
 
     def test_delete_non_existing_page(self):
-        self.browser.login('ak@gmailcom', 'ak', is_admin=True)
+        self.browser.login('ak@gmail.com', 'ak', is_admin=True)
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -476,7 +476,7 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual(0, page.revision)
 
     def test_delete_existing_page(self):
-        self.browser.login('ak@gmailcom', 'ak', is_admin=True)
+        self.browser.login('ak@gmail.com', 'ak', is_admin=True)
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -495,14 +495,26 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual(u'', page.body)
         self.assertEqual(0, page.revision)
 
+    def test_redirect_in_absolute_path(self):
+        self.browser.login('ak@gmail.com', 'ak')
+
+        # GET edit form of "New/page"
+        self.browser.get('/New/page')
+        self.browser.get(self.browser.query_link(".//a[@id='edit']"))
+
+        # PUT "New page"
+        self.browser.submit(".//form[@class='editform']", {'body': 'Hello', 'revision': '0', 'preview': '0'})
+        self.assertEqual(303, self.browser.res.status_code)
+        self.assertEqual('http://localhost/New/page', self.browser.res.headers['Location'])
+
     def test_root(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
         self.browser.get('/', follow_redir=False)
         self.assertEqual('http://localhost/Home', self.browser.res.headers['location'])
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
 
     def test_root_with_querystring(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.browser.login('ak@gmail.com', 'ak')
         self.browser.get('/?_type=txt', follow_redir=False)
         self.assertEqual('http://localhost/Home?_type=txt', self.browser.res.headers['location'])
 
