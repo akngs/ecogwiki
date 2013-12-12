@@ -229,7 +229,7 @@ class PageHandler(webapp2.RequestHandler):
                 set_response_body(self.response, html, head)
         elif restype == 'atom':
             pages = WikiPage.get_published_posts(page.title, 20)
-            rendered = self._render_posts_atom(page.title, pages)
+            rendered = render_posts_atom(self.request, page.title, pages)
             self.response.headers['Content-Type'] = 'text/xml; charset=utf-8'
             set_response_body(self.response, rendered, head)
         elif restype == 'txt':
@@ -414,7 +414,7 @@ class SpecialPageHandler(webapp2.RequestHandler):
         elif title == u'search':
             self.get_search(user, head)
         elif title == u'opensearch':
-            self.get_opensearch(user, head)
+            self.get_opensearch(head)
         elif title == u'randomly update related pages':
             recent = self.request.GET.get('recent', '0')
             titles = WikiPage.randomly_update_related_links(50, recent == '1')
@@ -484,7 +484,6 @@ class SpecialPageHandler(webapp2.RequestHandler):
 
     def get_changes(self, user, head):
         restype = get_restype(self.request)
-        email = user.email() if user is not None else 'None'
         rendered = None
 
         if restype == 'default':
@@ -519,7 +518,6 @@ class SpecialPageHandler(webapp2.RequestHandler):
 
     def get_posts(self, user, head):
         restype = get_restype(self.request)
-        email = user.email() if user is not None else 'None'
         rendered = None
 
         if restype == 'default':
@@ -532,7 +530,7 @@ class SpecialPageHandler(webapp2.RequestHandler):
         elif restype == 'atom':
             if rendered is None:
                 pages = WikiPage.get_published_posts(None, 20)
-                rendered = self._render_posts_atom(None, pages)
+                rendered = render_posts_atom(self.request, None, pages)
             self.response.headers['Content-Type'] = 'text/xml; charset=utf-8'
             set_response_body(self.response, rendered, head)
         else:
@@ -582,7 +580,7 @@ class SpecialPageHandler(webapp2.RequestHandler):
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
-    def get_opensearch(self, user, head):
+    def get_opensearch(self, head):
         self.response.headers['Content-Type'] = 'text/xml'
         rendered = template(self.request, 'opensearch.xml', {})
         set_response_body(self.response, rendered, head)
@@ -597,28 +595,29 @@ class SpecialPageHandler(webapp2.RequestHandler):
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
-    def _render_posts_atom(self, title, pages):
-        host = self.request.host_url
-        config = WikiPage.get_config()
-        if title is None:
-            feed_title = '%s: posts' % config['service']['title']
-            url = "%s/sp.posts?_type=atom" % host
-        else:
-            feed_title = title
-            url = "%s/%s?_type=atom" % (WikiPage.title_to_path(title), host)
 
-        feed = AtomFeed(title=feed_title,
-                        feed_url=url,
-                        url="%s/" % host,
-                        author=config['admin']['email'])
-        for page in pages:
-            feed.add(title=page.title,
-                     content_type="html",
-                     content=page.rendered_body,
-                     author=page.modifier,
-                     url='%s%s' % (host, page.absolute_url),
-                     updated=page.published_at)
-        return feed.to_string()
+def render_posts_atom(req, title, pages):
+    host = req.host_url
+    config = WikiPage.get_config()
+    if title is None:
+        feed_title = '%s: posts' % config['service']['title']
+        url = "%s/sp.posts?_type=atom" % host
+    else:
+        feed_title = title
+        url = "%s/%s?_type=atom" % (WikiPage.title_to_path(title), host)
+
+    feed = AtomFeed(title=feed_title,
+                    feed_url=url,
+                    url="%s/" % host,
+                    author=config['admin']['email'])
+    for page in pages:
+        feed.add(title=page.title,
+                 content_type="html",
+                 content=page.rendered_body,
+                 author=page.modifier,
+                 url='%s%s' % (host, page.absolute_url),
+                 updated=page.published_at)
+    return feed.to_string()
 
 
 def get_restype(req):
