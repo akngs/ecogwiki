@@ -1310,6 +1310,7 @@ class WikiPageRevision(ndb.Model, PageOperationMixin):
     acl_write = ndb.StringProperty()
     created_at = ndb.DateTimeProperty()
 
+    @property
     def absolute_url(self):
         return u'/%s?rev=%d' % (WikiPage.title_to_path(self.title), self.revision)
 
