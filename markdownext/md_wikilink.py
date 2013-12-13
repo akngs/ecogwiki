@@ -4,7 +4,6 @@ from markdown.util import etree
 from markdown.extensions import Extension
 from markdown.inlinepatterns import Pattern
 
-              # ur'(?P<date>(?P<y>\d+)-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>([0-2][1-9]|3[0-1]|\?\?))' \
 
 RE_WIKILINK = ur'\[\[' \
               ur'((?P<rel>[^\]=]+?)\:\:)?' \

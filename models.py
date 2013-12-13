@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from google.appengine.ext import deferred
 from markdown.extensions.def_list import DefListExtension
 from markdown.extensions.attr_list import AttrListExtension
-from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax, md_strikethrough
+from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax, md_strikethrough, md_tables
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -1538,6 +1538,7 @@ md = markdown.Markdown(
         md_url.URLExtension(),
         md_mathjax.MathJaxExtension(),
         md_strikethrough.StrikethroughExtension(),
+        md_tables.TableExtension(),
         DefListExtension(),
         AttrListExtension(),
     ],

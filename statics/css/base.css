@@ -646,6 +646,30 @@ article .body .toc {
     margin: 1.5em 0;
 }
 
+article .body table {
+    margin: 1em 0 2em;
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 2px;
+    border-color: gray;
+}
+article .body th {
+    vertical-align: bottom;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+    padding: 8px;
+    line-height: 1.428571429;
+}
+article .body td {
+    padding: 8px;
+    line-height: 1.428571429;
+    vertical-align: top;
+    border-top: 1px solid #ddd;
+}
+article .body tbody tr:nth-child(odd) > td {
+    background-color: #f9f9f9;
+}
+
 @media (min-width:550px) {
     article .body .toc {
         max-width: 60%;
