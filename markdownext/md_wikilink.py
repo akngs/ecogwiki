@@ -8,7 +8,7 @@ from markdown.inlinepatterns import Pattern
 RE_WIKILINK = ur'\[\[' \
               ur'((?P<rel>[^\]=]+?)\:\:)?' \
               ur'(' \
-              ur'(?P<date>(?P<y>\d+)-(?P<m>(\d+|\?\?))-(?P<d>(\d+|\?\?))' \
+              ur'(?P<date>(?P<y>\d+)-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>([0-2][1-9]|3[0-1]|\?\?))' \
               ur'( (?P<bce>BCE))?)|' \
               ur'(?P<plain>.+?)' \
               ur')\]\]'
@@ -141,10 +141,6 @@ def date_links(m):
     date = m.group('d')
     bce = m.group('bce') == 'BCE'
     bce_str = ' BCE' if bce else ''
-
-    if (month != '??' and int(month) > 12) or (date != '??' and int(date) > 31):
-        link = '%s-%s-%s%s' % (year, month, date, bce_str)
-        return [(link, link)]
 
     # handle year
     wikilinks.append(('%s' % year, '%s%s' % (year, bce_str), bce))
