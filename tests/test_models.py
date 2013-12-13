@@ -166,6 +166,12 @@ class WikiPageWikiLinkParserTest(unittest.TestCase):
         self.assertEqual({u'Article/relatedTo': [u'1979 BCE', u'March 27']},
                          parse_wikilinks('Article', u'[[1979-03-27 BCE]]'))
 
+    def test_invalid_month_or_date(self):
+        self.assertEqual({u'Article/relatedTo': [u'1979-13-27']},
+                         parse_wikilinks('Article', u'[[1979-13-27]]'))
+        self.assertEqual({u'Article/relatedTo': [u'1979-12-50']},
+                         parse_wikilinks('Article', u'[[1979-12-50]]'))
+
     def test_rel(self):
         self.assertEqual({u'Article/birthDate': [u'1979 BCE', u'March 27']},
                          parse_wikilinks('Article',

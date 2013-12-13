@@ -142,6 +142,10 @@ def date_links(m):
     bce = m.group('bce') == 'BCE'
     bce_str = ' BCE' if bce else ''
 
+    if (month != '??' and int(month) > 12) or (date != '??' and int(date) > 31):
+        link = '%s-%s-%s%s' % (year, month, date, bce_str)
+        return [(link, link)]
+
     # handle year
     wikilinks.append(('%s' % year, '%s%s' % (year, bce_str), bce))
 
