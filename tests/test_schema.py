@@ -58,7 +58,7 @@ class EmbeddedSchemaDataTest(unittest.TestCase):
 
     def test_normal_links(self):
         page_a = WikiPage.get_by_title(u'A')
-        page_a.update_content(u'[[B]]', 0)
+        page_a.update_content(u'[[B]]', 0, dont_defer=True)
         page_b = WikiPage.get_by_title(u'B')
 
         self.assertEqual([u'A'], page_b.data['inlinks'])

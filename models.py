@@ -528,11 +528,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
             cache.set_hashbangs(self.title, value)
         return value
 
-    def delete(self, user=None):
+    def delete(self, user=None, dont_defer=False):
         if not is_admin_user(user):
             raise RuntimeError('Only admin can delete pages.')
 
-        self.update_content('', self.revision, None, user, force_update=False, dont_create_rev=True)
+        self.update_content('', self.revision, None, user, force_update=False, dont_create_rev=True, dont_defer=dont_defer)
         self.related_links = {}
         self.modifier = None
         self.updated_at = None
@@ -544,7 +544,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         cache.del_titles()
 
-    def update_content(self, new_body, base_revision, comment='', user=None, force_update=False, dont_create_rev=False):
+    def update_content(self, new_body, base_revision, comment='', user=None, force_update=False, dont_create_rev=False, dont_defer=False):
         if not force_update and self.body == new_body:
             return False
 
@@ -642,16 +642,22 @@ class WikiPage(ndb.Model, PageOperationMixin):
                                    acl_read=self.acl_read, acl_write=self.acl_write)
             rev.put()
 
-        # deferred update schema data index
-        new_data = self.data
-        deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
-
         # update inlinks and outlinks
         old_redir = old_md.get('redirect')
         new_redir = new_md.get('redirect')
-        self.update_links(old_redir, new_redir)
+        if dont_defer:
+            self.update_links_deferred(old_redir, new_redir)
+        else:
+            deferred.defer(self.update_links_deferred, old_redir, new_redir)
 
-        # delete config and tittle cache
+        # deferred update schema data index
+        new_data = self.data
+        if dont_defer:
+            self.rebuild_data_index_deferred(old_data, new_data)
+        else:
+            deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
+
+        # delete config and title cache
         if self.title == '.config':
             cache.del_config()
         if self.revision == 1:
@@ -672,16 +678,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             i = SchemaDataIndex(title=self.title, name=name, value=value, data=data)
             i.put()
 
-    def _data_as_pairs(self, data):
-        pairs = set([])
-        for key, value in data.items():
-            if type(value) == list:
-                for v in value:
-                    pairs.add((key, v))
-            else:
-                pairs.add((key, value))
-        return pairs
-
     def rebuild_data_index_deferred(self, old_data, new_data):
         old_pairs = self._data_as_pairs(old_data)
         new_pairs = self._data_as_pairs(new_data)
@@ -698,32 +694,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         keys = [key for key in keys if key is not None]
         ndb.delete_multi(keys)
 
-    @property
-    def revisions(self):
-        return WikiPageRevision.query(ancestor=self._rev_key())
-
-    @property
-    def link_scoretable(self):
-        """Returns all links ordered by score"""
-
-        # related links
-        related_links_scoretable = self.related_links
-
-        # in/out links
-        inlinks = reduce(lambda a, b: a + b, self.inlinks.values(), [])
-        outlinks = reduce(lambda a, b: a + b, self.outlinks.values(), [])
-        inout_links = set(inlinks + outlinks).difference(related_links_scoretable.keys())
-        inout_links_len = len(inout_links)
-        inout_score = 1.0 / inout_links_len if inout_links_len != 0 else 0.0
-        inout_links_scoretable = dict(zip(inout_links, [inout_score] * inout_links_len))
-
-        scoretable = dict(inout_links_scoretable.items() + related_links_scoretable.items())
-        sorted_scoretable = sorted(scoretable.iteritems(),
-                                   key=operator.itemgetter(1),
-                                   reverse=True)
-        return OrderedDict(sorted_scoretable)
-
-    def update_links(self, old_redir, new_redir):
+    def update_links_deferred(self, old_redir, new_redir):
         """Updates outlinks of this page and inlinks of target pages"""
         # 1. process "redirect" metadata
         if old_redir != new_redir:
@@ -821,6 +792,41 @@ class WikiPage(ndb.Model, PageOperationMixin):
         for rel in self.outlinks.keys():
             self.outlinks[rel].sort()
         self.put()
+
+    def _data_as_pairs(self, data):
+        pairs = set([])
+        for key, value in data.items():
+            if type(value) == list:
+                for v in value:
+                    pairs.add((key, v))
+            else:
+                pairs.add((key, value))
+        return pairs
+
+    @property
+    def revisions(self):
+        return WikiPageRevision.query(ancestor=self._rev_key())
+
+    @property
+    def link_scoretable(self):
+        """Returns all links ordered by score"""
+
+        # related links
+        related_links_scoretable = self.related_links
+
+        # in/out links
+        inlinks = reduce(lambda a, b: a + b, self.inlinks.values(), [])
+        outlinks = reduce(lambda a, b: a + b, self.outlinks.values(), [])
+        inout_links = set(inlinks + outlinks).difference(related_links_scoretable.keys())
+        inout_links_len = len(inout_links)
+        inout_score = 1.0 / inout_links_len if inout_links_len != 0 else 0.0
+        inout_links_scoretable = dict(zip(inout_links, [inout_score] * inout_links_len))
+
+        scoretable = dict(inout_links_scoretable.items() + related_links_scoretable.items())
+        sorted_scoretable = sorted(scoretable.iteritems(),
+                                   key=operator.itemgetter(1),
+                                   reverse=True)
+        return OrderedDict(sorted_scoretable)
 
     def _publish(self, title, save):
         if self.published_at is not None and self.published_to == title:
