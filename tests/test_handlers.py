@@ -537,6 +537,30 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
 
 
+class SearchResultResourceTest(unittest.TestCase):
+    def setUp(self):
+        cache.prc.flush_all()
+
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+        self.testbed.init_user_stub()
+        self.oauth_stub = OAuthStub(self.testbed, logout=True)
+        self.browser = Browser()
+
+    def tearDown(self):
+        self.testbed.deactivate()
+        self.browser.logout()
+
+    def test_representations(self):
+        self.browser.get('/sp.search?q=H')
+        self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
+        self.browser.get('/sp.search?q=H&_type=json')
+        self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
+
+
 class Browser(object):
     def __init__(self):
         self.parser = html5parser.HTMLParser(strict=True)

@@ -85,104 +85,42 @@ JINJA.filters['userpage'] = userpage_link
 JINJA.filters['has_supported_language'] = has_supported_language
 
 
-#
-# Codes here are completely fucked up.
-# Introduce "Resource" class to reduce duplications and conditionals.
-#
-
-class SearchHandler(webapp2.RequestHandler):
-    def head(self, path):
-        return self.get(path, True)
-
-    def get(self, path, head=False):
-        cache.create_prc()
-        expression = WikiPage.path_to_title(path)
-        parsed_expression = search.parse_expression(expression)
-        scoretable = WikiPage.search(expression)
-
-        positives = dict([(k, v) for k, v in scoretable.items() if v >= 0.0])
-        positives = OrderedDict(sorted(positives.iteritems(),
-                                       key=operator.itemgetter(1),
-                                       reverse=True)[:20])
-        negatives = dict([(k, abs(v)) for k, v in scoretable.items() if v < 0.0])
-        negatives = OrderedDict(sorted(negatives.iteritems(),
-                                       key=operator.itemgetter(1),
-                                       reverse=True)[:20])
-
-        self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-        html = template(self.request, 'search.html', {'expression': expression,
-                                                      'parsed_expression': parsed_expression,
-                                                      'positives': positives,
-                                                      'negatives': negatives})
-        set_response_body(self.response, html, head)
-
-
-class WikiqueryHandler(webapp2.RequestHandler):
-    def head(self, path):
-        return self.get(path, True)
-
-    def get(self, path, head=False):
-        cache.create_prc()
-        query = WikiPage.path_to_title(path)
-        user = get_cur_user()
-        result = WikiPage.wikiquery(query, user)
-        view = self.request.GET.get('view', 'default')
-        restype = get_restype(self.request)
-        if restype == 'default' or restype == 'html':
-            if view == 'bodyonly':
-                html = template(self.request, 'bodyonly.html', {
-                    'title': u'Search: %s ' % query,
-                    'body': obj_to_html(result),
-                })
-            else:
-                html = template(self.request, 'wikiquery.html', {
-                    'query': query,
-                    'result': obj_to_html(result),
-                })
-            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            set_response_body(self.response, html, head)
-        elif restype == 'json':
-            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
-            set_response_body(self.response, json.dumps(result), head)
-        else:
-            self.abort(400, 'Unknown type: %s' % restype)
-
-
 class PageHandler(webapp2.RequestHandler):
     def head(self, path):
         return self.get(path, True)
 
     def get(self, path, head=False):
         if path == '':
-            self.response.headers['Location'] = '/Home'
+            self.response.location = '/Home'
             if len(self.request.query):
-                self.response.headers['Location'] += '?%s' % self.request.query
+                self.response.location += '?%s' % self.request.query
             self.response.status = 303
             return
         elif self.request.path_qs.find('%20') != -1:
-            self.response.headers['Location'] = '%s' % self.request.path_qs.replace('%20', '_')
+            self.response.location = '%s' % self.request.path_qs.replace('%20', '_')
             self.response.status = 303
             return
 
         cache.create_prc()
+
         title = WikiPage.path_to_title(path)
         user = get_cur_user()
-        restype = get_restype(self.request)
-        view = self.request.GET.get('view', 'default')
         page = WikiPage.get_by_title(title)
+        restype = get_restype(self.request, 'html')
+        view = self.request.GET.get('view', 'default')
 
         rev = self.request.GET.get('rev', 'latest')
         if rev == 'list':
-            self.get_revision_list(restype, page, head)
-            return
+            self.get_revision_list(restype, page, user, head)
+        else:
+            if rev == 'latest':
+                rev = '%d' % page.revision
+            rev = int(rev)
+            if rev != page.revision:
+                page = page.revisions.filter(WikiPageRevision.revision == rev).get()
+            self.get_page(restype, view, page, user, head)
 
-        if rev == 'latest':
-            rev = '%d' % page.revision
-        rev = int(rev)
-
-        if rev != page.revision:
-            page = page.revisions.filter(WikiPageRevision.revision == rev).get()
-
+    def get_page(self, restype, view, page, user, head):
         if not page.can_read(user):
             self.response.status = 403
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -191,16 +129,16 @@ class PageHandler(webapp2.RequestHandler):
             return
 
         # custom content-type metadata?
-        if restype == 'default' and view == 'default' and page.metadata['content-type'] != 'text/x-markdown':
+        if restype == 'html' and view == 'default' and page.metadata['content-type'] != 'text/x-markdown':
             self.response.headers['Content-Type'] = '%s; charset=utf-8' % str(page.metadata['content-type'])
             set_response_body(self.response, WikiPage.remove_metadata(page.body), head)
             return
 
-        if restype == 'default':
+        if restype == 'html':
             if view == 'default':
                 redirect = page.metadata.get('redirect', None)
                 if redirect is not None:
-                    self.response.headers['Location'] = '/' + WikiPage.title_to_path(redirect)
+                    self.response.location = '/' + WikiPage.title_to_path(redirect)
                     self.response.status = 303
                     return
 
@@ -213,19 +151,19 @@ class PageHandler(webapp2.RequestHandler):
                 elif page.revision == 0:
                     self.response.status_int = 404
 
-                self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 html = template(self.request, 'wikipage.html', template_data)
+                self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 set_response_body(self.response, html, head)
             elif view == 'edit':
                 html = template(self.request, 'wikipage.form.html', {'page': page, 'conflict': None})
                 self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 set_response_body(self.response, html, head)
             elif view == 'bodyonly':
-                self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 html = template(self.request, 'bodyonly.html', {
                     'title': page.title,
                     'body': page.rendered_body,
                 })
+                self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 set_response_body(self.response, html, head)
         elif restype == 'atom':
             pages = WikiPage.get_published_posts(page.title, 20)
@@ -236,7 +174,6 @@ class PageHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             set_response_body(self.response, page.body, head)
         elif restype == 'json':
-            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
             pagedict = {
                 'title': page.title,
                 'modifier': page.modifier.email() if page.modifier else None,
@@ -247,14 +184,18 @@ class PageHandler(webapp2.RequestHandler):
                 'acl_write': page.acl_write,
                 'data': page.data,
             }
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
             set_response_body(self.response, json.dumps(pagedict), head)
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
-    def get_revision_list(self, restype, page, head):
-        revisions = page.revisions.order(-WikiPageRevision.created_at)
+    def get_revision_list(self, restype, page, user, head):
+        revisions = [
+            r for r in page.revisions.order(-WikiPageRevision.created_at)
+            if r.can_read(user)
+        ]
 
-        if restype == 'default':
+        if restype == 'html':
             html = template(self.request, 'history.html', {'page': page, 'revisions': revisions})
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.response, html, head)
@@ -271,7 +212,6 @@ class PageHandler(webapp2.RequestHandler):
             set_response_body(self.response, json.dumps(revisions), head)
         else:
             self.abort(400, 'Unknown type: %s' % restype)
-            return
 
     def post(self, path):
         method = self.request.GET.get('_method', 'POST')
@@ -282,35 +222,32 @@ class PageHandler(webapp2.RequestHandler):
 
         cache.create_prc()
         title = WikiPage.path_to_title(path)
-
         user = get_cur_user()
         page = WikiPage.get_by_title(title)
         new_body = self.request.POST['body']
         comment = self.request.POST.get('comment', '')
 
         if not page.can_write(user):
+            html = template(self.request, '403.html', {'page': page})
             self.response.status = 403
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = template(self.request, '403.html', {'page': page})
             set_response_body(self.response, html, False)
             return
 
         try:
             page.update_content(page.body + new_body, page.revision, comment, user)
-            self.response.location = page.absolute_url
-            self.response.headers['X-Message'] = 'Successfully updated.'
             quoted_path = urllib2.quote(path.replace(' ', '_'))
-            restype = get_restype(self.request)
-            if restype == 'default':
-                self.response.headers['Location'] = str('/' + quoted_path)
+            restype = get_restype(self.request, 'html')
+            if restype == 'html':
+                self.response.location = str('/' + quoted_path)
             else:
-                self.response.headers['Location'] = str('/%s?_type=%s' % (quoted_path, restype))
+                self.response.location = str('/%s?_type=%s' % (quoted_path, restype))
             self.response.status = 303
-
+            self.response.headers['X-Message'] = 'Successfully updated.'
         except ValueError as e:
+            html = template(self.request, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
             self.response.status = 406
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = template(self.request, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
             set_response_body(self.response, html, False)
 
     def put(self, path):
@@ -342,23 +279,23 @@ class PageHandler(webapp2.RequestHandler):
 
         try:
             page.update_content(new_body, revision, comment, user)
-            self.response.location = page.absolute_url
-            self.response.headers['X-Message'] = 'Successfully updated.'
             quoted_path = urllib2.quote(path.replace(' ', '_'))
-            restype = get_restype(self.request)
-            self.response.headers['Location'] = str('/' + quoted_path)
-            if restype != 'default':
-                self.response.headers['Location'] += str('?_type=%s' % restype)
+            self.response.headers['X-Message'] = 'Successfully updated.'
             self.response.status = 303
+            restype = get_restype(self.request, 'html')
+            if restype == 'html':
+                self.response.location = str('/' + quoted_path)
+            else:
+                self.response.location = str('/%s?_type=%s' % (quoted_path, restype))
         except ConflictError as e:
+            html = template(self.request, 'wikipage.form.html', {'page': page, 'conflict': e})
             self.response.status = 409
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = template(self.request, 'wikipage.form.html', {'page': page, 'conflict': e})
             set_response_body(self.response, html, False)
         except ValueError as e:
+            html = template(self.request, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
             self.response.status = 406
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = template(self.request, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
             set_response_body(self.response, html, False)
 
     def delete(self, path):
@@ -377,6 +314,78 @@ class PageHandler(webapp2.RequestHandler):
             set_response_body(self.response, html, False)
 
 
+class RelatedPagesHandler(webapp2.RequestHandler):
+    def head(self, path):
+        return self.get(path, True)
+
+    def get(self, path, head=False):
+        cache.create_prc()
+        expression = WikiPage.path_to_title(path)
+        parsed_expression = search.parse_expression(expression)
+        scoretable = WikiPage.search(expression)
+        positives = dict([(k, v) for k, v in scoretable.items() if v >= 0.0])
+        positives = OrderedDict(sorted(positives.iteritems(),
+                                       key=operator.itemgetter(1),
+                                       reverse=True)[:20])
+        negatives = dict([(k, abs(v)) for k, v in scoretable.items() if v < 0.0])
+        negatives = OrderedDict(sorted(negatives.iteritems(),
+                                       key=operator.itemgetter(1),
+                                       reverse=True)[:20])
+        result = {
+            'expression': expression,
+            'parsed_expression': parsed_expression,
+            'positives': positives,
+            'negatives': negatives
+        }
+
+        restype = get_restype(self.request, 'html')
+        if restype == 'html':
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = template(self.request, 'search.html', result)
+            set_response_body(self.response, html, head)
+        elif restype == 'json':
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            set_response_body(self.response, json.dumps(result), head)
+        else:
+            self.abort(400, 'Unknown type: %s' % restype)
+
+
+class WikiqueryHandler(webapp2.RequestHandler):
+    def head(self, path):
+        return self.get(path, True)
+
+    def get(self, path, head=False):
+        cache.create_prc()
+        query = WikiPage.path_to_title(path)
+        user = get_cur_user()
+        view = self.request.GET.get('view', 'default')
+        restype = get_restype(self.request, 'html')
+        result = WikiPage.wikiquery(query, user)
+
+        if restype == 'html':
+            if view == 'default':
+                html = template(self.request, 'wikiquery.html', {
+                    'query': query,
+                    'result': obj_to_html(result),
+                })
+                self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+                set_response_body(self.response, html, head)
+            elif view == 'bodyonly':
+                html = template(self.request, 'bodyonly.html', {
+                    'title': u'Search: %s ' % query,
+                    'body': obj_to_html(result),
+                })
+                self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+                set_response_body(self.response, html, head)
+            else:
+                self.abort(400, 'Unknown view: %s' % view)
+        elif restype == 'json':
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            set_response_body(self.response, json.dumps(result), head)
+        else:
+            self.abort(400, 'Unknown type: %s' % restype)
+
+
 class SpecialPageHandler(webapp2.RequestHandler):
     def post(self, path):
         cache.create_prc()
@@ -388,12 +397,12 @@ class SpecialPageHandler(webapp2.RequestHandler):
 
     def post_preferences(self, user):
         if user is None:
-            self.response.status = 403
-            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             html = template(self.request, '403.html', {'page': {
                 'absolute_url': '/sp.preferences',
                 'title': 'User preferences',
             }})
+            self.response.status = 403
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.response, html, False)
             return
 
@@ -490,62 +499,56 @@ class SpecialPageHandler(webapp2.RequestHandler):
         set_response_body(self.response, rendered, head)
 
     def get_changes(self, user, head):
-        restype = get_restype(self.request)
-        rendered = None
+        restype = get_restype(self.request, 'html')
 
-        if restype == 'default':
-            if rendered is None:
-                pages = WikiPage.get_changes(user)
-                rendered = template(self.request, 'wiki_sp_changes.html',
-                                          {'pages': pages})
+        if restype == 'html':
+            pages = WikiPage.get_changes(user)
+            rendered = template(self.request, 'wiki_sp_changes.html',
+                                {'pages': pages})
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.response, rendered, head)
         elif restype == 'atom':
-            if rendered is None:
-                pages = WikiPage.get_changes(None, 3, include_body=True)
-                config = WikiPage.get_config()
-                host = self.request.host_url
-                url = "%s/sp.changes?_type=atom" % host
-                feed = AtomFeed(title="%s: changes" % config['service']['title'],
-                                feed_url=url,
-                                url="%s/" % host,
-                                author=config['admin']['email'])
-                for page in pages:
-                    feed.add(title=page.title,
-                             content_type="html",
-                             content=page.rendered_body,
-                             author=page.modifier,
-                             url='%s%s' % (host, page.absolute_url),
-                             updated=page.updated_at)
-                rendered = feed.to_string()
+            pages = WikiPage.get_changes(None, 3, include_body=True)
+            config = WikiPage.get_config()
+            host = self.request.host_url
+            url = "%s/sp.changes?_type=atom" % host
+            feed = AtomFeed(title="%s: changes" % config['service']['title'],
+                            feed_url=url,
+                            url="%s/" % host,
+                            author=config['admin']['email'])
+            for page in pages:
+                feed.add(title=page.title,
+                         content_type="html",
+                         content=page.rendered_body,
+                         author=page.modifier,
+                         url='%s%s' % (host, page.absolute_url),
+                         updated=page.updated_at)
+            rendered = feed.to_string()
             self.response.headers['Content-Type'] = 'text/xml; charset=utf-8'
             set_response_body(self.response, rendered, head)
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
     def get_posts(self, user, head):
-        restype = get_restype(self.request)
-        rendered = None
+        restype = get_restype(self.request, 'html')
 
-        if restype == 'default':
-            if rendered is None:
-                pages = WikiPage.get_published_posts(None, 200)
-                rendered = template(self.request, 'wiki_sp_posts.html',
-                                          {'pages': pages})
+        if restype == 'html':
+            pages = WikiPage.get_published_posts(None, 200)
+            rendered = template(self.request, 'wiki_sp_posts.html',
+                                {'pages': pages})
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.response, rendered, head)
         elif restype == 'atom':
-            if rendered is None:
-                pages = WikiPage.get_published_posts(None, 20)
-                rendered = render_posts_atom(self.request, None, pages)
+            pages = WikiPage.get_published_posts(None, 20)
+            rendered = render_posts_atom(self.request, None, pages)
             self.response.headers['Content-Type'] = 'text/xml; charset=utf-8'
             set_response_body(self.response, rendered, head)
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
     def get_index(self, user, head):
-        restype = get_restype(self.request)
-        if restype == 'default':
+        restype = get_restype(self.request, 'html')
+        if restype == 'html':
             pages = WikiPage.get_index(user)
             page_group = groupby(pages,
                                  lambda p: title_grouper(p.title))
@@ -574,20 +577,19 @@ class SpecialPageHandler(webapp2.RequestHandler):
             self.abort(400, 'Unknown type: %s' % restype)
 
     def get_search(self, user, head):
-        restype = get_restype(self.request)
-        resformat = self.request.GET.get('format', 'opensearch')
+        restype = get_restype(self.request, 'html')
         q = self.request.GET.get('q', None)
 
-        if restype == 'json' and resformat == 'opensearch':
+        if restype == 'html':
+            quoted_path = urllib2.quote(q.encode('utf8').replace(' ', '_'))
+            self.response.location = '/' + quoted_path
+            self.response.status = 303
+        elif restype == 'json':
             titles = WikiPage.get_titles(user)
             if q is not None and len(q) > 0:
                 titles = [t for t in titles if t.find(q) != -1]
-            self.response.headers['Content-Type'] = 'application/json'
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
             set_response_body(self.response, json.dumps([q, list(titles)]), head)
-        elif restype == 'default':
-            quoted_path = urllib2.quote(q.encode('utf8').replace(' ', '_'))
-            self.response.headers['Location'] = '/' + quoted_path
-            self.response.status = 303
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
@@ -597,7 +599,7 @@ class SpecialPageHandler(webapp2.RequestHandler):
         set_response_body(self.response, rendered, head)
 
     def get_titles(self, user, head):
-        restype = get_restype(self.request)
+        restype = get_restype(self.request, 'json')
 
         if restype == 'json':
             titles = WikiPage.get_titles(user)
@@ -631,8 +633,8 @@ def render_posts_atom(req, title, pages):
     return feed.to_string()
 
 
-def get_restype(req):
-    return str(req.GET.get('_type', 'default'))
+def get_restype(req, default):
+    return str(req.GET.get('_type', default))
 
 
 def set_response_body(res, resbody, head):

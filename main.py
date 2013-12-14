@@ -66,7 +66,7 @@ DEFAULT_CONFIG = {
 
 app = webapp2.WSGIApplication([
     (ur'/sp\.(.*)', 'views.SpecialPageHandler', 'sp'),
-    (ur'/([+-].*)', 'views.SearchHandler', 'search'),
+    (ur'/([+-].*)', 'views.RelatedPagesHandler', 'related-pages'),
     (ur'/=(.*)', 'views.WikiqueryHandler', 'wikiquery'),
     (ur'/(.*)', 'views.PageHandler', 'page'),
 ], debug=True)
