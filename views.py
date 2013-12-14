@@ -584,6 +584,10 @@ class SpecialPageHandler(webapp2.RequestHandler):
                 titles = [t for t in titles if t.find(q) != -1]
             self.response.headers['Content-Type'] = 'application/json'
             set_response_body(self.response, json.dumps([q, list(titles)]), head)
+        elif restype == 'default':
+            quoted_path = urllib2.quote(q.encode('utf8').replace(' ', '_'))
+            self.response.headers['Location'] = '/' + quoted_path
+            self.response.status = 303
         else:
             self.abort(400, 'Unknown type: %s' % restype)
 
