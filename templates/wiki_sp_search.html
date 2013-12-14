@@ -1,16 +1,16 @@
 {% extends "templates/wiki_base.html" %}
-{% block title %}Search by title: {{ q }}{% endblock %}
+{% block title %}Search by title: {{ page.title }}{% endblock %}
 {% block body %}
 <header>
     <h1>
-        Search by title: {{ q }}
+        Search by title: {{ page.title }}
     </h1>
 </header>
 
 {% if page.revision != 0 %}
     <h2>Exact match</h2>
     <ul>
-        <li><a href="{{ q|to_path }}" class="wikipage caret-target">{{ q }}</a></li>
+        <li><a href="{{ page.absolute_url }}" class="wikipage caret-target">{{ page.title }}</a></li>
     </ul>
 {% endif %}
 
