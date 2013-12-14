@@ -610,7 +610,7 @@ class SpecialPageHandler(webapp2.RequestHandler):
         elif restype == 'json':
             titles = WikiPage.get_titles(user)
             if q is not None and len(q) > 0:
-                titles = [t for t in titles if t.find(q) != -1]
+                titles = [t for t in titles if t.find(title) != -1]
             self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
             set_response_body(self.response, json.dumps([q, list(titles)]), head)
         else:
