@@ -37,6 +37,20 @@
 
     ga('create', '{{ config.service.ga_profile_id }}', '{{ config.service.domain }}');
     ga('require', 'linkid', 'linkid.js');
+
+    // Send search pageview if needed
+    var tokens = document.cookie.split(';');
+    for(var i = 0; i < tokens.length; i++) {
+        var token = tokens[i].trim();
+        if(token.indexOf('ecogwiki_search_query=') !== 0) continue;
+        var query = token.split('=')[1].trim();
+        if(!query) continue;
+
+        ga('send', 'pageview', '/sp.search?q=' + encodeURIComponent(query));
+        document.cookie = 'ecogwiki_search_query=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+    }
+
+    // ... and then send this page's pageview
     ga('send', 'pageview');
 
     // Logged-in?

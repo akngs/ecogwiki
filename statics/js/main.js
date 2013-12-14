@@ -64,6 +64,7 @@ $(function() {
         $($search[0].form).on('submit', function() {
             var value = $search.val();
             if(value) {
+                document.cookie = 'ecogwiki_search_query=' + value;
                 location.href = '/' + value;
             }
             return false;
