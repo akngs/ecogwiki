@@ -582,7 +582,7 @@ class SpecialPageHandler(webapp2.RequestHandler):
             self.abort(400)
             return
 
-        title = WikiPage.path_to_title(q)
+        title = WikiPage.path_to_title(q.encode('utf-8'))
         page = WikiPage.get_by_title(title)
         restype = get_restype(self.request, 'html')
 
