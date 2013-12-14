@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="ko">
+<head><meta charset="utf-8"><title>Search by title: {{ q }}</title></head>
+<body><div class="wrap">
+<header>
+    <h1>Search by title: {{ q }}</h1>
+</header>
+
+{% if page.revision != 0 %}
+    <h2>Exact match</h2>
+    <ul>
+        <li><a href="{{ q|to_path }}" class="wikipage caret-target">{{ q }}</a></li>
+    </ul>
+{% endif %}
+
+{% for key, titles in page.get_similar_titles(user).items() %}
+    {% if key == 'startswiths' and titles %}
+        <h2>Pages starting with "{{ page.title }}"</h2>
+    {% elif key == 'endswiths' and titles %}
+        <h2>Pages ending with "{{ page.title }}"</h2>
+    {% elif key == 'contains' and titles %}
+        <h2>Pages containing "{{ page.title }}"</h2>
+    {% endif %}
+
+    {% if titles %}
+        <ul>
+        {% for title in titles %}
+            <li><a href="{{ title|to_path }}" class="wikipage caret-target">{{ title }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endfor %}
+
+</div></body>
+</html>

@@ -1,0 +1,35 @@
+{% extends "templates/wiki_base.html" %}
+{% block title %}Search by title: {{ q }}{% endblock %}
+{% block body %}
+<header>
+    <h1>
+        Search by title: {{ q }}
+    </h1>
+</header>
+
+{% if page.revision != 0 %}
+    <h2>Exact match</h2>
+    <ul>
+        <li><a href="{{ q|to_path }}" class="wikipage caret-target">{{ q }}</a></li>
+    </ul>
+{% endif %}
+
+{% for key, titles in page.get_similar_titles(user).items() %}
+    {% if key == 'startswiths' and titles %}
+        <h2>Pages starting with "{{ page.title }}"</h2>
+    {% elif key == 'endswiths' and titles %}
+        <h2>Pages ending with "{{ page.title }}"</h2>
+    {% elif key == 'contains' and titles %}
+        <h2>Pages containing "{{ page.title }}"</h2>
+    {% endif %}
+
+    {% if titles %}
+        <ul>
+        {% for title in titles %}
+            <li><a href="{{ title|to_path }}" class="wikipage caret-target">{{ title }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endfor %}
+
+{% endblock %}

@@ -1232,10 +1232,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
         startswiths = []
         endswiths = []
         for title in titles:
-            normalized_title = cls._normalize_title(title)
-            if normalized_title.find(normalized_target) == -1:
+            if title == target:
                 continue
-            if normalized_title.startswith(normalized_target):
+
+            normalized_title = cls._normalize_title(title)
+
+            if normalized_title.find(normalized_target) == -1:
+                pass
+            elif normalized_title.startswith(normalized_target):
                 startswiths.append(title)
             elif normalized_title.endswith(normalized_target):
                 endswiths.append(title)

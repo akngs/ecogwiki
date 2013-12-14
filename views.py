@@ -159,7 +159,7 @@ class PageHandler(webapp2.RequestHandler):
                 self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 set_response_body(self.response, html, head)
             elif view == 'bodyonly':
-                html = template(self.request, 'bodyonly.html', {
+                html = template(self.request, 'wikipage_bodyonly.html', {
                     'title': page.title,
                     'body': page.rendered_body,
                 })
@@ -263,7 +263,7 @@ class PageHandler(webapp2.RequestHandler):
 
         if preview == '1':
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = template(self.request, 'bodyonly.html', {
+            html = template(self.request, 'wikipage_bodyonly.html', {
                 'title': page.title,
                 'body': page.preview_rendered_body(new_body)
             })
@@ -371,7 +371,7 @@ class WikiqueryHandler(webapp2.RequestHandler):
                 self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 set_response_body(self.response, html, head)
             elif view == 'bodyonly':
-                html = template(self.request, 'bodyonly.html', {
+                html = template(self.request, 'wikipage_bodyonly.html', {
                     'title': u'Search: %s ' % query,
                     'body': obj_to_html(result),
                 })
@@ -577,13 +577,31 @@ class SpecialPageHandler(webapp2.RequestHandler):
             self.abort(400, 'Unknown type: %s' % restype)
 
     def get_search(self, user, head):
+        q = self.request.GET.get('q', '')
+        if len(q) == 0:
+            self.abort(400)
+            return
+
+        title = WikiPage.path_to_title(q)
+        page = WikiPage.get_by_title(title)
         restype = get_restype(self.request, 'html')
-        q = self.request.GET.get('q', None)
 
         if restype == 'html':
-            quoted_path = urllib2.quote(q.encode('utf8').replace(' ', '_'))
-            self.response.location = '/' + quoted_path
-            self.response.status = 303
+            redir = self.request.GET.get('redir', '0') == '1' and page.revision != 0
+            if redir:
+                quoted_path = urllib2.quote(q.encode('utf8').replace(' ', '_'))
+                self.response.location = '/' + quoted_path
+                self.response.status = 303
+            else:
+                view = self.request.GET.get('view', 'default')
+                if view == 'default':
+                    html = template(self.request, 'wiki_sp_search.html', {'q': q, 'page': page})
+                    self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+                    set_response_body(self.response, html, head)
+                elif view == 'bodyonly':
+                    html = template(self.request, 'wiki_sp_search_bodyonly.html', {'q': q, 'page': page})
+                    self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+                    set_response_body(self.response, html, head)
         elif restype == 'json':
             titles = WikiPage.get_titles(user)
             if q is not None and len(q) > 0:

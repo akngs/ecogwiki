@@ -723,9 +723,11 @@ article li .score {
     color: #888;
 }
 
+article header h1 a.search-by-title,
 article header h1 a.search.pos {
     font-size: 14px;
     font-weight: normal;
+    margin-right: 0.5em;
 }
 
 article .body a.search.pos,

@@ -301,7 +301,7 @@ class HTML5ValidationTest(unittest.TestCase):
             self._validate('/sp.index', 'html')
             self._validate('/sp.index?_type=atom', 'xml')
 
-            self._validate('/sp.search?_type=json&view=opensearch', 'json')
+            self._validate('/sp.search?_type=json&q=1', 'json')
 
             self._validate('/="Home"', 'html')
             self._validate('/="Home"?view=bodyonly', 'html')

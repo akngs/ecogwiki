@@ -92,20 +92,21 @@ window.fbAsyncInit = function() {
 
             <br>
             <a href="{{ page.title|to_pluspath }}" rel="nofollow" class="search pos">Related pages</a>
+            {% if page.revision > 0 %}
+            <a href="/sp.search?q={{ page.title|e }}" class="search-by-title">Similar titles</a>
+            {% endif %}
         </h1>
 
         <ul class="info">
-            {% if page.updated_at %}
             <li class="updated_at">
-                <a href="{{ page.absolute_url|e }}?rev=list">
-                <time
+                {% if page.updated_at %}
+                <a href="{{ page.absolute_url|e }}?rev=list"><time
                     {% if page.itemtype == 'Article' %}itemprop="dateModified"{% endif %}
                     datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|dt }}
-                </time>
-                (rev. <span {% if page.itemtype == 'Article' %}itemprop="version"{% endif %}>{{ page.revision }}</span>)
-                </a>
+                </time></a>
+                {% endif %}
+                (rev. <span class="revision" {% if page.itemtype == 'Article' %}itemprop="version"{% endif %}>{{ page.revision }}</span>)
             </li>
-            {% endif %}
             {% if page.published_at %}
             <li class="published_at">
                 <time

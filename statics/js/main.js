@@ -61,7 +61,7 @@ $(function() {
         var $search = $('#searchbox');
         if ($search.length === 0) return;
 
-        $($('#searchbox')[0].form).on('submit', function() {
+        $($search[0].form).on('submit', function() {
             var value = $search.val();
             if(value) {
                 location.href = '/' + value;
