@@ -642,6 +642,13 @@ class WikiPage(ndb.Model, PageOperationMixin):
                                    acl_read=self.acl_read, acl_write=self.acl_write)
             rev.put()
 
+        # deferred update schema data index
+        new_data = self.data
+        if dont_defer:
+            self.rebuild_data_index_deferred(old_data, new_data)
+        else:
+            deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
+
         # update inlinks and outlinks
         old_redir = old_md.get('redirect')
         new_redir = new_md.get('redirect')
@@ -649,13 +656,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             self.update_links_deferred(old_redir, new_redir)
         else:
             deferred.defer(self.update_links_deferred, old_redir, new_redir)
-
-        # deferred update schema data index
-        new_data = self.data
-        if dont_defer:
-            self.rebuild_data_index_deferred(old_data, new_data)
-        else:
-            deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
 
         # delete config and title cache
         if self.title == '.config':
