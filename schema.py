@@ -38,10 +38,11 @@ SUPPORTED_SCHEMA = {
     'Person': {
         'parent': 'Thing',
         'properties': {
-            'parent': (u'Children', u'Parent'),
-            'relatedTo': (u'Related people', u'Related to'),
             'birthDate': (u'Births', u'Birth date'),
             'deathDate': (u'Deaths', u'Death date'),
+            'parent': (u'Children', u'Parent'),
+            'relatedTo': (u'Related people', u'Related to'),
+            'spouse': (u'Spouse', u'Spouse'),
         }
     },
     'ScholarlyArticle': {
