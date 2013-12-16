@@ -934,6 +934,21 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # done
         self.related_links = related_links
 
+    def _schema_item_to_links(self, name, values):
+        itemtype = self.itemtype
+
+        if type(values) == list:
+            links = {}
+            for value in values:
+                for key, parsed_values in md_wikilink.parse_wikilinks(itemtype, u'[[%s::%s]]' % (name, value)).items():
+                    if key not in links:
+                        links[key] = []
+                    links[key] += parsed_values
+        else:
+            links = md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, values))
+
+        return links
+
     def _parse_outlinks(self):
         unique_links = {}
         itemtype = self.itemtype
@@ -948,7 +963,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             if not self._is_schema_item_link(name):
                 continue
 
-            links = md_wikilink.parse_wikilinks(itemtype, u'[[%s::%s]]' % (name, value))
+            links = self._schema_item_to_links(name, value)
+
             for rel, titles in links.items():
                 if rel not in unique_links:
                     unique_links[rel] = set([])

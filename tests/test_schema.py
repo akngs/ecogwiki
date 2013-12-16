@@ -53,7 +53,8 @@ class EmbeddedSchemaDataTest(unittest.TestCase):
 
     def test_multiple_authors(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n[[author::AK]] and [[author::TK]]', 0)
+        page.update_content(u'.schema Book\n[[author::AK]] and [[author::TK]]', 0, dont_defer=True)
+        self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
         self.assertEqual([u'AK', u'TK'], page.data['author'])
 
     def test_normal_links(self):
@@ -84,7 +85,8 @@ class YamlSchemaDataTest(unittest.TestCase):
 
     def test_list_value(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\nHello', 0)
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\nHello', 0, dont_defer=True)
+        self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
         self.assertEquals([u'AK', u'TK'], page.data['author'])
 
     def test_mix_with_embedded_data(self):
