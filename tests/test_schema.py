@@ -80,7 +80,8 @@ class YamlSchemaDataTest(unittest.TestCase):
 
     def test_yaml(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "123456789"\n\nHello', 0)
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "123456789"\n\nHello', 0, dont_defer=True)
+        self.assertEqual({u'Book/author': [u'AK']}, page.outlinks)
         self.assertEquals({'name': u'Hello', 'isbn': u'123456789', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'}, page.data)
 
     def test_list_value(self):
@@ -91,7 +92,8 @@ class YamlSchemaDataTest(unittest.TestCase):
 
     def test_mix_with_embedded_data(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::123456789}}\n\n[[author::JK]]', 0)
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::123456789}}\n\n[[author::JK]]', 0, dont_defer=True)
+        self.assertEqual({u'Book/author': [u'AK', u'JK', u'TK']}, page.outlinks)
         self.assertEquals({'name': u'Hello', 'isbn': u'123456789', 'schema': u'Thing/CreativeWork/Book/', 'author': [u'AK', u'TK', u'JK']}, page.data)
 
     def test_yaml_block_should_not_be_rendered(self):
