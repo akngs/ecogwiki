@@ -1,0 +1,45 @@
+{
+    "properties": {
+        "author": {
+            "reversed_label": "Authored %s"
+        },
+        "birthDate": {
+            "reversed_label": "%s Born"
+        },
+        "dateModified": {
+            "reversed_label": "Published %s (rev)"
+        },
+        "datePublished": {
+            "reversed_label": "Published %s"
+        },
+        "deathDate": {
+            "reversed_label": "%s Died"
+        },
+        "founder": {
+            "reversed_label": "%s Founded"
+        },
+        "foundingDate": {
+            "reversed_label": "%s Founded"
+        },
+        "operatingSystem": {
+            "reversed_label": "Supported %s"
+        },
+        "parent": {
+            "reversed_label": "Children"
+        },
+        "programmingLanguage": {
+            "reversed_label": "%s Written"
+        },
+        "relatedTo": {
+            "reversed_label": "Related %s"
+        },
+        "spouse": {
+            "reversed_label": "Spouse"
+        }
+    },
+    "types": {
+        "Person": {
+            "plural_label": "People"
+        }
+    }
+}

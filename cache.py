@@ -98,6 +98,33 @@ def del_titles():
         return None
 
 
+def set_schema_set(value):
+    key = 'schema_set'
+    try:
+        memcache.set(key, value)
+        prc.set(key, value)
+    except:
+        return None
+
+
+def set_schema(key, value):
+    key = 'schema\t%s' % key
+    try:
+        memcache.set(key, value)
+        prc.set(key, value)
+    except:
+        return None
+
+
+def set_schema_property(prop_name, prop):
+    key = 'schema\tprop\t%s' % prop_name
+    try:
+        memcache.set(key, prop)
+        prc.set(key, prop)
+    except:
+        return None
+
+
 def set_config(value):
     key = 'model\tconfig'
     try:
@@ -165,6 +192,36 @@ def set_hashbangs(title, value):
         return None
 
 
+def get_schema_set():
+    key = 'schema_set'
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
+
+
+def get_schema(key):
+    key = 'schema\t%s' % key
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
+
+
+def get_schema_property(prop_name):
+    key = 'schema\tprop\t%s' % prop_name
+    if prc.get(key) is None:
+        try:
+            prc.set(key, memcache.get(key))
+        except:
+            pass
+    return prc.get(key)
+
+
 def get_config():
     key = 'model\tconfig'
     if prc.get(key) is None:
@@ -223,6 +280,33 @@ def get_hashbangs(title):
         except:
             pass
     return prc.get(key)
+
+
+def del_schema_set():
+    key = 'schema_set'
+    try:
+        memcache.delete(key)
+        prc.set(key, None)
+    except:
+        return None
+
+
+def del_schema(key):
+    key = 'schema\t%s' % key
+    try:
+        memcache.delete(key)
+        prc.set(key, None)
+    except:
+        return None
+
+
+def del_schema_property(prop_name):
+    key = 'schema\tprop\t%s' % prop_name
+    try:
+        memcache.delete(key)
+        prc.set(key, None)
+    except:
+        return None
 
 
 def del_config():

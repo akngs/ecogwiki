@@ -41,7 +41,7 @@ class PageOperationMixin(object):
 
     @property
     def rendered_data(self):
-        data = [(n, v, schema.humane_property(self.itemtype, n, False))
+        data = [(n, v, schema.humane_property(self.itemtype, n))
                 for n, v in self.data.items()
                 if n not in ['schema', 'inlinks', 'outlinks']]
 
@@ -83,8 +83,7 @@ class PageOperationMixin(object):
             lines = [u'# Incoming Links']
             for rel, links in self.inlinks.items():
                 itemtype, rel = rel.split('/')
-                humane_rel = schema.humane_property(itemtype, rel, True)
-                lines.append(u'## %s' % humane_rel)
+                lines.append(u'## %s' % schema.humane_property(itemtype, rel, True))
 
                 # remove dups and sort
                 links = list(set(links))

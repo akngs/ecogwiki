@@ -5,6 +5,7 @@ import json
 import main
 import cache
 import jinja2
+import schema
 import search
 import urllib2
 import webapp2
@@ -468,6 +469,12 @@ class SpecialPageHandler(webapp2.RequestHandler):
             for page in pages:
                 page.comment = ''
                 page.put()
+        elif title == u'schema':
+            itemtype = self.request.GET.get('itemtype', 'Article')
+            itemschema = schema.get_schema(itemtype)
+
+            self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+            self.response.write(json.dumps(itemschema))
         elif title == u'gcstest':
             import cloudstorage as gcs
             f = gcs.open(

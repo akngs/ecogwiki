@@ -1,95 +1,68 @@
-SUPPORTED_SCHEMA = {
-    'Article': {
-        'parent': 'CreativeWork',
-        'properties': {
-            'relatedTo': (u'Related pages', u'Related to'),
-        }
-    },
-    'Blog': {
-        'parent': 'CreativeWork',
-        'properties': {
-            'relatedTo': (u'Related blogs', u'Related to'),
-        }
-    },
-    'Book': {
-        'parent': 'CreativeWork',
-        'properties': {
-            'author': (u'Author of', u'Author'),
-            'isbn': (u'ISBN', u'ISBN'),
-            'datePublished': (u'Publications', u'Published date'),
-            'dateModified': (u'Publications (revised)', u'Revised date'),
-            'relatedTo': (u'Related books', u'Related to'),
-        }
-    },
-    'Code': {
-        'parent': 'CreativeWork',
-        'properties': {
-            'programmingLanguage': (u'Codes, snippiets or libraries', u'Programming language'),
-            'relatedTo': (u'Related codes', u'Related to'),
-        }
-    },
-    'CreativeWork': {
-        'parent': 'Thing',
-        'title': u'Creative work',
-        'properties': {
-            'relatedTo': (u'Related works', u'Related to'),
-        }
-    },
-    'Person': {
-        'parent': 'Thing',
-        'properties': {
-            'birthDate': (u'Births', u'Birth date'),
-            'deathDate': (u'Deaths', u'Death date'),
-            'parent': (u'Children', u'Parent'),
-            'relatedTo': (u'Related people', u'Related to'),
-            'spouse': (u'Spouse', u'Spouse'),
-        }
-    },
-    'ScholarlyArticle': {
-        'parent': 'Article',
-        'title': u'Scholary article',
-        'properties': {
-            'relatedTo': (u'Related scholary articles', u'Related to'),
-        }
-    },
-    'SoftwareApplication': {
-        'parent': 'CreativeWork',
-        'properties': {
-            'relatedTo': (u'Related softwares', u'Related to'),
-            'operatingSystem': (u'Related softwares', u'Operating system'),
-        }
-    },
-    'Thing': {
-        'parent': None,
-        'properties': {
-            'relatedTo': (u'Related things', u'Related to'),
-        }
-    },
-    'WebApplication': {
-        'parent': 'SoftwareApplication',
-        'properties': {
-            'relatedTo': (u'Related sites', u'Related to'),
-        }
-    },
-    'Review': {
-        'parent': 'CreativeWork',
-        'properties': {
-            'relatedTo': (u'Related reviews', u'Related to'),
-        }
-    },
-}
+import os
+import json
+import cache
 
 
-def humane_item(itemtype):
+def get_schema_set():
+    schema_set = cache.get_schema_set()
+    if schema_set is None:
+        schema_set_path = os.path.join(os.path.dirname(__file__), 'schema.json')
+        with open(schema_set_path, 'r') as f:
+            schema_set = json.load(f)
+        addon_path = os.path.join(os.path.dirname(__file__), 'schema.addon.json')
+        with open(addon_path, 'r') as f:
+            addon = json.load(f)
+
+        # merge schemaset with addon
+        for k, v in addon['properties'].items():
+            for key_to_add, value_to_add in v.items():
+                schema_set['properties'][k][key_to_add] = value_to_add
+
+        for k, v in addon['types'].items():
+            for key_to_add, value_to_add in v.items():
+                schema_set['types'][k][key_to_add] = value_to_add
+
+        cache.set_schema_set(schema_set)
+
+    return schema_set
+
+
+def get_schema(itemtype):
+    schema = cache.get_schema(itemtype)
+    if schema is None:
+        schema = get_schema_set()['types'][itemtype]
+        if 'plural_label' not in schema:
+            schema['plural_label'] = u'%ss' % schema['label']
+        cache.set_schema(itemtype, schema)
+    return schema
+
+
+def get_property(prop_name):
+    prop = cache.get_schema_property(prop_name)
+    if prop is None:
+        prop = get_schema_set()['properties'][prop_name]
+        if 'reversed_label' not in prop:
+            prop['reversed_label'] = '[%%s] %s' % prop['label']
+        cache.set_schema_property(prop_name, prop)
+    return prop
+
+
+def humane_item(itemtype, plural=False):
     try:
-        return SUPPORTED_SCHEMA[itemtype]['title']
+        if plural:
+            return get_schema(itemtype)['plural_label']
+        else:
+            return get_schema(itemtype)['label']
     except KeyError:
         return itemtype
 
 
-def humane_property(itemtype, prop, inlink):
+def humane_property(itemtype, prop, rev=False):
     try:
-        return SUPPORTED_SCHEMA[itemtype]['properties'][prop][0 if inlink else 1]
+        if rev:
+            return get_property(prop)['reversed_label'] % humane_item(itemtype, True)
+        else:
+            return get_property(prop)['label']
     except KeyError:
         return prop.capitalize()
 
@@ -100,7 +73,8 @@ def get_itemtype_path(itemtype):
         parent = itemtype
         while parent is not None:
             parts.append(parent)
-            parent = SUPPORTED_SCHEMA[parent]['parent']
+            supers = get_schema(parent)['supertypes']
+            parent = supers[0] if len(supers) > 0 else None
         parts.reverse()
         parts.append('')
         return '/'.join(parts)

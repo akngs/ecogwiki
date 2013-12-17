@@ -6,15 +6,44 @@ from google.appengine.ext import testbed
 from models import WikiPage, SchemaDataIndex
 
 
+class SchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+
+    def test_get_schema_label(self):
+        self.assertEqual(u'Creative Work', schema.get_schema('CreativeWork')['label'])
+        self.assertEqual(u'Creative Works', schema.get_schema('CreativeWork')['plural_label'])
+
+    def test_get_schema_label_for_custom_plural_form(self):
+        self.assertEqual(u'Person', schema.get_schema('Person')['label'])
+        self.assertEqual(u'People', schema.get_schema('Person')['plural_label'])
+
+    def test_get_property_label(self):
+        self.assertEqual(u'Author', schema.get_property('author')['label'])
+        self.assertEqual(u'Authored %s', schema.get_property('author')['reversed_label'])
+
+    def test_get_property_label_for_custom_reversed_form(self):
+        self.assertEqual(u'Date Published', schema.get_property('datePublished')['label'])
+        self.assertEqual(u'Published %s', schema.get_property('datePublished')['reversed_label'])
+
+    def test_incoming_links(self):
+        self.assertEqual(u'Related People', schema.humane_property('Person', 'relatedTo', True))
+
+
+# TODO: Delete it after finishing migration
 class SchemaPathTest(unittest.TestCase):
     def test_humane_itemtype(self):
         self.assertEqual('Book', schema.humane_item('Book'))
-        self.assertEqual('Creative work', schema.humane_item('CreativeWork'))
+        self.assertEqual('Creative Work', schema.humane_item('CreativeWork'))
 
     def test_humane_property(self):
-        self.assertEqual('Publications',
+        self.assertEqual('Published Books',
                          schema.humane_property('Book', 'datePublished', True))
-        self.assertEqual('Published date',
+        self.assertEqual('Date Published',
                          schema.humane_property('Book', 'datePublished', False))
 
     def test_itemtype_path(self):
@@ -22,10 +51,6 @@ class SchemaPathTest(unittest.TestCase):
                          schema.get_itemtype_path('Thing'))
         self.assertEqual('Thing/CreativeWork/Article/',
                          schema.get_itemtype_path('Article'))
-
-    def test_every_itemtype_should_have_a_parent_except_for_root(self):
-        for item in schema.SUPPORTED_SCHEMA.keys():
-            self.assertEqual('Thing/', schema.get_itemtype_path(item)[:6])
 
 
 class EmbeddedSchemaDataTest(unittest.TestCase):
