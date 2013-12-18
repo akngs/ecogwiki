@@ -9,7 +9,8 @@ def get_schema_set():
         schema_set_path = os.path.join(os.path.dirname(__file__), 'schema.json')
         with open(schema_set_path, 'r') as f:
             schema_set = json.load(f)
-        addon_path = os.path.join(os.path.dirname(__file__), 'schema.addon.json')
+        addon_path = os.path.join(os.path.dirname(__file__),
+                                  'schema.supplement.json')
         with open(addon_path, 'r') as f:
             addon = json.load(f)
 
