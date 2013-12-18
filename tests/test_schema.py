@@ -37,6 +37,7 @@ class SchemaTest(unittest.TestCase):
 
 class CustomSchemaTest(unittest.TestCase):
     def setUp(self):
+        cache.prc.flush_all()
         self.testbed = testbed.Testbed()
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
@@ -45,7 +46,7 @@ class CustomSchemaTest(unittest.TestCase):
         schema.SCHEMA_FILE_TO_LOAD.append('schema-custom.json.sample')
 
     def tearDown(self):
-        schema.SCHEMA_FILE_TO_LOAD.pop()
+        schema.SCHEMA_FILE_TO_LOAD = schema.SCHEMA_FILE_TO_LOAD[:-1]
 
     def test_get_custom_schema(self):
         person = schema.get_schema('Person')

@@ -31,7 +31,7 @@
       "supertypes": [
         "Person"
       ],
-      "url": "http://www.ecogwiki.com/.schema/Politician"
+      "url": "http://www.ecogwiki.com/sp.schema/types/Politician"
     }
   }
 }

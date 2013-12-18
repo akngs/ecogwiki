@@ -1,0 +1,13 @@
+{% extends "templates/wiki_base.html" %}
+{% block title %}{{ schema }}{% endblock %}
+
+{% block body %}
+<article>
+    <header>
+        <h1>{{ schema }}</h1>
+    </header>
+    <section class="body">
+        {{ data }}
+    </section>
+</article>
+{% endblock %}

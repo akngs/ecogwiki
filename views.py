@@ -444,6 +444,8 @@ class SpecialPageHandler(webapp2.RequestHandler):
             self.response.write('\n'.join(titles))
         elif title == u'preferences':
             self.get_preferences(user, head)
+        elif title.startswith(u'schema/'):
+            self.get_schema(title.split(u'/')[1:], head)
         elif title == u'rebuild data index':
             deferred.defer(WikiPage.rebuild_all_data_index, 0)
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
@@ -509,6 +511,42 @@ class SpecialPageHandler(webapp2.RequestHandler):
         })
         self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
         set_response_body(self.response, rendered, head)
+
+    def get_schema(self, tokens, head):
+        key1, key2 = tokens
+        if key1 == u'types':
+            data = schema.get_schema(key2)
+        elif key1 == u'properties':
+            data = schema.get_property(key2)
+        else:
+            self.abort(400, 'Unknown key: %s' % key1)
+            return
+
+        restype = get_restype(self.request, 'json')
+        if restype == 'html':
+            self.abort(400, 'Unknown type: %s' % restype)
+            # view = self.request.GET.get('view', 'default')
+            # if view == 'default':
+            #     html = template(self.request, 'schema.html', {
+            #         'schema': u'%s / %s' % (key1, key2),
+            #         'data': obj_to_html(data),
+            #     })
+            #     self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            #     set_response_body(self.response, html, head)
+            # elif view == 'bodyonly':
+            #     html = template(self.request, 'wikipage_bodyonly.html', {
+            #         'schema': u'%s / %s' % (key1, key2),
+            #         'data': obj_to_html(data),
+            #     })
+            #     self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            #     set_response_body(self.response, html, head)
+            # else:
+            #     self.abort(400, 'Unknown view: %s' % view)
+        elif restype == 'json':
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            set_response_body(self.response, json.dumps(data), head)
+        else:
+            self.abort(400, 'Unknown type: %s' % restype)
 
     def get_changes(self, user, head):
         restype = get_restype(self.request, 'html')
