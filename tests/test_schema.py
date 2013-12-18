@@ -145,6 +145,12 @@ class YamlSchemaDataTest(unittest.TestCase):
         self.assertEqual({u'Book/author': [u'AK', u'JK', u'TK']}, page.outlinks)
         self.assertEquals({'name': u'Hello', 'isbn': u'123456789', 'schema': u'Thing/CreativeWork/Book/', 'author': [u'AK', u'TK', u'JK']}, page.data)
 
+    def test_no_duplications(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::123456789}}\n\n[[author::TK]]', 0, dont_defer=True)
+        self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
+        self.assertEquals([u'AK', u'TK'], page.data['author'])
+
     def test_yaml_block_should_not_be_rendered(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "123456789"\n\nHello', 0)

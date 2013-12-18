@@ -363,7 +363,16 @@ class PageOperationMixin(object):
                 matches[name].append(value)
             else:
                 matches[name] = value
-        return matches
+
+        # remove duplicated values
+        dedup = {}
+        for key, value in matches.items():
+            if type(value) is list:
+                dedup[key] = list(set(value))
+            else:
+                dedup[key] = value
+
+        return dedup
 
     @staticmethod
     def parse_metadata(body):
