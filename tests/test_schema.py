@@ -32,6 +32,29 @@ class SchemaTest(unittest.TestCase):
 
     def test_incoming_links(self):
         self.assertEqual(u'Related People', schema.humane_property('Person', 'relatedTo', True))
+        self.assertEqual(u'Children', schema.humane_property('Person', 'parent', True))
+
+
+class CustomSchemaTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+        schema.SCHEMA_FILE_TO_LOAD.append('schema-custom.json.sample')
+
+    def tearDown(self):
+        schema.SCHEMA_FILE_TO_LOAD.pop()
+
+    def test_get_custom_schema(self):
+        person = schema.get_schema('Person')
+        politician = schema.get_schema('Politician')
+        self.assertTrue('Politician' in person['subtypes'])
+        self.assertEqual(person['properties'], politician['properties'])
+
+        self.assertEqual(u'Politician', schema.get_schema('Politician')['label'])
+        self.assertEqual(u'Politicians', schema.humane_property('Politician', 'politicalParty', True))
 
 
 # TODO: Delete it after finishing migration

@@ -4,4 +4,5 @@
 .idea/
 app.yaml
 appengine_config.py
+schema-custom.json
 

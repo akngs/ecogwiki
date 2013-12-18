@@ -3,26 +3,42 @@ import json
 import cache
 
 
+SCHEMA_FILE_TO_LOAD = [
+    'schema.json',
+    'schema.supplement.json',
+    'schema-custom.json',
+]
+
+
 def get_schema_set():
     schema_set = cache.get_schema_set()
     if schema_set is None:
-        schema_set_path = os.path.join(os.path.dirname(__file__), 'schema.json')
-        with open(schema_set_path, 'r') as f:
-            schema_set = json.load(f)
-        addon_path = os.path.join(os.path.dirname(__file__),
-                                  'schema.supplement.json')
-        with open(addon_path, 'r') as f:
-            addon = json.load(f)
+        for schema_file in SCHEMA_FILE_TO_LOAD:
+            fullpath = os.path.join(os.path.dirname(__file__), schema_file)
+            try:
+                with open(fullpath, 'r') as f:
+                    addon = json.load(f)
+                    if schema_set is None:
+                        schema_set = addon
+                        continue
 
-        # merge schemaset with addon
-        for k, v in addon['properties'].items():
-            for key_to_add, value_to_add in v.items():
-                schema_set['properties'][k][key_to_add] = value_to_add
+                    for k, v in addon['properties'].items():
+                        if k not in schema_set['properties']:
+                            schema_set['properties'][k] = {}
+                        for key_to_add, value_to_add in v.items():
+                            schema_set['properties'][k][key_to_add] = value_to_add
 
-        for k, v in addon['types'].items():
-            for key_to_add, value_to_add in v.items():
-                schema_set['types'][k][key_to_add] = value_to_add
+                    for k, v in addon['types'].items():
+                        if k not in schema_set['types']:
+                            schema_set['types'][k] = {}
 
+                            for supertype in v['supertypes']:
+                                schema_set['types'][supertype]['subtypes'].append(k)
+                            v['properties'] = schema_set['types'][supertype]['properties']
+                        for key_to_add, value_to_add in v.items():
+                            schema_set['types'][k][key_to_add] = value_to_add
+            except IOError:
+                pass
         cache.set_schema_set(schema_set)
 
     return schema_set
@@ -61,7 +77,11 @@ def humane_item(itemtype, plural=False):
 def humane_property(itemtype, prop, rev=False):
     try:
         if rev:
-            return get_property(prop)['reversed_label'] % humane_item(itemtype, True)
+            propstr = get_property(prop)['reversed_label']
+            if propstr.find('%s') == -1:
+                return propstr
+            else:
+                return propstr % humane_item(itemtype, True)
         else:
             return get_property(prop)['label']
     except KeyError:

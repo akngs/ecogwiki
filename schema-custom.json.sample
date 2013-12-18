@@ -1,0 +1,37 @@
+{
+  "properties": {
+    "politicalParty": {
+      "comment": "Political party.",
+      "comment_plain": "Political party.",
+      "domains": [
+        "Thing"
+      ],
+      "id": "politicalParty",
+      "label": "Political Party",
+      "reversed_label": "%s",
+      "ranges": [
+        "Text"
+      ]
+    }
+  },
+  "types": {
+    "Politician": {
+      "ancestors": [
+        "Thing",
+        "Person"
+      ],
+      "comment": "",
+      "comment_plain": "",
+      "id": "Politician",
+      "label": "Politician",
+      "specific_properties": [
+        "politicalParty"
+      ],
+      "subtypes": [],
+      "supertypes": [
+        "Person"
+      ],
+      "url": "http://www.ecogwiki.com/.schema/Politician"
+    }
+  }
+}
