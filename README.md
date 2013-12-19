@@ -1,11 +1,12 @@
 # Install
 
 1.   Create new Google App Engine application
-2.   Create app.yaml by copying app.yaml.sample
-3.   Change application id appropriately
-4.   Deploy and wait for index building (takes a few minutes)
-5.   Edit .config page. See [this example](http://www.ecogwiki.com/.config?_type=txt)
-6.   Done
+2.   Create ``app.yaml`` by copying ``app.yaml.sample``
+3.   [Optional] Create ``schema-custom.json`` by copying ``schema-custom.json.sample`` if you want to define custom schema
+4.   Change application id appropriately
+5.   Deploy and wait for index building (takes a few minutes)
+6.   Edit ``.config`` page. See [this example](http://www.ecogwiki.com/.config?_type=txt)
+7.   Done
 
 
 # How to learn tests
