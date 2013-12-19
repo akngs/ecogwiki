@@ -100,7 +100,7 @@ window.fbAsyncInit = function() {
         <ul class="info">
             <li class="updated_at">
                 {% if page.updated_at %}
-                <a href="{{ page.absolute_url|e }}?rev=list"><time
+                <a href="{{ page.revision_list_url|e }}"><time
                     {% if page.itemtype == 'Article' %}itemprop="dateModified"{% endif %}
                     datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|dt }}
                 </time></a>

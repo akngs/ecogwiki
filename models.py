@@ -145,6 +145,10 @@ class PageOperationMixin(object):
         return u'/%s' % WikiPage.title_to_path(self.title)
 
     @property
+    def revision_list_url(self):
+        return u'/%s?rev=list' % WikiPage.title_to_path(self.title)
+
+    @property
     def absolute_newer_url(self):
         return u'/%s' % WikiPage.title_to_path(self.newer_title)
 

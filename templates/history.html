@@ -22,7 +22,7 @@
             <td>
                 <span class="modifier">{{ revision.modifier|userpage }}</span>
                 <br>
-                <a class="caret-target comment" href="{{ page.absolute_url|e }}?rev={{ revision.revision }}">
+                <a class="caret-target comment" href="{{ revision.absolute_url|e }}">
                     {% if revision.comment %}
                     {{ revision.comment }}
                     {% else %}
