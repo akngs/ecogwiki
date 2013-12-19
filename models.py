@@ -675,32 +675,31 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     def rebuild_data_index(self):
         # delete all index for this page
-        index = SchemaDataIndex.query(SchemaDataIndex.title == self.title).fetch()
-
-        keys = [i.key for i in index]
+        keys = [i.key for i in SchemaDataIndex.query(SchemaDataIndex.title == self.title).fetch()]
         ndb.delete_multi(keys)
 
         # insert
         data = self.data
-        for name, value in self._data_as_pairs(data):
-            i = SchemaDataIndex(title=self.title, name=name, value=value, data=data)
-            i.put()
+        entities = [SchemaDataIndex(title=self.title, name=name, value=value) for name, value in self._data_as_pairs(data)]
+        ndb.put_multi(entities)
 
     def rebuild_data_index_deferred(self, old_data, new_data):
         old_pairs = self._data_as_pairs(old_data)
         new_pairs = self._data_as_pairs(new_data)
 
-        inserts = new_pairs.difference(old_pairs)
         deletes = old_pairs.difference(new_pairs)
-
-        # insert
-        indice = [SchemaDataIndex(title=self.title, name=name, value=value, data=new_data) for name, value in inserts]
-        ndb.put_multi(indice)
+        inserts = new_pairs.difference(old_pairs)
 
         # delete
-        keys = [SchemaDataIndex(title=self.title, name=name, value=value, data=new_data).key for name, value in deletes]
-        keys = [key for key in keys if key is not None]
+        queries = [SchemaDataIndex.query(SchemaDataIndex.title == self.title, SchemaDataIndex.name == name, SchemaDataIndex.value == value)
+                   for name, value in deletes]
+        entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
+        keys = [e.key for e in entities]
         ndb.delete_multi(keys)
+
+        # insert
+        entities = [SchemaDataIndex(title=self.title, name=name, value=value) for name, value in inserts]
+        ndb.put_multi(entities)
 
     def update_links_deferred(self, old_redir, new_redir):
         """Updates outlinks of this page and inlinks of target pages"""
@@ -1161,13 +1160,17 @@ class WikiPage(ndb.Model, PageOperationMixin):
         results = cache.get_wikiquery(q, email)
         if results is None:
             page_query, attrs = search.parse_wikiquery(q)
-            datas = cls._evaluate_pages(page_query)
-            accessible_titles = WikiPage.get_titles(user)
+            titles = cls._evaluate_pages(page_query)
+            accessible_titles = WikiPage.get_titles(user).intersection(titles)
 
             results = []
-            for title, data in datas.items():
-                if title in accessible_titles:
-                    results.append(OrderedDict((attr, data[attr] if attr in data else None) for attr in attrs))
+            if attrs == [u'name']:
+                for title in accessible_titles:
+                    results.append({u'name': title})
+            else:
+                for title in accessible_titles:
+                    pagedata = WikiPage.get_by_title(title, follow_redirect=True).data
+                    results.append(OrderedDict((attr, pagedata[attr] if attr in pagedata else None) for attr in attrs))
 
             if len(results) == 1:
                 results = results[0]
@@ -1189,32 +1192,19 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def _evaluate_page_query_term(cls, name, value):
         if name == 'schema' and value.find('/') == -1:
             value = schema.get_itemtype_path(value)
-
-        pages = {}
-
-        for index in SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value):
-            pages[index.title] = index.data
-
-        return pages
+        return [index.title for index in SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value)]
 
     @classmethod
     def _evaluate_page_query_expr(cls, operand, op, rest):
         pages1 = cls._evaluate_pages(operand)
         pages2 = cls._evaluate_pages(rest)
-        pages = {}
 
         if op == '*':
-            keys = set(pages1.keys()).intersection(set(pages2.keys()))
-            for key in keys:
-                if key in pages1:
-                    pages[key] = pages1[key]
-                else:
-                    pages[key] = pages2[key]
+            return set(pages1).intersection(pages2)
         elif op == '+':
-            keys = set(pages1.keys()).union(set(pages2.keys()))
-            pages = dict((k, v) for k, v in (pages1.items() + pages2.items()) if k in keys)
-
-        return pages
+            return set(pages1).union(pages2)
+        else:
+            raise ValueError('Invalid operator: %s' % op)
 
     @classmethod
     def get_by_title(cls, title, follow_redirect=False):
@@ -1381,7 +1371,6 @@ class SchemaDataIndex(ndb.Model):
     title = ndb.StringProperty()
     name = ndb.StringProperty()
     value = ndb.StringProperty()
-    data = ndb.JsonProperty()
 
 
 class TocGenerator(object):

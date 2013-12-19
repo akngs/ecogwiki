@@ -69,10 +69,10 @@ page_query_expr = p.Forward()
 attr_expr = p.Forward()
 
 expr = page_query_expr + p.Optional(p.Suppress('>') + attr_expr)
-expr.setParseAction(lambda x: x if len(x) == 2 else [x[0], ['name']])
+expr.setParseAction(lambda x: x if len(x) == 2 else [x[0], [u'name']])
 
 page_query_term = p.Group(p.Optional(identifier + p.Suppress(':')) + double_quote_str)
-page_query_term.setParseAction(lambda x: x if len(x[0]) == 2 else [['name', x[0][0]]])
+page_query_term.setParseAction(lambda x: x if len(x[0]) == 2 else [[u'name', x[0][0]]])
 page_query_expr << p.operatorPrecedence(page_query_term, [
     (p.Literal('*'), 2, p.opAssoc.LEFT),
     (p.Literal('+'), 2, p.opAssoc.LEFT),
