@@ -102,7 +102,7 @@ class PageHandler(webapp2.RequestHandler):
                 self.response.location += '?%s' % self.request.query
             self.response.status = 303
             return
-        elif self.request.path_qs.find('%20') != -1:
+        elif self.request.path.find('%20') != -1:
             self.response.location = '%s' % self.request.path_qs.replace('%20', '_')
             self.response.status = 303
             return
@@ -161,6 +161,9 @@ class PageHandler(webapp2.RequestHandler):
                 self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 set_response_body(self.response, html, head)
             elif view == 'edit':
+                # insert body from params if revision is 0
+                if page.revision == 0 and self.request.GET.get('body'):
+                    page.body = self.request.GET.get('body')
                 html = template(self.request, 'wikipage.form.html', {'page': page, 'conflict': None})
                 self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 set_response_body(self.response, html, head)

@@ -380,6 +380,26 @@ class PageResourceTest(unittest.TestCase):
         page = WikiPage.get_by_title(u'New page')
         self.assertEqual(u'Hello', page.body)
 
+    def test_provide_placeholder_with_param_when_editing_new_page(self):
+        self.browser.login('ak@gmailcom', 'ak')
+
+        # GET edit form of "New page"
+        self.browser.get('/New_page?view=edit&body=some%20pre%20value')
+        body = self.browser.query(".//form[@class='editform']//*[@name='body']")[0]
+        self.assertEqual(body.text, 'some pre value')
+
+    def test_no_placeholder_when_editing_existing_page(self):
+        self.browser.login('ak@gmailcom', 'ak')
+
+        # Create page
+        page = WikiPage.get_by_title(u'New page')
+        page.update_content(u'Hello', 0)
+
+        # GET edit form of "New page"
+        self.browser.get('/New_page?view=edit&body=some%20pre%20value')
+        body = self.browser.query(".//form[@class='editform']//*[@name='body']")[0]
+        self.assertEqual(body.text, 'Hello')
+
     def test_update_existing_page(self):
         self.browser.login('ak@gmail.com', 'ak')
 
