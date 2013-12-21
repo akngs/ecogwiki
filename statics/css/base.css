@@ -28,6 +28,10 @@ a:hover {
     padding-bottom: 1px;
     border-bottom: 1px solid #46A;
 }
+a.btn:hover {
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid transparent;
+}
 
 .btn {
     margin: 0;
