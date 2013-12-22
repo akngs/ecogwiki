@@ -11,6 +11,9 @@ TEST_PATH   Path to package containing test modules"""
 
 
 def main(sdk_path, test_paths):
+    if 'lib' not in sys.path:
+        sys.path.insert(0, 'lib')
+
     sys.path.insert(0, sdk_path)
     import dev_appserver
     dev_appserver.fix_sys_path()
@@ -26,10 +29,6 @@ def main(sdk_path, test_paths):
             suite = unittest2.loader.TestLoader().discover(test_path, test_file)
         # tests.module.TestCase
         elif '/' not in test_path and '.' in test_path:
-            #module_name, class_name = test_path.rsplit('.', 1)
-            #module = __import__(module_name, fromlist=[module_name])
-            #testcase = getattr(module, class_name)
-            #suite = unittest2.loader.TestLoader().loadTestsFromTestCase(testcase)
             suite = unittest2.loader.TestLoader().loadTestsFromName(test_path)
         suites.addTest(suite)
     unittest2.TextTestRunner(verbosity=2).run(suites)
