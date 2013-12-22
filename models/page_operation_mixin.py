@@ -3,7 +3,6 @@
 import re
 import yaml
 import main
-import cache
 import schema
 import logging
 import operator
@@ -57,12 +56,6 @@ class PageOperationMixin(object):
                 html.append(u'<dd class="value value-%s">%s</dd>' % (name, self._render_data_item(name, value)))
         html.append(u'</dl></div>')
         return '\n'.join(html)
-
-    def _render_data_item(self, name, value):
-        if self._is_schema_item_link(name):
-            return u'<span itemprop="%s">%s</span>' % (name, md_wikilink.render_wikilink(value))
-        else:
-            return u'<span itemprop="%s">%s</span>' % (name, value)
 
     @property
     def rendered_body(self):
@@ -131,10 +124,11 @@ class PageOperationMixin(object):
 
         return rendered
 
-
-    @staticmethod
-    def escape_title(path):
-        return urllib2.quote(path.replace(u' ', u'_').encode('utf-8'))
+    def _render_data_item(self, name, value):
+        if self._is_schema_item_link(name):
+            return u'<span itemprop="%s">%s</span>' % (name, md_wikilink.render_wikilink(value))
+        else:
+            return u'<span itemprop="%s">%s</span>' % (name, value)
 
     @property
     def absolute_url(self):
@@ -176,46 +170,6 @@ class PageOperationMixin(object):
     def metadata(self):
         return PageOperationMixin.parse_metadata(self.body)
 
-    def can_read(self, user, default_acl=None):
-        if default_acl is None:
-            default_acl = PageOperationMixin.get_default_permission()
-
-        acl = self.acl_read.split(',') if self.acl_read else []
-        acl = acl or default_acl['read']
-
-        if u'all' in acl or len(acl) == 0:
-            return True
-        elif u'login' in acl and user is not None:
-            return True
-        elif user is not None and (user.email() in acl or user.email() in self.acl_write.split(',')):
-            return True
-        elif is_admin_user(user):
-            return True
-        else:
-            return False
-
-    def can_write(self, user, default_acl=None):
-        if default_acl is None:
-            default_acl = PageOperationMixin.get_default_permission()
-
-        acl = self.acl_write.split(',') if self.acl_write is not None and len(self.acl_write) != 0 else []
-        if len(acl) == 0:
-            acl = default_acl['write']
-
-        if (not self.can_read(user, default_acl)) and (user is None or user.email() not in acl):
-            return False
-        elif 'all' in acl:
-            return True
-        elif (len(acl) == 0 or u'login' in acl) and user is not None:
-            return True
-        elif user is not None and user.email() in acl:
-            return True
-        elif is_admin_user(user):
-            return True
-        else:
-            return False
-
-
     @property
     def itemtype(self):
         if 'schema' in self.metadata:
@@ -254,6 +208,72 @@ class PageOperationMixin(object):
     @property
     def hashbangs(self):
         return PageOperationMixin.extract_hashbangs(self.rendered_body)
+
+    def make_description(self, max_length=200):
+        # remove yaml/schema block and metadata
+        body = re.sub(PageOperationMixin.re_yaml_schema, u'\n', self.body)
+        body = PageOperationMixin.remove_metadata(body).strip()
+
+        # try newline
+        index = body.find(u'\n')
+        if index != -1:
+            body = body[:index].strip()
+
+        # try period
+        index = 0
+        while index < max_length:
+            next_index = body.find(u'. ', index)
+            if next_index == -1:
+                break
+            index = next_index + 1
+
+        if index > 3:
+            return body[:index].strip()
+
+        if len(body) <= max_length:
+            return body
+
+        # just cut-off
+        return body[:max_length - 3].strip() + u'...'
+
+    def can_read(self, user, default_acl=None):
+        if default_acl is None:
+            default_acl = main.DEFAULT_CONFIG['service']['default_permissions']
+
+        acl = self.acl_read.split(',') if self.acl_read else []
+        acl = acl or default_acl['read']
+
+        if u'all' in acl or len(acl) == 0:
+            return True
+        elif u'login' in acl and user is not None:
+            return True
+        elif user is not None and (user.email() in acl or user.email() in self.acl_write.split(',')):
+            return True
+        elif is_admin_user(user):
+            return True
+        else:
+            return False
+
+    def can_write(self, user, default_acl=None):
+        if default_acl is None:
+            default_acl = main.DEFAULT_CONFIG['service']['default_permissions']
+
+        acl = self.acl_write.split(',') if self.acl_write is not None and len(self.acl_write) != 0 else []
+        if len(acl) == 0:
+            acl = default_acl['write']
+
+        if (not self.can_read(user, default_acl)) and (user is None or user.email() not in acl):
+            return False
+        elif 'all' in acl:
+            return True
+        elif (len(acl) == 0 or u'login' in acl) and user is not None:
+            return True
+        elif user is not None and user.email() in acl:
+            return True
+        elif is_admin_user(user):
+            return True
+        else:
+            return False
 
     def _check_special_titles_years(self):
         return (
@@ -321,39 +341,9 @@ class PageOperationMixin(object):
         else:
             return True
 
-    @classmethod
-    def get_config(cls):
-        result = cache.get_config()
-        if result is None:
-            result = main.DEFAULT_CONFIG
-
-            try:
-                from models import WikiPage
-                page = WikiPage.get_config_page()
-                user_config = yaml.load(PageOperationMixin.remove_metadata(page.body))
-            except:
-                user_config = None
-            user_config = user_config or {}
-
-            def merge_dict(target_dict, source_dict):
-                for (key,value) in source_dict.iteritems():
-                    if type(value) != dict:
-                        target_dict[key] = value
-                    else:
-                        merge_dict(target_dict.setdefault(key, {}), value)
-
-            merge_dict(result, user_config)
-
-            cache.set_config(result)
-        return result
-
-    
     @staticmethod
-    def get_default_permission():
-        try:
-            return PageOperationMixin.get_config()['service']['default_permissions']
-        except KeyError:
-            return main.DEFAULT_CONFIG['service']['default_permissions']
+    def escape_title(path):
+        return urllib2.quote(path.replace(u' ', u'_').encode('utf-8'))
 
     @staticmethod
     def parse_data(title, itemtype, body):
@@ -445,30 +435,3 @@ class PageOperationMixin(object):
         if re.match(ur'.*(\\\(.+\\\)|\$\$.+\$\$)', html, re.DOTALL):
             matches.append('mathjax')
         return matches
-
-    def make_description(self, max_length=200):
-        # remove yaml/schema block and metadata
-        body = re.sub(PageOperationMixin.re_yaml_schema, u'\n', self.body)
-        body = PageOperationMixin.remove_metadata(body).strip()
-
-        # try newline
-        index = body.find(u'\n')
-        if index != -1:
-            body = body[:index].strip()
-
-        # try period
-        index = 0
-        while index < max_length:
-            next_index = body.find(u'. ', index)
-            if next_index == -1:
-                break
-            index = next_index + 1
-
-        if index > 3:
-            return body[:index].strip()
-
-        if len(body) <= max_length:
-            return body
-
-        # just cut-off
-        return body[:max_length - 3].strip() + u'...'

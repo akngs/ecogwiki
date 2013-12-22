@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
+import yaml
+import main
 import cache
 import random
 import schema
@@ -45,10 +47,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
     older_title = ndb.StringProperty()
     newer_title = ndb.StringProperty()
 
-    @classmethod
-    def get_config_page(cls):
-        return cls.get_by_title('.config')
-
     @property
     def is_old_revision(self):
         return False
@@ -60,11 +58,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             value = super(WikiPage, self).rendered_body
             cache.set_rendered_body(self.title, value)
         return value
-
-    def preview_rendered_body(self, body):
-        """Preview rendered body without updating model"""
-        self.body = body
-        return super(WikiPage, self).rendered_body
 
     @property
     def data(self):
@@ -89,6 +82,46 @@ class WikiPage(ndb.Model, PageOperationMixin):
             value = super(WikiPage, self).hashbangs
             cache.set_hashbangs(self.title, value)
         return value
+
+    @property
+    def revisions(self):
+        return WikiPageRevision.query(ancestor=self._rev_key())
+
+    @property
+    def link_scoretable(self):
+        """Returns all links ordered by score"""
+
+        # related links
+        related_links_scoretable = self.related_links
+
+        # in/out links
+        inlinks = reduce(lambda a, b: a + b, self.inlinks.values(), [])
+        outlinks = reduce(lambda a, b: a + b, self.outlinks.values(), [])
+        inout_links = set(inlinks + outlinks).difference(related_links_scoretable.keys())
+        inout_links_len = len(inout_links)
+        inout_score = 1.0 / inout_links_len if inout_links_len != 0 else 0.0
+        inout_links_scoretable = dict(zip(inout_links, [inout_score] * inout_links_len))
+
+        scoretable = dict(inout_links_scoretable.items() + related_links_scoretable.items())
+        sorted_scoretable = sorted(scoretable.iteritems(),
+                                   key=operator.itemgetter(1),
+                                   reverse=True)
+        return OrderedDict(sorted_scoretable)
+
+    def preview_rendered_body(self, body):
+        """Preview rendered body without updating model"""
+        self.body = body
+        return super(WikiPage, self).rendered_body
+
+    def can_write(self, user, default_acl=None):
+        if default_acl is None:
+            default_acl = WikiPage.get_default_permission()
+        return super(WikiPage, self).can_write(user, default_acl)
+
+    def can_read(self, user, default_acl=None):
+        if default_acl is None:
+            default_acl = WikiPage.get_default_permission()
+        return super(WikiPage, self).can_read(user, default_acl)
 
     def delete(self, user=None, dont_defer=False):
         if not is_admin_user(user):
@@ -364,31 +397,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 pairs.add((key, value))
         return pairs
 
-    @property
-    def revisions(self):
-        return WikiPageRevision.query(ancestor=self._rev_key())
-
-    @property
-    def link_scoretable(self):
-        """Returns all links ordered by score"""
-
-        # related links
-        related_links_scoretable = self.related_links
-
-        # in/out links
-        inlinks = reduce(lambda a, b: a + b, self.inlinks.values(), [])
-        outlinks = reduce(lambda a, b: a + b, self.outlinks.values(), [])
-        inout_links = set(inlinks + outlinks).difference(related_links_scoretable.keys())
-        inout_links_len = len(inout_links)
-        inout_score = 1.0 / inout_links_len if inout_links_len != 0 else 0.0
-        inout_links_scoretable = dict(zip(inout_links, [inout_score] * inout_links_len))
-
-        scoretable = dict(inout_links_scoretable.items() + related_links_scoretable.items())
-        sorted_scoretable = sorted(scoretable.iteritems(),
-                                   key=operator.itemgetter(1),
-                                   reverse=True)
-        return OrderedDict(sorted_scoretable)
-
     def _publish(self, title, save):
         if self.published_at is not None and self.published_to == title:
             return
@@ -555,6 +563,34 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def del_outlink(self, title, rel=None):
         WikiPage._del_inout_link(self.outlinks, title, rel)
 
+    def _rev_key(self):
+        return ndb.Key(u'revision', self.title)
+
+    @classmethod
+    def get_config(cls):
+        result = cache.get_config()
+        if result is None:
+            result = main.DEFAULT_CONFIG
+
+            try:
+                config_page = cls.get_by_title('.config')
+                user_config = yaml.load(PageOperationMixin.remove_metadata(config_page.body))
+            except:
+                user_config = None
+            user_config = user_config or {}
+
+            def merge_dict(target_dict, source_dict):
+                for (key,value) in source_dict.iteritems():
+                    if type(value) != dict:
+                        target_dict[key] = value
+                    else:
+                        merge_dict(target_dict.setdefault(key, {}), value)
+
+            merge_dict(result, user_config)
+
+            cache.set_config(result)
+        return result
+
     @classmethod
     def search(cls, expression):
         # parse
@@ -637,7 +673,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             WikiPage.modifier,
             WikiPage.updated_at])
 
-        default_permission = PageOperationMixin.get_default_permission()
+        default_permission = WikiPage.get_default_permission()
         return [page for page in pages
                 if page.updated_at and page.can_read(user, default_permission)]
 
@@ -651,12 +687,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         return titles
 
-    @staticmethod
-    def get_published_posts(title, limit):
-        q = WikiPage.query(ancestor=WikiPage._key())
-        q = q.filter(WikiPage.published_to == title)
-        q = q.filter(WikiPage.published_at != None)
-        return list(q.order(-WikiPage.published_at).fetch(limit=limit))
+    @classmethod
+    def get_published_posts(cls, title, limit):
+        q = cls.query(ancestor=cls._key())
+        q = q.filter(cls.published_to == title)
+        q = q.filter(cls.published_at != None)
+        return list(q.order(-cls.published_at).fetch(limit=limit))
 
     @classmethod
     def get_changes(cls, user, limit=7, include_body=False):
@@ -680,7 +716,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             ]
             pages = q.order(-WikiPage.updated_at).fetch(projection=prjs)
 
-        default_permission = cls.get_default_permission()
+        default_permission = WikiPage.get_default_permission()
         return [page for page in pages if page.can_read(user, default_permission)]
 
     @classmethod
@@ -803,6 +839,28 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def _key(cls):
         return ndb.Key(u'wiki', u'/')
 
+    @classmethod
+    def rebuild_all_data_index(cls, page_index=0):
+        logging.debug('Rebuilding data index: %d' % page_index)
+
+        batch_size = 20
+        all_pages = list(cls.query().fetch(batch_size, offset=page_index * batch_size))
+        if len(all_pages) == 0:
+            logging.debug('Rebuilding data index: Finished!')
+            return
+
+        for p in all_pages:
+            p.rebuild_data_index()
+
+        deferred.defer(cls.rebuild_all_data_index, page_index + 1)
+
+    @classmethod
+    def get_default_permission(cls):
+        try:
+            return cls.get_config()['service']['default_permissions']
+        except KeyError:
+            return main.DEFAULT_CONFIG['service']['default_permissions']
+
     @staticmethod
     def _add_inout_links(links, titles, rel):
         if len(titles) == 0:
@@ -833,21 +891,3 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 titles.remove(title)
                 if len(titles) == 0:
                     del links[rel]
-
-    @classmethod
-    def rebuild_all_data_index(cls, page_index=0):
-        logging.debug('Rebuilding data index: %d' % page_index)
-
-        batch_size = 20
-        all_pages = list(cls.query().fetch(batch_size, offset=page_index * batch_size))
-        if len(all_pages) == 0:
-            logging.debug('Rebuilding data index: Finished!')
-            return
-
-        for p in all_pages:
-            p.rebuild_data_index()
-
-        deferred.defer(cls.rebuild_all_data_index, page_index + 1)
-
-    def _rev_key(self):
-        return ndb.Key(u'revision', self.title)

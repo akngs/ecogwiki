@@ -383,7 +383,7 @@ class WikiPageGetConfigTest(unittest.TestCase):
         self.testbed.init_memcache_stub()
         self.testbed.init_taskqueue_stub()
         
-        self.config_page = WikiPage.get_by_title(u'.config')
+        self.config_page = WikiPage.get_by_title('.config')
         self.config_page.update_content(u'''
           admin:
             email: janghwan@gmail.com
@@ -397,7 +397,7 @@ class WikiPageGetConfigTest(unittest.TestCase):
         self.testbed.deactivate()
 
     def test_empty_config_page(self):
-        config_page = WikiPage.get_by_title(u'.config')
+        config_page = WikiPage.get_by_title('.config')
         config_page.update_content('', 1)
 
         config = WikiPage.get_config()

@@ -7,5 +7,3 @@ class ConflictError(ValueError):
         self.base = base
         self.provided = provided
         self.merged = merged
-
-
