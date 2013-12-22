@@ -17,7 +17,9 @@ from markdownext import md_wikilink
 from models import PageOperationMixin, ConflictError, WikiPageRevision, TocGenerator, SchemaDataIndex
 from models import is_admin_user, md
 
+
 logging.getLogger().setLevel(logging.DEBUG)
+
 
 class WikiPage(ndb.Model, PageOperationMixin):
     re_normalize_title = re.compile(ur'([\[\]\(\)\~\!\@\#\$\%\^\&\*\-'
@@ -849,4 +851,3 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     def _rev_key(self):
         return ndb.Key(u'revision', self.title)
-

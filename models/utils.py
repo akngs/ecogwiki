@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import markdown
 from markdown.extensions.def_list import DefListExtension
 from markdown.extensions.attr_list import AttrListExtension
@@ -8,12 +7,14 @@ from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax, md_striket
 from google.appengine.api import users
 from google.appengine.api import oauth
 
+
 __all__ = [
     'regions', 
     'title_grouper',
     'is_admin_user',
     'md',
 ]
+
 
 regions = {
     u'ㄱ': (u'가', u'나'),
@@ -75,4 +76,3 @@ md = markdown.Markdown(
     ],
     safe_mode=False,
 )
-

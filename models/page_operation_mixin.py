@@ -17,6 +17,7 @@ from models import TocGenerator
 
 logging.getLogger().setLevel(logging.DEBUG)
 
+
 class PageOperationMixin(object):
     re_img = re.compile(ur'<p><img( .+? )/></p>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
@@ -471,5 +472,3 @@ class PageOperationMixin(object):
 
         # just cut-off
         return body[:max_length - 3].strip() + u'...'
-
-

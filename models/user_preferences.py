@@ -2,7 +2,9 @@ import logging
 from google.appengine.ext import ndb
 from datetime import datetime
 
+
 logging.getLogger().setLevel(logging.DEBUG)
+
 
 class UserPreferences(ndb.Model):
     user = ndb.UserProperty()
@@ -26,4 +28,3 @@ class UserPreferences(ndb.Model):
     def get_by_email(cls, email):
         keyid = ndb.Key(cls, email).string_id()
         return cls.get_by_id(keyid)
-

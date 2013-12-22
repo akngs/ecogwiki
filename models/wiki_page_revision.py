@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
 from google.appengine.ext import ndb
-
 from models import PageOperationMixin
 
+
 logging.getLogger().setLevel(logging.DEBUG)
+
 
 class WikiPageRevision(ndb.Model, PageOperationMixin):
     title = ndb.StringProperty()
@@ -47,5 +48,3 @@ class WikiPageRevision(ndb.Model, PageOperationMixin):
     @property
     def newer_title(self):
         return None
-
-

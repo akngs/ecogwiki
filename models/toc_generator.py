@@ -6,6 +6,7 @@ import logging
 
 logging.getLogger().setLevel(logging.DEBUG)
 
+
 class TocGenerator(object):
     re_headings = ur'<h(\d)>(.+?)</h\d>'
 
@@ -124,5 +125,3 @@ class TocGenerator(object):
                 cur_path = h
             result.append(cur_path)
             self._generate_children_path(result, cur_path, children)
-
-
