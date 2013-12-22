@@ -1075,3 +1075,34 @@ class WikiPageDeleteTest(unittest.TestCase):
         os.environ['USER_ID'] = user_id or ''
         os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
 
+
+class WikiPageHierarchyTest(unittest.TestCase):
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_taskqueue_stub()
+
+    def tearDown(self):
+        self.testbed.deactivate()
+
+    def test_no_hierarchy(self):
+        page = WikiPage.get_by_title(u'GEB')
+        self.assertEqual(
+            [
+                (u'GEB', u'GEB')
+            ],
+            page.paths
+        )
+
+    def test_hierarchy(self):
+        page = WikiPage.get_by_title(u'GEB/Chapter 1/Memo')
+        self.assertEqual(
+            [
+                (u'GEB', u'GEB'),
+                (u'GEB/Chapter 1', u'Chapter 1'),
+                (u'GEB/Chapter 1/Memo', u'Memo'),
+            ],
+            page.paths
+        )

@@ -128,6 +128,15 @@ class PageOperationMixin(object):
             return u'<span itemprop="%s">%s</span>' % (name, value)
 
     @property
+    def paths(self):
+        abs_path = []
+        result = []
+        for token in self.title.split(u'/'):
+            abs_path.append(token)
+            result.append((u'/'.join(abs_path), token))
+        return result
+
+    @property
     def absolute_url(self):
         return u'/%s' % PageOperationMixin.escape_title(self.title)
 

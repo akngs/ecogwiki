@@ -80,7 +80,11 @@ window.fbAsyncInit = function() {
                     <span class="parent"><a href="/sp.posts">Posts</a></span>
                 {% endif %}
             {% endif %}
-            <span itemprop="name">{{ page.title }}</span>
+
+            {% for abs_path, path in page.paths[:-1] %}
+                <span class="parent"><a href="{{ abs_path|to_path }}">{{ path }}</a></span>
+            {% endfor %}
+            <span itemprop="name">{{ page.paths[-1][1] }}</span>
 
             {% if page.revision > 0 %}
             <a id="top" href="#top" class="caret-target">#</a>
