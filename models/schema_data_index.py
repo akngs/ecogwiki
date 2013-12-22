@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-import logging
 from google.appengine.ext import ndb
-
-
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 class SchemaDataIndex(ndb.Model):

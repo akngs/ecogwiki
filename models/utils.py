@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import cache
 import markdown
 from markdown.extensions.def_list import DefListExtension
 from markdown.extensions.attr_list import AttrListExtension
@@ -12,6 +13,7 @@ __all__ = [
     'regions', 
     'title_grouper',
     'is_admin_user',
+    'get_cur_user',
     'md',
 ]
 
@@ -45,6 +47,23 @@ def title_grouper(title):
             return key
 
     return 'Misc'
+
+
+def get_cur_user():
+    user = users.get_current_user()
+    # try oauth
+    if user is None:
+        try:
+            oauth_user = oauth.get_current_user()
+            is_local_dummy_user = oauth_user.user_id() == '0' and oauth_user.email() == 'example@example.com'
+            if not is_local_dummy_user:
+                user = oauth_user
+        except oauth.OAuthRequestError as e:
+            pass
+
+    if user is not None:
+        cache.add_recent_email(user.email())
+    return user
 
 
 def is_admin_user(user):

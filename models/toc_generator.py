@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
 import hashlib
-import logging
-
-
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 class TocGenerator(object):

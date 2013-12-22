@@ -240,17 +240,17 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # deferred update schema data index
         new_data = self.data
         if dont_defer:
-            self.rebuild_data_index_deferred(old_data, new_data)
+            self.update_data_index(old_data, new_data)
         else:
-            deferred.defer(self.rebuild_data_index_deferred, old_data, new_data)
+            deferred.defer(self.update_data_index, old_data, new_data)
 
         # update inlinks and outlinks
         old_redir = old_md.get('redirect')
         new_redir = new_md.get('redirect')
         if dont_defer:
-            self.update_links_deferred(old_redir, new_redir)
+            self.update_links(old_redir, new_redir)
         else:
-            deferred.defer(self.update_links_deferred, old_redir, new_redir)
+            deferred.defer(self.update_links, old_redir, new_redir)
 
         # delete config and title cache
         if self.title == '.config':
@@ -267,12 +267,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # insert
         data = self.data
-        entities = [SchemaDataIndex(title=self.title, name=name, value=value) for name, value in self._data_as_pairs(data)]
+        entities = [SchemaDataIndex(title=self.title, name=name, value=value) for name, value in WikiPage._data_as_pairs(data)]
         ndb.put_multi(entities)
 
-    def rebuild_data_index_deferred(self, old_data, new_data):
-        old_pairs = self._data_as_pairs(old_data)
-        new_pairs = self._data_as_pairs(new_data)
+    def update_data_index(self, old_data, new_data):
+        old_pairs = WikiPage._data_as_pairs(old_data)
+        new_pairs = WikiPage._data_as_pairs(new_data)
 
         deletes = old_pairs.difference(new_pairs)
         inserts = new_pairs.difference(old_pairs)
@@ -288,7 +288,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         entities = [SchemaDataIndex(title=self.title, name=name, value=value) for name, value in inserts]
         ndb.put_multi(entities)
 
-    def update_links_deferred(self, old_redir, new_redir):
+    def update_links(self, old_redir, new_redir):
         """Updates outlinks of this page and inlinks of target pages"""
         # 1. process "redirect" metadata
         if old_redir != new_redir:
@@ -386,16 +386,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
         for rel in self.outlinks.keys():
             self.outlinks[rel].sort()
         self.put()
-
-    def _data_as_pairs(self, data):
-        pairs = set([])
-        for key, value in data.items():
-            if type(value) == list:
-                for v in value:
-                    pairs.add((key, v))
-            else:
-                pairs.add((key, value))
-        return pairs
 
     def _publish(self, title, save):
         if self.published_at is not None and self.published_to == title:
@@ -891,3 +881,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 titles.remove(title)
                 if len(titles) == 0:
                     del links[rel]
+
+    @staticmethod
+    def _data_as_pairs(data):
+        pairs = set([])
+        for key, value in data.items():
+            if type(value) == list:
+                for v in value:
+                    pairs.add((key, v))
+            else:
+                pairs.add((key, value))
+        return pairs

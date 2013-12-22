@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-import logging
 from google.appengine.ext import ndb
 from models import PageOperationMixin
-
-
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 class WikiPageRevision(ndb.Model, PageOperationMixin):

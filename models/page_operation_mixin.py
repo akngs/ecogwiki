@@ -4,7 +4,6 @@ import re
 import yaml
 import main
 import schema
-import logging
 import operator
 import urllib2
 from collections import OrderedDict
@@ -13,8 +12,6 @@ from lxml.html.clean import Cleaner
 
 from models import md, is_admin_user
 from models import TocGenerator
-
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 class PageOperationMixin(object):

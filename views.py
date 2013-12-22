@@ -15,9 +15,8 @@ from pyatom import AtomFeed
 from itertools import groupby
 from collections import OrderedDict
 from google.appengine.api import users
-from google.appengine.api import oauth
 from google.appengine.ext import deferred
-from models import WikiPage, WikiPageRevision, UserPreferences, title_grouper, ConflictError
+from models import WikiPage, WikiPageRevision, UserPreferences, title_grouper, ConflictError, get_cur_user
 
 logger = logging.getLogger(__name__)
 
@@ -742,23 +741,6 @@ def is_mobile(req):
     if 'User-Agent' not in req.headers:
         return False
     return re.match(p, req.headers['User-Agent']) is not None
-
-
-def get_cur_user():
-    user = users.get_current_user()
-    # try oauth
-    if user is None:
-        try:
-            oauth_user = oauth.get_current_user()
-            is_local_dummy_user = oauth_user.user_id() == '0' and oauth_user.email() == 'example@example.com'
-            if not is_local_dummy_user:
-                user = oauth_user
-        except oauth.OAuthRequestError as e:
-            pass
-
-    if user is not None:
-        cache.add_recent_email(user.email())
-    return user
 
 
 def obj_to_html(o, key=None):

@@ -1,9 +1,5 @@
-import logging
 from google.appengine.ext import ndb
 from datetime import datetime
-
-
-logging.getLogger().setLevel(logging.DEBUG)
 
 
 class UserPreferences(ndb.Model):

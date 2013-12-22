@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from views import get_cur_user
-from models import is_admin_user
+from models import is_admin_user, get_cur_user
 import unittest2 as unittest
 from google.appengine.ext import testbed
 
