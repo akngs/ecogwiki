@@ -18,20 +18,24 @@ def get_schema_set():
             try:
                 with open(fullpath, 'r') as f:
                     addon = json.load(f)
+                    # assign if it's the first one
                     if schema_set is None:
                         schema_set = addon
                         continue
 
+                    # else, perform merge for properties...
                     for k, v in addon['properties'].items():
                         if k not in schema_set['properties']:
                             schema_set['properties'][k] = {}
                         for key_to_add, value_to_add in v.items():
                             schema_set['properties'][k][key_to_add] = value_to_add
 
+                    # ...and types
                     for k, v in addon['types'].items():
                         if k not in schema_set['types']:
                             schema_set['types'][k] = {}
 
+                            # modify supertype-subtype relationships
                             for supertype in v['supertypes']:
                                 schema_set['types'][supertype]['subtypes'].append(k)
                             v['properties'] = schema_set['types'][supertype]['properties']
