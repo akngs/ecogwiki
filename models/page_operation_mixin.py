@@ -319,12 +319,38 @@ class PageOperationMixin(object):
             return False
         else:
             return True
+
+    @classmethod
+    def get_config(cls):
+        result = cache.get_config()
+        if result is None:
+            result = main.DEFAULT_CONFIG
+
+            try:
+                from models import WikiPage
+                page = WikiPage.get_config_page()
+                user_config = yaml.load(PageOperationMixin.remove_metadata(page.body))
+            except:
+                user_config = None
+            user_config = user_config or {}
+
+            def merge_dict(target_dict, source_dict):
+                for (key,value) in source_dict.iteritems():
+                    if type(value) != dict:
+                        target_dict[key] = value
+                    else:
+                        merge_dict(target_dict.setdefault(key, {}), value)
+
+            merge_dict(result, user_config)
+
+            cache.set_config(result)
+        return result
+
     
     @staticmethod
     def get_default_permission():
         try:
-            from models import WikiPage
-            return WikiPage.get_config()['service']['default_permissions']
+            return PageOperationMixin.get_config()['service']['default_permissions']
         except KeyError:
             return main.DEFAULT_CONFIG['service']['default_permissions']
 

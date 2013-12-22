@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import re
-import yaml
-import main
 import cache
 import random
 import schema
@@ -44,6 +42,10 @@ class WikiPage(ndb.Model, PageOperationMixin):
     published_to = ndb.StringProperty()
     older_title = ndb.StringProperty()
     newer_title = ndb.StringProperty()
+
+    @classmethod
+    def get_config_page(cls):
+        return cls.get_by_title('.config')
 
     @property
     def is_old_revision(self):
@@ -622,31 +624,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
                                   score_table, distance - 1)
 
     @classmethod
-    def get_config(cls):
-        result = cache.get_config()
-        if result is None:
-            result = main.DEFAULT_CONFIG
-
-            try:
-                page = cls.get_by_title('.config')
-                user_config = yaml.load(PageOperationMixin.remove_metadata(page.body))
-            except:
-                user_config = None
-            user_config = user_config or {}
-
-            def merge_dict(target_dict, source_dict):
-                for (key,value) in source_dict.iteritems():
-                    if type(value) != dict:
-                        target_dict[key] = value
-                    else:
-                        merge_dict(target_dict.setdefault(key, {}), value)
-
-            merge_dict(result, user_config)
-
-            cache.set_config(result)
-        return result
-
-    @classmethod
     def get_index(cls, user=None):
         q = WikiPage.query(ancestor=WikiPage._key())
 
@@ -776,7 +753,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     @classmethod
     def title_to_path(cls, title):
-        #return urllib2.quote(title.replace(u' ', u'_').encode('utf-8'))
         return PageOperationMixin.escape_title(title)
 
     @classmethod
