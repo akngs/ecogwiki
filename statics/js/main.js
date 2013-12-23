@@ -183,7 +183,7 @@ $(function() {
         var selector = 'article input[type="checkbox"]';
 
         if($('#edit').length === 0) {
-            $('article input[type="checkbox"]').prop('disabled', true);
+            $(selector).prop('disabled', true);
             return;
         }
 
