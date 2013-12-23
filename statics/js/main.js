@@ -181,6 +181,12 @@ $(function() {
     // Checkbox
     (function() {
         var selector = 'article input[type="checkbox"]';
+
+        if($('#edit').length === 0) {
+            'article input[type="checkbox"]'.prop('disabled', true);
+            return;
+        }
+
         $(document).on('change', selector, function() {
             var $this = $(this);
             var checked = $(this).is(':checked') ? '1' : '0';
