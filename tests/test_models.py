@@ -194,6 +194,11 @@ class WikiPageRenderingTest(unittest.TestCase):
         expected = u'<p>Hello <strike>AK</strike>?</p>'
         self.assertEqual(expected, actual)
 
+    def test_checkbox(self):
+        actual = md.convert(u'[ ] Hello [x] There')
+        expected = u'<p><input type="checkbox" /> Hello <input checked="checked" type="checkbox" /> There</p>'
+        self.assertEqual(expected, actual)
+
 
 class WikiPageWikilinkRenderingTest(unittest.TestCase):
     def test_plain(self):

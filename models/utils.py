@@ -10,7 +10,7 @@ from google.appengine.api import oauth
 
 
 __all__ = [
-    'regions', 
+    'regions',
     'title_grouper',
     'is_admin_user',
     'get_cur_user',
@@ -89,7 +89,6 @@ md = markdown.Markdown(
         md_url.URLExtension(),
         md_mathjax.MathJaxExtension(),
         md_strikethrough.StrikethroughExtension(),
-        md_checkbox.EmptyCheckboxExtension(),
         md_checkbox.CheckboxExtension(),
         md_tables.TableExtension(),
         DefListExtension(),
