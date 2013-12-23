@@ -512,10 +512,17 @@ class WikiPage(ndb.Model, PageOperationMixin):
         unique_links = {}
         itemtype = self.itemtype
 
+        # Add links in hierarchical title
+        anscestors = set([path[0] for path in self.paths[:-1]])
+        if len(anscestors) > 0:
+            unique_links['%s/relatedTo' % itemtype] = anscestors
+
         # Add links in body
         links = md_wikilink.parse_wikilinks(itemtype, WikiPage.remove_metadata(self.body))
         for rel, titles in links.items():
-            unique_links[rel] = set(titles)
+            if rel not in unique_links:
+                unique_links[rel] = set([])
+            unique_links[rel].update(titles)
 
         # Add links in structured data
         for name, value in self.data.items():

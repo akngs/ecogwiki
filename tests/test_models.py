@@ -1110,3 +1110,8 @@ class WikiPageHierarchyTest(unittest.TestCase):
             ],
             page.paths
         )
+
+    def test_ancestors_should_be_regarded_as_outlinks(self):
+        page = WikiPage.get_by_title(u'GEB/Chapter 1/Memo')
+        page.update_content(u'Hello [[There]]', 0, dont_defer=True)
+        self.assertEqual([u'GEB', u'GEB/Chapter 1', u'There'], page.outlinks['Article/relatedTo'])
