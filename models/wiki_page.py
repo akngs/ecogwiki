@@ -139,7 +139,29 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         cache.del_titles()
 
-    def update_content(self, new_body, base_revision, comment='', user=None, force_update=False, dont_create_rev=False, dont_defer=False):
+    def update_content(self, content, base_revision, comment='', user=None, force_update=False, dont_create_rev=False, dont_defer=False, partial='all'):
+        if partial == 'all':
+            return self._update_content_all(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
+        elif partial.startswith('checkbox'):
+            return self._update_content_checkbox(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, partial)
+        else:
+            raise ValueError('Invalid partial expression: %s' % partial)
+
+    def _update_content_checkbox(self, content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, exp):
+        cur_body = PageOperationMixin.remove_metadata(self.body).strip()
+        cur_index = {'value': -1}
+        index = int(re.match(ur'checkbox\[(\d+)\]', exp).group(1))
+        def replacer(m):
+            cur_index['value'] += 1
+            if cur_index['value'] != index:
+                return m.group(0)
+            else:
+                return u'[x]' if content == u'1' else u'[ ]'
+
+        new_body = re.sub(ur'\[[ x]\]', replacer, cur_body)
+        return self._update_content_all(new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
+
+    def _update_content_all(self, new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer):
         if not force_update and self.body == new_body:
             return False
 
