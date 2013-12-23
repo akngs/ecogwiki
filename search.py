@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import re
 import operator
 import pyparsing as p

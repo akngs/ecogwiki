@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from google.appengine.api import memcache
 import threading
 
@@ -44,16 +45,6 @@ def add_recent_email(email):
         prc.set(key, value)
     except:
         return None
-
-
-def get_recent_emails():
-    key = 'view\trecentemails'
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
 
 
 def get_recent_emails():

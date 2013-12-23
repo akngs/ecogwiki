@@ -604,12 +604,11 @@ class SpecialPageHandler(webapp2.RequestHandler):
             pages = WikiPage.get_index(user)
             page_group = groupby(pages,
                                  lambda p: title_grouper(p.title))
-            html = template(self.request, 'wiki_sp_index.html',
-                                  {'page_group': page_group})
+            html = template(self.request, 'wiki_sp_index.html', {'page_group': page_group})
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.response, html, head)
         elif restype == 'atom':
-            pages = WikiPage.get_index(None)
+            pages = WikiPage.get_index()
             config = WikiPage.get_config()
             host = self.request.host_url
             url = "%s/sp.index?_type=atom" % host

@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 import optparse
 import os
 import sys
 import unittest2
+
 
 USAGE = """%prog SDK_PATH TEST_PATH
 Run unit tests for App Engine apps.
@@ -44,4 +46,3 @@ if __name__ == '__main__':
     SDK_PATH = args[0]
     TEST_PATHS = args[1:]
     main(SDK_PATH, TEST_PATHS)
-
