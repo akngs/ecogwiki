@@ -34,22 +34,28 @@ class CustomSchemaTest(AppEngineTestCase):
     def setUp(self):
         super(CustomSchemaTest, self).setUp()
         schema.SCHEMA_FILE_TO_LOAD.append('schema-custom.json.sample')
+        self.person = schema.get_schema('Person')
+        self.politician = schema.get_schema('Politician')
 
     def tearDown(self):
         super(CustomSchemaTest, self).tearDown()
         schema.SCHEMA_FILE_TO_LOAD = schema.SCHEMA_FILE_TO_LOAD[:-1]
 
-    def test_get_custom_schema(self):
-        person = schema.get_schema('Person')
-        politician = schema.get_schema('Politician')
-        self.assertTrue('Politician' in person['subtypes'])
-        self.assertEqual(person['properties'], politician['properties'])
+    def test_inheritance_relationship(self):
+        self.assertTrue('Politician' in self.person['subtypes'])
+        self.assertTrue('Person' in self.politician['supertypes'])
+        self.assertTrue('Person' in self.politician['ancestors'])
 
+    def test_humane_labels(self):
         self.assertEqual(u'Politician', schema.get_schema('Politician')['label'])
         self.assertEqual(u'Politicians', schema.humane_property('Politician', 'politicalParty', True))
+        self.assertEqual(u'Political Party', schema.humane_property('Politician', 'politicalParty'))
+
+    def test_property_inheritance(self):
+        self.assertEqual(self.person['properties'], self.politician['properties'])
+        self.assertEqual([u'politicalParty'], self.politician['specific_properties'])
 
 
-# TODO: Delete it after finishing migration
 class SchemaPathTest(unittest.TestCase):
     def test_humane_itemtype(self):
         self.assertEqual('Book', schema.humane_item('Book'))
@@ -59,7 +65,7 @@ class SchemaPathTest(unittest.TestCase):
         self.assertEqual('Published Books',
                          schema.humane_property('Book', 'datePublished', True))
         self.assertEqual('Date Published',
-                         schema.humane_property('Book', 'datePublished', False))
+                         schema.humane_property('Book', 'datePublished'))
 
     def test_itemtype_path(self):
         self.assertEqual('Thing/',
