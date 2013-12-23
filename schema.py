@@ -16,7 +16,7 @@ def get_schema_set():
         for schema_file in SCHEMA_FILE_TO_LOAD:
             fullpath = os.path.join(os.path.dirname(__file__), schema_file)
             try:
-                with open(fullpath, 'r') as f:
+                with open(fullpath) as f:
                     addon = json.load(f)
                     # assign if it's the first one
                     if schema_set is None:
@@ -38,7 +38,11 @@ def get_schema_set():
                             # modify supertype-subtype relationships
                             for supertype in v['supertypes']:
                                 schema_set['types'][supertype]['subtypes'].append(k)
-                            v['properties'] = schema_set['types'][supertype]['properties']
+
+                                # inherit properties of supertypes
+                                if 'properties' not in v:
+                                    v['properties'] = []
+                                v['properties'] += schema_set['types'][supertype]['properties']
                         for key_to_add, value_to_add in v.items():
                             schema_set['types'][k][key_to_add] = value_to_add
             except IOError:
