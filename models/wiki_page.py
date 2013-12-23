@@ -151,6 +151,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         cur_body = PageOperationMixin.remove_metadata(self.body).strip()
         cur_index = {'value': -1}
         index = int(re.match(ur'checkbox\[(\d+)\]', exp).group(1))
+
         def replacer(m):
             cur_index['value'] += 1
             if cur_index['value'] != index:
@@ -159,6 +160,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 return u'[x]' if content == u'1' else u'[ ]'
 
         new_body = re.sub(ur'\[[ x]\]', replacer, cur_body)
+
         return self._update_content_all(new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
 
     def _update_content_all(self, new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer):

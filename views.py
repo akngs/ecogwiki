@@ -289,6 +289,7 @@ class PageHandler(webapp2.RequestHandler):
         try:
             page.update_content(new_body, revision, comment, user, partial=partial)
             self.response.headers['X-Message'] = 'Successfully updated.'
+
             if partial == 'all':
                 quoted_path = urllib2.quote(path.replace(' ', '_'))
                 self.response.status = 303
@@ -298,7 +299,9 @@ class PageHandler(webapp2.RequestHandler):
                 else:
                     self.response.location = str('/%s?_type=%s' % (quoted_path, restype))
             else:
-                self.response.status = 204
+                self.response.status = 200
+                self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
+                self.response.write(json.dumps({'revision': page.revision}))
         except ConflictError as e:
             html = template(self.request, 'wikipage.form.html', {'page': page, 'conflict': e})
             self.response.status = 409

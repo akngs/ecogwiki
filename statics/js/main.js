@@ -183,7 +183,7 @@ $(function() {
         var selector = 'article input[type="checkbox"]';
 
         if($('#edit').length === 0) {
-            'article input[type="checkbox"]'.prop('disabled', true);
+            $('article input[type="checkbox"]').prop('disabled', true);
             return;
         }
 
@@ -194,8 +194,8 @@ $(function() {
             var index = $this.index(selector);
 
             $(selector).prop('disabled', true);
-            $.post('?_method=PUT&partial=checkbox[' + index + ']', {'body': checked, 'revision': revision}, function() {
-                $('.revision').text(revision + 1);
+            $.post('?_method=PUT&partial=checkbox[' + index + ']', {'body': checked, 'revision': revision}, function(data) {
+                $('.revision').text(data['revision']);
             }).fail(function() {
                 alert('Failed to update content. Please refresh the page.');
             }).done(function() {

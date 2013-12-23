@@ -523,6 +523,19 @@ class PageResourceTest(AppEngineTestCase):
         self.browser.get('/New page?rev=list&_type=json')
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
 
+    def test_checkbox(self):
+        self.browser.login('ak@gmail.com', 'ak')
+
+        page = WikiPage.get_by_title(u'New page')
+        page.update_content(u'[ ] Hello', 0)
+
+        self.browser.post('/New page?_method=PUT&partial=checkbox[0]', 'body=1&revision=1')
+        self.assertEqual(200, self.browser.res.status_code)
+        self.assertEqual('{"revision": 2}', self.browser.res.body)
+
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'[x] Hello', page.body)
+
 
 class SearchResultResourceTest(AppEngineTestCase):
     def setUp(self):
