@@ -537,7 +537,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         itemtype = self.itemtype
 
         # Add links in hierarchical title
-        anscestors = set([path[0] for path in self.paths[:-1]])
+        anscestors = {path[0] for path in self.paths[:-1]}
         if len(anscestors) > 0:
             unique_links['%s/relatedTo' % itemtype] = anscestors
 
@@ -545,7 +545,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         links = md_wikilink.parse_wikilinks(itemtype, WikiPage.remove_metadata(self.body))
         for rel, titles in links.items():
             if rel not in unique_links:
-                unique_links[rel] = set([])
+                unique_links[rel] = set()
             unique_links[rel].update(titles)
 
         # Add links in structured data
@@ -557,7 +557,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
             for rel, titles in links.items():
                 if rel not in unique_links:
-                    unique_links[rel] = set([])
+                    unique_links[rel] = set()
                 unique_links[rel].update(titles)
 
         # turn sets into lists
@@ -703,7 +703,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         email = user.email() if user is not None else u'None'
         titles = cache.get_titles(email)
         if titles is None:
-            titles = set([page.title for page in cls.get_index(user)])
+            titles = {page.title for page in cls.get_index(user)}
             cache.set_titles(email, titles)
 
         return titles
@@ -804,10 +804,19 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if page is None:
             page = WikiPage(parent=key, title=title, body=u'', revision=0,
                             inlinks={}, outlinks={}, related_links={})
-        elif follow_redirect and 'redirect' in page.metadata:
-            new_title = page.metadata['redirect']
-            page = cls.get_by_title(new_title, follow_redirect)
+        elif follow_redirect:
+            page = cls._follow_redirect(page)
 
+        return page
+
+    @classmethod
+    def _follow_redirect(cls, page):
+        trail = {page.title}
+        while 'redirect' in page.metadata:
+            next_title = page.metadata['redirect']
+            if next_title in trail:
+                raise ValueError('Circular redirection detected')
+            page = cls.get_by_title(next_title)
         return page
 
     @classmethod
@@ -915,7 +924,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     @staticmethod
     def _data_as_pairs(data):
-        pairs = set([])
+        pairs = set()
         for key, value in data.items():
             if type(value) == list:
                 for v in value:

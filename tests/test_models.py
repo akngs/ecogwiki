@@ -540,6 +540,69 @@ class WikiPageSpecialTitlesTest(AppEngineTestCase):
         )
 
 
+class RedirectionTest(AppEngineTestCase):
+    def setUp(self):
+        super(RedirectionTest, self).setUp()
+
+    def test_adding_redirect_should_change_inout_links(self):
+        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
+        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
+
+        a = WikiPage.get_by_title(u'A')
+        b = WikiPage.get_by_title(u'B')
+        c = WikiPage.get_by_title(u'C')
+        self.assertEqual({u'Article/relatedTo': [u'C']}, a.outlinks)
+        self.assertEqual({}, b.inlinks)
+        self.assertEqual({}, b.outlinks)
+        self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
+
+    def test_removing_redirect_should_change_inout_links(self):
+        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
+        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
+        WikiPage.get_by_title(u'B').update_content(u'Hello [[D]]', 1, dont_defer=True)
+
+        a = WikiPage.get_by_title(u'A')
+        b = WikiPage.get_by_title(u'B')
+        c = WikiPage.get_by_title(u'C')
+        d = WikiPage.get_by_title(u'D')
+        self.assertEqual({u'Article/relatedTo': [u'B']}, a.outlinks)
+        self.assertEqual({u'Article/relatedTo': [u'A']}, b.inlinks)
+        self.assertEqual({u'Article/relatedTo': [u'D']}, b.outlinks)
+        self.assertEqual({}, c.inlinks)
+        self.assertEqual({u'Article/relatedTo': [u'B']}, d.inlinks)
+
+    def test_changing_redirect_should_change_inout_links(self):
+        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
+        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
+        WikiPage.get_by_title(u'B').update_content(u'.redirect D', 1, dont_defer=True)
+
+        # flush thread-local cache
+        cache.prc.flush_all()
+
+        a = WikiPage.get_by_title(u'A')
+        b = WikiPage.get_by_title(u'B')
+        c = WikiPage.get_by_title(u'C')
+        d = WikiPage.get_by_title(u'D')
+        self.assertEqual({u'Article/relatedTo': [u'D']}, a.outlinks)
+        self.assertEqual({}, b.inlinks)
+        self.assertEqual({}, b.outlinks)
+        self.assertEqual({}, c.inlinks)
+        self.assertEqual({u'Article/relatedTo': [u'A']}, d.inlinks)
+
+    def test_two_aliases(self):
+        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
+        WikiPage.get_by_title(u'A').update_content(u'B, [[C]]', 0, dont_defer=True)
+        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 1, dont_defer=True)
+        a = WikiPage.get_by_title(u'A')
+        c = WikiPage.get_by_title(u'C')
+        self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
+        self.assertEqual({u'Article/relatedTo': [u'C']}, a.outlinks)
+
+    def test_do_not_allow_circular_redirect(self):
+        page = WikiPage.get_by_title(u'A')
+        self.assertRaises(ValueError, page.update_content, u'.redirect A', 0, dont_defer=True)
+
+
 class WikiPageLinksTest(AppEngineTestCase):
     def setUp(self):
         super(WikiPageLinksTest, self).setUp()
@@ -595,60 +658,6 @@ class WikiPageLinksTest(AppEngineTestCase):
         page.update_content(u'[[A]], [[A]], [[Hello World]]', 0, dont_defer=True)
         links = page.outlinks
         self.assertEquals({u'Article/relatedTo': [u'A', u'Hello World']}, links)
-
-    def test_adding_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
-
-        a = WikiPage.get_by_title(u'A')
-        b = WikiPage.get_by_title(u'B')
-        c = WikiPage.get_by_title(u'C')
-        self.assertEqual({u'Article/relatedTo': [u'C']}, a.outlinks)
-        self.assertEqual({}, b.inlinks)
-        self.assertEqual({}, b.outlinks)
-        self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
-
-    def test_removing_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'Hello [[D]]', 1, dont_defer=True)
-
-        a = WikiPage.get_by_title(u'A')
-        b = WikiPage.get_by_title(u'B')
-        c = WikiPage.get_by_title(u'C')
-        d = WikiPage.get_by_title(u'D')
-        self.assertEqual({u'Article/relatedTo': [u'B']}, a.outlinks)
-        self.assertEqual({u'Article/relatedTo': [u'A']}, b.inlinks)
-        self.assertEqual({u'Article/relatedTo': [u'D']}, b.outlinks)
-        self.assertEqual({}, c.inlinks)
-        self.assertEqual({u'Article/relatedTo': [u'B']}, d.inlinks)
-
-    def test_changing_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'.redirect D', 1, dont_defer=True)
-
-        # flush thread-local cache
-        cache.prc.flush_all()
-
-        a = WikiPage.get_by_title(u'A')
-        b = WikiPage.get_by_title(u'B')
-        c = WikiPage.get_by_title(u'C')
-        d = WikiPage.get_by_title(u'D')
-        self.assertEqual({u'Article/relatedTo': [u'D']}, a.outlinks)
-        self.assertEqual({}, b.inlinks)
-        self.assertEqual({}, b.outlinks)
-        self.assertEqual({}, c.inlinks)
-        self.assertEqual({u'Article/relatedTo': [u'A']}, d.inlinks)
-
-    def test_two_aliases(self):
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'B, [[C]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 1, dont_defer=True)
-        a = WikiPage.get_by_title(u'A')
-        c = WikiPage.get_by_title(u'C')
-        self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
-        self.assertEqual({u'Article/relatedTo': [u'C']}, a.outlinks)
 
     def test_rel(self):
         WikiPage.get_by_title(u'A').update_content(u'[[birthDate::1979]]', 0, dont_defer=True)
