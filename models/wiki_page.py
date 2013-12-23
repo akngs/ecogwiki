@@ -451,7 +451,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             self.put()
 
     def get_similar_titles(self, user):
-        return WikiPage._similar_titles(WikiPage.get_titles(user), self.title)
+        return WikiPage.similar_titles(WikiPage.get_titles(user), self.title)
 
     def update_related_links(self, max_distance=5):
         """Update related_links score table by random walk"""
@@ -788,8 +788,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return urllib2.unquote(path).decode('utf-8').replace('_', ' ')
 
     @classmethod
-    def _similar_titles(cls, titles, target):
-        normalized_target = cls._normalize_title(target)
+    def similar_titles(cls, titles, target):
+        normalized_target = cls.normalize_title(target)
         if len(normalized_target) == 0:
             return OrderedDict([
                 (u'startswiths', []),
@@ -804,7 +804,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             if title == target:
                 continue
 
-            normalized_title = cls._normalize_title(title)
+            normalized_title = cls.normalize_title(title)
 
             if normalized_title.find(normalized_target) == -1:
                 pass
@@ -822,7 +822,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         ])
 
     @classmethod
-    def _normalize_title(cls, title):
+    def normalize_title(cls, title):
         return re.sub(cls.re_normalize_title, u'', title.lower())
 
     @classmethod

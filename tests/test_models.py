@@ -139,13 +139,11 @@ class WikiPageMetadataParserTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_get_body_only(self):
-        page = WikiPage.get_by_title(u'Hello')
         expected = u'blahblah'
         actual = WikiPage.remove_metadata(u'.hello a b c\n.x what?\nblahblah')
         self.assertEqual(expected, actual)
 
     def test_line_starts_with_a_dot(self):
-        page = WikiPage.get_by_title(u'Hello')
         expected = u'Hello\n.There'
         actual = WikiPage.remove_metadata(u'Hello\n.There')
         self.assertEqual(expected, actual)
@@ -427,16 +425,18 @@ class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
 
     def test_update_related_links(self):
         a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[B]], [[C]], [[D]]', 0)
+        a.update_content(u'[[B]]', 0, dont_defer=True)
 
         b = WikiPage.get_by_title(u'B')
-        b.update_content(u'[[D]], [[E]]', 0)
+        b.update_content(u'[[C]]', 0, dont_defer=True)
 
         c = WikiPage.get_by_title(u'C')
-        c.update_content(u'[[A]]', 0)
+        c.update_content(u'[[D]]', 0, dont_defer=True)
 
-        for _ in range(10):
-            a.update_related_links()
+        a.update_related_links()
+        a.put()
+
+        self.assertEqual({u'C': 0.025, u'D': 0.0125}, a.related_links)
 
     def test_redirect(self):
         a = WikiPage.get_by_title(u'A')
@@ -470,7 +470,7 @@ class WikiPageSimilarTitlesTest(unittest.TestCase):
             u'hallow',
             u'what the hell',
         ]
-        actual = WikiPage._similar_titles(titles, u'lo')
+        actual = WikiPage.similar_titles(titles, u'lo')
         expected = {
             u'startswiths': [u'Low'],
             u'endswiths': [u'hello'],
@@ -486,7 +486,7 @@ class WikiPageSimilarTitlesTest(unittest.TestCase):
             u'(hello)',
         ]
         for t in titles:
-            self.assertEqual(u'hello', WikiPage._normalize_title(t))
+            self.assertEqual(u'hello', WikiPage.normalize_title(t))
 
     def test_ignoring_articles(self):
         titles = [
@@ -498,7 +498,7 @@ class WikiPageSimilarTitlesTest(unittest.TestCase):
             u'hello there a',
         ]
         for t in titles:
-            self.assertEqual(u'hellothere', WikiPage._normalize_title(t))
+            self.assertEqual(u'hellothere', WikiPage.normalize_title(t))
 
 
 class WikiPageDescriptionTest(unittest.TestCase):
@@ -629,6 +629,7 @@ class WikiPageLinksTest(unittest.TestCase):
     def test_wikiquery(self):
         a = WikiPage.get_by_title(u'A')
         a.update_content(u'[[="Article"]]\n[[=schema:"Article"]]', 0, dont_defer=True)
+        self.assertEqual({}, a.outlinks)
 
     def test_do_not_display_restricted_links(self):
         a = WikiPage.get_by_title(u'A')
@@ -948,9 +949,12 @@ class WikiPageBugsTest(unittest.TestCase):
         self.testbed.deactivate()
 
     def test_remove_acl_and_link_at_once_caused_an_error(self):
-        WikiPage.get_by_title(u'A').update_content(u'.read jania902@gmail.com\n'
-                                                   u'[[B]]', 0)
-        WikiPage.get_by_title(u'A').update_content(u'Hello', 1)
+        try:
+            WikiPage.get_by_title(u'A').update_content(u'.read jania902@gmail.com\n'
+                                                       u'[[B]]', 0)
+            WikiPage.get_by_title(u'A').update_content(u'Hello', 1)
+        except AssertionError:
+            self.fail()
 
 
 class UserPreferencesTest(unittest.TestCase):
