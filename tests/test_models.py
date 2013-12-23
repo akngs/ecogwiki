@@ -955,7 +955,7 @@ class WikiPageDeleteTest(AppEngineTestCase):
     def test_in_out_links(self):
         self._login('a@x.com', 'a', is_admin=True)
 
-        self.pagea.delete(users.get_current_user(), dont_defer=True)
+        self.pagea.delete(users.get_current_user())
         self.pageb = WikiPage.get_by_title(u'B')
         self.assertEquals(1, len(self.pagea.inlinks))
         self.assertEquals(0, len(self.pagea.outlinks))

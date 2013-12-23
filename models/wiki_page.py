@@ -123,11 +123,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
             default_acl = WikiPage.get_default_permission()
         return super(WikiPage, self).can_read(user, default_acl)
 
-    def delete(self, user=None, dont_defer=False):
+    def delete(self, user=None):
         if not is_admin_user(user):
             raise RuntimeError('Only admin can delete pages.')
 
-        self.update_content('', self.revision, None, user, force_update=False, dont_create_rev=True, dont_defer=dont_defer)
+        self.update_content('', self.revision, None, user, dont_create_rev=True, dont_defer=True)
         self.related_links = {}
         self.modifier = None
         self.updated_at = None
