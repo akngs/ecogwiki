@@ -13,8 +13,8 @@ class TocGenerator(object):
     def validate(self):
         try:
             headings = TocGenerator.extract_headings(self._html)
-            outlines = self._generate_outline(headings)
-            self._generate_path(outlines)
+            outlines = self.generate_outline(headings)
+            self.generate_path(outlines)
             return True
         except ValueError:
             return False
@@ -22,8 +22,8 @@ class TocGenerator(object):
     def add_toc(self):
         """Add table of contents to HTML"""
         headings = TocGenerator.extract_headings(self._html)
-        outlines = self._generate_outline(headings)
-        paths = self._generate_path(outlines)
+        outlines = self.generate_outline(headings)
+        paths = self.generate_path(outlines)
 
         if len(headings) > 4:
             toc = u'<div class="toc"><h1>Table of Contents</h1>' \
@@ -59,7 +59,7 @@ class TocGenerator(object):
         m.update(path.encode('utf-8'))
         return m.hexdigest()
 
-    def _generate_outline(self, headings):
+    def generate_outline(self, headings):
         """Generate recursive array of document headings"""
         if len(headings) == 0:
             return []
@@ -103,7 +103,7 @@ class TocGenerator(object):
 
         return index, result
 
-    def _generate_path(self, outlines):
+    def generate_path(self, outlines):
         result = []
         self._generate_children_path(result, None, outlines)
 

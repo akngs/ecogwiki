@@ -9,12 +9,12 @@ class OutlinerTest(unittest.TestCase):
         self.t = TocGenerator('')
 
     def test_no_headings(self):
-        actual = self.t._generate_outline([])
+        actual = self.t.generate_outline([])
         expected = []
         self.assertEqual(expected, actual)
 
     def test_single_level(self):
-        actual = self.t._generate_outline([
+        actual = self.t.generate_outline([
             [1, u'T1'],
             [1, u'T2'],
         ])
@@ -25,7 +25,7 @@ class OutlinerTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_multi_level_case_1(self):
-        actual = self.t._generate_outline([
+        actual = self.t.generate_outline([
             [1, u'T1'],
             [1, u'T2'],
             [2, u'T2-1'],
@@ -43,7 +43,7 @@ class OutlinerTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_multi_level_case_2(self):
-        actual = self.t._generate_outline([
+        actual = self.t.generate_outline([
             [1, u'T1'],
             [2, u'T1-1'],
             [3, u'T1-1-1'],
@@ -62,8 +62,8 @@ class OutlinerTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_invalid_level(self):
-        self.assertRaises(ValueError, self.t._generate_outline, [[1, u'T1'], [3, u'T2']])
-        self.assertRaises(ValueError, self.t._generate_outline, [[2, u'T1'], [3, u'T2']])
+        self.assertRaises(ValueError, self.t.generate_outline, [[1, u'T1'], [3, u'T2']])
+        self.assertRaises(ValueError, self.t.generate_outline, [[2, u'T1'], [3, u'T2']])
 
 
 class PathTest(unittest.TestCase):
@@ -71,7 +71,7 @@ class PathTest(unittest.TestCase):
         self.t = TocGenerator('')
 
     def test_single_level(self):
-        actual = self.t._generate_path([
+        actual = self.t.generate_path([
             [u'제목1', []],
             [u'제목2', []],
         ])
@@ -82,7 +82,7 @@ class PathTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_multi_level(self):
-        actual = self.t._generate_path([
+        actual = self.t.generate_path([
             [u'T1', []],
             [u'제목2', [
                 [u'제목2-1', []],
@@ -103,7 +103,7 @@ class PathTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_duplicated_path(self):
-        self.assertRaises(ValueError, self.t._generate_path, [[u'T1', []], [u'T1', []]])
+        self.assertRaises(ValueError, self.t.generate_path, [[u'T1', []], [u'T1', []]])
 
 
 class HTMLGenerationTest(unittest.TestCase):
