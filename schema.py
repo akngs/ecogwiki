@@ -63,7 +63,14 @@ def get_schema(itemtype):
 
     schema = get_schema_set()['types'][itemtype]
     if 'plural_label' not in schema:
-        schema['plural_label'] = u'%ss' % schema['label']
+        if schema['label'][-2:] in ['ay', 'ey', 'iy', 'oy', 'uy', 'wy']:
+            schema['plural_label'] = u'%ss' % schema['label']
+        elif schema['label'].endswith('y'):
+            schema['plural_label'] = u'%sies' % schema['label'][:-1]
+        elif schema['label'].endswith('s') or schema['label'].endswith('o'):
+            schema['plural_label'] = u'%ses' % schema['label']
+        else:
+            schema['plural_label'] = u'%ss' % schema['label']
     cache.set_schema(itemtype, schema)
     return schema
 

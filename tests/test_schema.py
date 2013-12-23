@@ -9,12 +9,13 @@ class SchemaTest(AppEngineTestCase):
     def setUp(self):
         super(SchemaTest, self).setUp()
 
-    def test_get_schema_label(self):
-        self.assertEqual(u'Creative Work', schema.get_schema('CreativeWork')['label'])
+    def test_get_plural_label(self):
         self.assertEqual(u'Creative Works', schema.get_schema('CreativeWork')['plural_label'])
+        self.assertEqual(u'Medical Entities', schema.get_schema('MedicalEntity')['plural_label'])
+        self.assertEqual(u'Local Businesses', schema.get_schema('LocalBusiness')['plural_label'])
+        self.assertEqual(u'Attorneys', schema.get_schema('Attorney')['plural_label'])
 
-    def test_get_schema_label_for_custom_plural_form(self):
-        self.assertEqual(u'Person', schema.get_schema('Person')['label'])
+    def test_get_custom_plural_label_for_irregular_noun(self):
         self.assertEqual(u'People', schema.get_schema('Person')['plural_label'])
 
     def test_get_property_label(self):
