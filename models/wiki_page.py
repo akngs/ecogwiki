@@ -577,7 +577,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             user_config = user_config or {}
 
             def merge_dict(target_dict, source_dict):
-                for (key,value) in source_dict.iteritems():
+                for (key, value) in source_dict.iteritems():
                     if type(value) != dict:
                         target_dict[key] = value
                     else:
