@@ -25,7 +25,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 class WikiPage(ndb.Model, PageOperationMixin):
     re_normalize_title = re.compile(ur'([\[\]\(\)\~\!\@\#\$\%\^\&\*\-'
-                                    ur'\=\+\\:\;\'\"\,\.\/\?\<\>\s]|'
+                                    ur'\=\+\\:\;\'\"\,\.\?\<\>\s]|'
                                     ur'\bthe\b|\ban?\b)')
 
     itemtype_path = ndb.StringProperty()
