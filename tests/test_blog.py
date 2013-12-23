@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
 import unittest2 as unittest
+from tests import AppEngineTestCase
 from models import WikiPage
 from google.appengine.ext import testbed
 
 
-class DefaultBlogPublishTest(unittest.TestCase):
+class DefaultBlogPublishTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(DefaultBlogPublishTest, self).setUp()
 
     def test_first_publish(self):
         page = WikiPage.get_by_title(u'Hello')
@@ -40,13 +34,9 @@ class DefaultBlogPublishTest(unittest.TestCase):
         self.assertEqual(page1.title, posts[0].older_title)
 
 
-class DefaultBlogUnpublishTest(unittest.TestCase):
+class DefaultBlogUnpublishTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
+        super(DefaultBlogUnpublishTest, self).setUp()
 
         page1 = WikiPage.get_by_title(u'Hello 1')
         page1.update_content(u'.pub\nHello 1', 0)
@@ -56,9 +46,6 @@ class DefaultBlogUnpublishTest(unittest.TestCase):
 
         page3 = WikiPage.get_by_title(u'Hello 3')
         page3.update_content(u'.pub\nHello 3', 0)
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_unpublish_middle(self):
         middle = WikiPage.get_by_title(u'Hello 2')
@@ -88,16 +75,9 @@ class DefaultBlogUnpublishTest(unittest.TestCase):
         self.assertEqual(u'Hello 1', newer.older_title)
 
 
-class CustomBlogTest(unittest.TestCase):
+class CustomBlogTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(CustomBlogTest, self).setUp()
 
     def test_publish(self):
         page = WikiPage.get_by_title(u'Hello')
@@ -139,13 +119,9 @@ class CustomBlogTest(unittest.TestCase):
         self.assertEqual(None, page.published_to)
 
 
-class MultipleCustomBlogsTest(unittest.TestCase):
+class MultipleCustomBlogsTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
+        super(MultipleCustomBlogsTest, self).setUp()
 
         self.b1p1 = WikiPage.get_by_title(u'b1p1')
         self.b1p1.update_content(u'.pub B1', 0)
@@ -155,9 +131,6 @@ class MultipleCustomBlogsTest(unittest.TestCase):
         self.b1p2.update_content(u'.pub B1', 0)
         self.b2p2 = WikiPage.get_by_title(u'b2p2')
         self.b2p2.update_content(u'.pub B2', 0)
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_older_newer_isolation(self):
         b1p1 = WikiPage.get_by_title(u'b1p1')

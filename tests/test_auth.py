@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
-from models import is_admin_user, get_cur_user
-import unittest2 as unittest
+from tests import AppEngineTestCase
 from google.appengine.ext import testbed
+from models import is_admin_user, get_cur_user
 
 
 def user_login(email, user_id, is_admin=False):
@@ -20,15 +20,13 @@ def current_user_is_admin():
     return is_admin_user(user)
 
 
-class CurrentUserTest(unittest.TestCase):
+class CurrentUserTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_user_stub()
-        self.oauth_stub = OAuthStub(self.testbed, logout=True)
+        super(CurrentUserTest, self).setUp()
+        self.oauth_stub = OAuthStub(self.testbed)
 
     def tearDown(self):
-        self.testbed.deactivate()
+        super(CurrentUserTest, self).tearDown()
         user_logout()
 
     def test_none_on_logout(self):
@@ -45,15 +43,13 @@ class CurrentUserTest(unittest.TestCase):
         self.assertEquals(get_cur_user().email(), 'jh@gmail.com')
 
 
-class AdminUserTest(unittest.TestCase):
+class AdminUserTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_user_stub()
-        self.oauth_stub = OAuthStub(self.testbed, logout=True)
+        super(AdminUserTest, self).setUp()
+        self.oauth_stub = OAuthStub(self.testbed)
 
     def tearDown(self):
-        self.testbed.deactivate()
+        super(AdminUserTest, self).tearDown()
         user_logout()
 
     def test_false_when_logged_out(self):
@@ -63,14 +59,14 @@ class AdminUserTest(unittest.TestCase):
         user_login('ak@gmail.com', 'ah', is_admin=True)
         self.assertTrue(current_user_is_admin())
 
-        user_login('jh@gmail.com', 'jh', is_admin=False)
+        user_login('jh@gmail.com', 'jh')
         self.assertFalse(current_user_is_admin())
 
     def test_oauth_login(self):
         self.oauth_stub.login('ak@gmail.com', 'ah', is_admin=True)
         self.assertTrue(current_user_is_admin())
 
-        self.oauth_stub.login('jh@gmail.com', 'jh', is_admin=False)
+        self.oauth_stub.login('jh@gmail.com', 'jh')
         self.assertFalse(current_user_is_admin())
 
 

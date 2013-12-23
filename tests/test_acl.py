@@ -1,26 +1,17 @@
 # -*- coding: utf-8 -*-
-import unittest2 as unittest
 from models import WikiPage
+from tests import AppEngineTestCase
 from google.appengine.api import users
-from google.appengine.ext import testbed
 
 
-class DefaultAclTest(unittest.TestCase):
+class DefaultAclTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        self.testbed.init_user_stub()
+        super(DefaultAclTest, self).setUp()
 
         self.page = WikiPage.get_by_title(u'Hello')
         self.page.update_content(u'Hello', 0)
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_read_all_write_login(self):
         default = {'read': ['all'], 'write': ['login']}
@@ -53,22 +44,14 @@ class DefaultAclTest(unittest.TestCase):
         self.assertEqual(False, self.page.can_write(self.user2, default))
 
 
-class PageLevelAclTest(unittest.TestCase):
+class PageLevelAclTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        self.testbed.init_user_stub()
+        super(PageLevelAclTest, self).setUp()
 
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
         self.default = {'read': ['all'], 'write': ['login']}
         self.page = WikiPage.get_by_title(u'Hello')
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_default(self):
         self.page.update_content(u'Hello', 0)
@@ -101,22 +84,14 @@ class PageLevelAclTest(unittest.TestCase):
         self.assertEqual(True, self.page.can_read(self.user2, self.default))
 
 
-class InconsistantAclTest(unittest.TestCase):
+class InconsistantAclTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        self.testbed.init_user_stub()
+        super(InconsistantAclTest, self).setUp()
 
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
         self.default = {'read': ['all'], 'write': ['login']}
         self.page = WikiPage.get_by_title(u'Hello')
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_read_login_write_all(self):
         self.page.update_content(u'.read login\n.write all\nHello', 0)

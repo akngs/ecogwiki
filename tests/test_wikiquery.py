@@ -2,6 +2,7 @@
 import cache
 from models import WikiPage
 import unittest2 as unittest
+from tests import AppEngineTestCase
 from google.appengine.api import users
 from search import parse_wikiquery as p
 from google.appengine.ext import testbed
@@ -68,23 +69,15 @@ class WikiqueryParserTest(unittest.TestCase):
 #        self.assertEqual(p('"A" * "C"'), p('"A" * "C" * ("A" + "B" + "C" + "D")'))
 
 
-class WikiqueryEvaluationTest(unittest.TestCase):
+class WikiqueryEvaluationTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        cache.prc.flush_all()
+        super(WikiqueryEvaluationTest, self).setUp()
 
         WikiPage.get_by_title(u'The Mind\'s I').update_content(u'.schema Book\n[[author::Daniel Dennett]] and [[author::Douglas Hofstadter]]\n[[datePublished::1982]]', 0, u'')
         WikiPage.get_by_title(u'GEB').update_content(u'.schema Book\n{{author::Douglas Hofstadter}}\n[[datePublished::1979]]', 0, u'')
         WikiPage.get_by_title(u'Douglas Hofstadter').update_content(u'.schema Person', 0, u'')
         for p in WikiPage.query().fetch():
             p.rebuild_data_index()
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_by_name(self):
         self.assertEqual({u'name': u'GEB'},
@@ -122,23 +115,14 @@ class WikiqueryEvaluationTest(unittest.TestCase):
                          WikiPage.wikiquery(u'schema:"Thing/CreativeWork/Book/" > name, author'))
 
 
-class WikiqueryAclEvaluationTest(unittest.TestCase):
+class WikiqueryAclEvaluationTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        self.testbed.init_user_stub()
-        cache.prc.flush_all()
+        super(WikiqueryAclEvaluationTest, self).setUp()
 
         WikiPage.get_by_title(u'A').update_content(u'.schema Book\n.read all\nHello', 0, u'')
         WikiPage.get_by_title(u'B').update_content(u'.schema Book\n.read a@x.com\nThere', 0, u'')
         for p in WikiPage.query().fetch():
             p.rebuild_data_index()
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_anonymous(self):
         self.assertEqual({u'name': u'A'},

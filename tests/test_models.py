@@ -4,22 +4,15 @@ import main
 import cache
 import unittest2 as unittest
 from itertools import groupby
+from tests import AppEngineTestCase
 from google.appengine.api import users
-from google.appengine.ext import testbed
-from models import md, WikiPage, UserPreferences, title_grouper, ConflictError
 from markdownext.md_wikilink import parse_wikilinks
+from models import md, WikiPage, UserPreferences, title_grouper, ConflictError
 
 
-class WikiPageUpdateTest(unittest.TestCase):
+class WikiPageUpdateTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageUpdateTest, self).setUp()
 
     def test_should_update_acls(self):
         page = WikiPage.get_by_title(u'Hello')
@@ -98,20 +91,13 @@ class WikiPageUpdateTest(unittest.TestCase):
         self.assertRaises(ValueError, page.update_content, u'.schema Book\n\n    #!yaml/schema\n    y\n', 0)
 
 
-class WikiPageMetadataParserTest(unittest.TestCase):
+class WikiPageMetadataParserTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
+        super(WikiPageMetadataParserTest, self).setUp()
         self.default_md = {
             'content-type': 'text/x-markdown',
             'schema': 'Article',
         }
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_normal(self):
         page = WikiPage.get_by_title(u'Hello')
@@ -336,16 +322,9 @@ class SchemaItemPropertyRenderingTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
-class WikiTitleToPathConvertTest(unittest.TestCase):
+class WikiTitleToPathConvertTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiTitleToPathConvertTest, self).setUp()
 
     def test_title_to_path(self):
         self.assertEqual('Hello_World', WikiPage.title_to_path(u'Hello World'))
@@ -358,29 +337,17 @@ class WikiTitleToPathConvertTest(unittest.TestCase):
         self.assertEqual(u'가', WikiPage.path_to_title('%EA%B0%80'))
 
 
-class WikiYamlParserTest(unittest.TestCase):
+class WikiYamlParserTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiYamlParserTest, self).setUp()
 
     def test_empty_page(self):
         self.assertEqual(main.DEFAULT_CONFIG, WikiPage.get_config())
 
 
-class WikiPageGetConfigTest(unittest.TestCase):
+class WikiPageGetConfigTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        
+        super(WikiPageGetConfigTest, self).setUp()
         self.config_page = WikiPage.get_by_title('.config')
         self.config_page.update_content(u'''
           admin:
@@ -390,9 +357,6 @@ class WikiPageGetConfigTest(unittest.TestCase):
               read: [all]
               write: [login]
         ''', 0)
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_empty_config_page(self):
         config_page = WikiPage.get_by_title('.config')
@@ -412,16 +376,9 @@ class WikiPageGetConfigTest(unittest.TestCase):
         self.assertEqual(config['service']['title'], '')
 
 
-class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
+class WikiPageRelatedPageUpdatingTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageRelatedPageUpdatingTest, self).setUp()
 
     def test_update_related_links(self):
         a = WikiPage.get_by_title(u'A')
@@ -452,16 +409,9 @@ class WikiPageRelatedPageUpdatingTest(unittest.TestCase):
         self.assertTrue(u'D' in a.related_links)
 
 
-class WikiPageSimilarTitlesTest(unittest.TestCase):
+class WikiPageSimilarTitlesTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageSimilarTitlesTest, self).setUp()
 
     def test_similar_pages(self):
         titles = [
@@ -501,16 +451,9 @@ class WikiPageSimilarTitlesTest(unittest.TestCase):
             self.assertEqual(u'hellothere', WikiPage.normalize_title(t))
 
 
-class WikiPageDescriptionTest(unittest.TestCase):
+class WikiPageDescriptionTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageDescriptionTest, self).setUp()
 
     def test_try_newline(self):
         page = WikiPage.get_by_title(u'Hello')
@@ -538,16 +481,9 @@ class WikiPageDescriptionTest(unittest.TestCase):
         self.assertEqual(u'Hello', page.make_description(20))
 
 
-class WikiPageSpecialTitlesTest(unittest.TestCase):
+class WikiPageSpecialTitlesTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageSpecialTitlesTest, self).setUp()
 
     def test_years(self):
         titles = [
@@ -587,17 +523,9 @@ class WikiPageSpecialTitlesTest(unittest.TestCase):
         )
 
 
-class WikiPageLinksTest(unittest.TestCase):
+class WikiPageLinksTest(AppEngineTestCase):
     def setUp(self):
-        cache.prc.flush_all()
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageLinksTest, self).setUp()
 
     def test_nonexisting_page(self):
         a = WikiPage.get_by_title(u'A')
@@ -808,16 +736,9 @@ class WikiPageLinksTest(unittest.TestCase):
         self.assertEqual({}, page.outlinks)
 
 
-class WikiPageHashbang(unittest.TestCase):
+class WikiPageHashbang(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageHashbang, self).setUp()
 
     def test_no_hashbang(self):
         a = WikiPage.get_by_title(u'A')
@@ -864,25 +785,16 @@ class WikiPageTitleGroupingTest(unittest.TestCase):
         self.assertEqual([u'나나나'], list(titles))
 
 
-class PageOperationMixinTest(unittest.TestCase):
+class PageOperationMixinTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
+        super(PageOperationMixinTest, self).setUp()
 
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.pub X\nHello [[There]]', 0, u'', dont_defer=True)
-
         page2 = WikiPage.get_by_title(u'Other')
         page2.update_content(u'[[Hello]]', 0, u'', dont_defer=True)
-
         self.page = WikiPage.get_by_title(u'Hello')
         self.revision = self.page.revisions.fetch()[0]
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_rendered_body(self):
         self.assertTrue(self.page.rendered_body.startswith(u'<p>Hello <a class="wikipage" href="/There">There</a></p>\n<h1>Incoming Links <a id="h_ea3d40041db650b8c49e9a81fb17e208" href="#h_ea3d40041db650b8c49e9a81fb17e208" class="caret-target">#</a></h1>\n<h2>Related Articles <a id="h_49b9e0167582ae0274c0d7fe4693a540" href="#h_49b9e0167582ae0274c0d7fe4693a540" class="caret-target">#</a></h2>\n<ul>\n<li><a class="wikipage" href="/Other">Other</a></li>\n</ul>'))
@@ -937,16 +849,9 @@ class PageOperationMixinTest(unittest.TestCase):
         self.assertEqual(u'http://schema.org/Article', self.revision.itemtype_url)
 
 
-class WikiPageBugsTest(unittest.TestCase):
+class WikiPageBugsTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageBugsTest, self).setUp()
 
     def test_remove_acl_and_link_at_once_caused_an_error(self):
         try:
@@ -957,16 +862,10 @@ class WikiPageBugsTest(unittest.TestCase):
             self.fail()
 
 
-class UserPreferencesTest(unittest.TestCase):
+class UserPreferencesTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
+        super(UserPreferencesTest, self).setUp()
         self.user = users.User('user@example.com')
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_save_once(self):
         self.assertEqual(0, UserPreferences.query().count())
@@ -991,15 +890,9 @@ class UserPreferencesTest(unittest.TestCase):
         self.assertEquals(u'김경수', UserPreferences.get_by_email('user@example.com').userpage_title)
 
 
-class WikiPageDeleteTest(unittest.TestCase):
+class WikiPageDeleteTest(AppEngineTestCase):
     def setUp(self):
-        cache.prc.flush_all()
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        self.testbed.init_user_stub()
+        super(WikiPageDeleteTest, self).setUp()
 
         self.pagea = WikiPage.get_by_title(u'A')
         self.pagea.update_content(u'Hello [[B]]', 0, dont_defer=True)
@@ -1009,9 +902,6 @@ class WikiPageDeleteTest(unittest.TestCase):
         # reload
         self.pagea = WikiPage.get_by_title(u'A')
         self.pageb = WikiPage.get_by_title(u'B')
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_should_be_deleted(self):
         self._login('a@x.com', 'a', is_admin=True)
@@ -1080,16 +970,9 @@ class WikiPageDeleteTest(unittest.TestCase):
         os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
 
 
-class WikiPageHierarchyTest(unittest.TestCase):
+class WikiPageHierarchyTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageHierarchyTest, self).setUp()
 
     def test_no_hierarchy(self):
         page = WikiPage.get_by_title(u'GEB')

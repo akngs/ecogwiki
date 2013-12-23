@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
-import cache
 import schema
 import unittest2 as unittest
-from google.appengine.ext import testbed
+from tests import AppEngineTestCase
 from models import WikiPage, SchemaDataIndex
 
 
-class SchemaTest(unittest.TestCase):
+class SchemaTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
+        super(SchemaTest, self).setUp()
 
     def test_get_schema_label(self):
         self.assertEqual(u'Creative Work', schema.get_schema('CreativeWork')['label'])
@@ -35,17 +30,13 @@ class SchemaTest(unittest.TestCase):
         self.assertEqual(u'Children', schema.humane_property('Person', 'parent', True))
 
 
-class CustomSchemaTest(unittest.TestCase):
+class CustomSchemaTest(AppEngineTestCase):
     def setUp(self):
-        cache.prc.flush_all()
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
+        super(CustomSchemaTest, self).setUp()
         schema.SCHEMA_FILE_TO_LOAD.append('schema-custom.json.sample')
 
     def tearDown(self):
+        super(CustomSchemaTest, self).tearDown()
         schema.SCHEMA_FILE_TO_LOAD = schema.SCHEMA_FILE_TO_LOAD[:-1]
 
     def test_get_custom_schema(self):
@@ -77,17 +68,9 @@ class SchemaPathTest(unittest.TestCase):
                          schema.get_itemtype_path('Article'))
 
 
-class EmbeddedSchemaDataTest(unittest.TestCase):
+class EmbeddedSchemaDataTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        cache.prc.flush_all()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(EmbeddedSchemaDataTest, self).setUp()
 
     def test_no_data(self):
         page = WikiPage.get_by_title(u'Hello')
@@ -115,17 +98,9 @@ class EmbeddedSchemaDataTest(unittest.TestCase):
         self.assertEqual([u'B'], page_a.data['outlinks'])
 
 
-class YamlSchemaDataTest(unittest.TestCase):
+class YamlSchemaDataTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        cache.prc.flush_all()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(YamlSchemaDataTest, self).setUp()
 
     def test_yaml(self):
         page = WikiPage.get_by_title(u'Hello')
@@ -157,17 +132,9 @@ class YamlSchemaDataTest(unittest.TestCase):
         self.assertEqual(-1, page.rendered_body.find(u'#!yaml/schema'))
 
 
-class SchemaIndexTest(unittest.TestCase):
+class SchemaIndexTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        cache.prc.flush_all()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(SchemaIndexTest, self).setUp()
 
     def test_schema_index_create(self):
         page = WikiPage.get_by_title(u'Hello')

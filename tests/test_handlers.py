@@ -3,32 +3,24 @@ import re
 import os
 import json
 import main
-import cache
-import views
+import urllib
 import webapp2
 import lxml.etree
-import urllib
 from models import WikiPage
-import unittest2 as unittest
-from google.appengine.ext import testbed
+from tests import AppEngineTestCase
 from lxml.html import html5parser
+from google.appengine.ext import testbed
 
 from tests.test_auth import OAuthStub
 
 
-class ContentTypeTest(unittest.TestCase):
+class ContentTypeTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_user_stub()
-        self.testbed.init_taskqueue_stub()
-
+        super(ContentTypeTest, self).setUp()
         self.browser = Browser()
 
     def tearDown(self):
-        self.testbed.deactivate()
+        super(ContentTypeTest, self).tearDown()
         self.browser.logout()
 
     def test_get_default_content_type(self):
@@ -61,16 +53,10 @@ class ContentTypeTest(unittest.TestCase):
         self.assertRaises(ValueError, p.update_content, u'.read blah\n.content-type text/plain\nHello', 0)
 
 
-class PageHandlerTest(unittest.TestCase):
+class PageHandlerTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        self.testbed.init_user_stub()
-        self.oauth_stub = OAuthStub(self.testbed, logout=True)
-
+        super(PageHandlerTest, self).setUp()
+        self.oauth_stub = OAuthStub(self.testbed)
         self.fixtures = [
             [u'Home', u'Home'],
             [u'A', u'Goto [[Home]]'],
@@ -87,7 +73,7 @@ class PageHandlerTest(unittest.TestCase):
         self.browser = Browser()
 
     def tearDown(self):
-        self.testbed.deactivate()
+        super(PageHandlerTest, self).tearDown()
         self.browser.logout()
 
     def test_get_sp_chages(self):
@@ -193,19 +179,11 @@ class PageHandlerTest(unittest.TestCase):
         self.assertTrue(u'New page' in link_texts)
 
 
-class RevisionTest(unittest.TestCase):
+class RevisionTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_user_stub()
-        self.testbed.init_taskqueue_stub()
+        super(RevisionTest, self).setUp()
         self.parser = html5parser.HTMLParser(strict=True)
         self.browser = Browser()
-
-    def tearDown(self):
-        self.testbed.deactivate()
 
     def test_rev(self):
         page = WikiPage.get_by_title(u'A')
@@ -253,17 +231,13 @@ class RevisionTest(unittest.TestCase):
         self.assertEqual(403, self.browser.res.status_code)
 
 
-class HTML5ValidationTest(unittest.TestCase):
+class HTML5ValidationTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_user_stub()
+        super(HTML5ValidationTest, self).setUp()
+        # no OAuth login
         user_stub = self.testbed._test_stub_map.GetStub(testbed.USER_SERVICE_NAME)
-        user_stub.SetOAuthUser(email=None) # no OAuth login
+        user_stub.SetOAuthUser(email=None)
 
-        self.testbed.init_taskqueue_stub()
         self.parser = html5parser.HTMLParser(strict=True)
         self.browser = Browser()
 
@@ -282,7 +256,7 @@ class HTML5ValidationTest(unittest.TestCase):
             page.update_content(body + u'!', 1, None)
 
     def tearDown(self):
-        self.testbed.deactivate()
+        super(HTML5ValidationTest, self).tearDown()
         self.browser.logout()
 
     def test_normal_pages(self):
@@ -347,21 +321,14 @@ class HTML5ValidationTest(unittest.TestCase):
 
 
 # TODO: Complete this test cases and remove redundent tests
-class PageResourceTest(unittest.TestCase):
+class PageResourceTest(AppEngineTestCase):
     def setUp(self):
-        cache.prc.flush_all()
-
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        self.testbed.init_user_stub()
-        self.oauth_stub = OAuthStub(self.testbed, logout=True)
+        super(PageResourceTest, self).setUp()
+        self.oauth_stub = OAuthStub(self.testbed)
         self.browser = Browser()
 
     def tearDown(self):
-        self.testbed.deactivate()
+        super(PageResourceTest, self).setUp()
         self.browser.logout()
 
     def test_create_new_page(self):
@@ -557,21 +524,14 @@ class PageResourceTest(unittest.TestCase):
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
 
 
-class SearchResultResourceTest(unittest.TestCase):
+class SearchResultResourceTest(AppEngineTestCase):
     def setUp(self):
-        cache.prc.flush_all()
-
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-        self.testbed.init_user_stub()
-        self.oauth_stub = OAuthStub(self.testbed, logout=True)
+        super(SearchResultResourceTest, self).setUp()
+        self.oauth_stub = OAuthStub(self.testbed)
         self.browser = Browser()
 
     def tearDown(self):
-        self.testbed.deactivate()
+        super(SearchResultResourceTest, self).tearDown()
         self.browser.logout()
 
     def test_representations(self):

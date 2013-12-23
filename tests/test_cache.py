@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
-import unittest2 as unittest
 from models import WikiPage
-from google.appengine.ext import testbed
+from tests import AppEngineTestCase
 from google.appengine.api import memcache
 
 
-class WikiPageUpdateTest(unittest.TestCase):
+class WikiPageUpdateTest(AppEngineTestCase):
     def setUp(self):
-        self.testbed = testbed.Testbed()
-        self.testbed.activate()
-        self.testbed.init_datastore_v3_stub()
-        self.testbed.init_memcache_stub()
-        self.testbed.init_taskqueue_stub()
-
-    def tearDown(self):
-        self.testbed.deactivate()
+        super(WikiPageUpdateTest, self).setUp()
 
     def test_rendered_body_should_be_cached(self):
         page = WikiPage.get_by_title(u'Hello')
