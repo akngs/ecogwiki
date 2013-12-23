@@ -14,7 +14,7 @@ from collections import OrderedDict
 from google.appengine.ext import ndb
 from datetime import datetime, timedelta
 from google.appengine.ext import deferred
-from markdownext import md_wikilink
+from markdownext import md_wikilink, md_checkbox
 
 from models import PageOperationMixin, ConflictError, WikiPageRevision, TocGenerator, SchemaDataIndex
 from models import is_admin_user, md
@@ -150,7 +150,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def _update_content_checkbox(self, content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, exp):
         cur_body = PageOperationMixin.remove_metadata(self.body).strip()
         cur_index = {'value': -1}
-        index = int(re.match(ur'checkbox\[(\d+)\]', exp).group(1))
+        index = int(re.match(ur'checkbox\[(\d+)]', exp).group(1))
 
         def replacer(m):
             cur_index['value'] += 1
@@ -159,7 +159,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             else:
                 return u'[x]' if content == u'1' else u'[ ]'
 
-        new_body = re.sub(ur'\[[ x]\]', replacer, cur_body)
+        new_body = re.sub(md_checkbox.RE_CHECKBOX, replacer, cur_body)
 
         return self._update_content_all(new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
 
