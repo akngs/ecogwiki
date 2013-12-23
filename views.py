@@ -268,6 +268,7 @@ class PageHandler(webapp2.RequestHandler):
         new_body = self.request.POST['body']
         comment = self.request.POST.get('comment', '')
         preview = self.request.POST.get('preview', '0')
+        partial = self.request.GET.get('partial', 'all')
 
         if preview == '1':
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -286,15 +287,18 @@ class PageHandler(webapp2.RequestHandler):
             return
 
         try:
-            page.update_content(new_body, revision, comment, user)
-            quoted_path = urllib2.quote(path.replace(' ', '_'))
+            page.update_content(new_body, revision, comment, user, partial=partial)
             self.response.headers['X-Message'] = 'Successfully updated.'
-            self.response.status = 303
-            restype = get_restype(self.request, 'html')
-            if restype == 'html':
-                self.response.location = str('/' + quoted_path)
+            if partial == 'all':
+                quoted_path = urllib2.quote(path.replace(' ', '_'))
+                self.response.status = 303
+                restype = get_restype(self.request, 'html')
+                if restype == 'html':
+                    self.response.location = str('/' + quoted_path)
+                else:
+                    self.response.location = str('/%s?_type=%s' % (quoted_path, restype))
             else:
-                self.response.location = str('/%s?_type=%s' % (quoted_path, restype))
+                self.response.status = 204
         except ConflictError as e:
             html = template(self.request, 'wikipage.form.html', {'page': page, 'conflict': e})
             self.response.status = 409

@@ -113,6 +113,7 @@ class PageOperationMixin(object):
                 'www.youtube.com',
                 'player.vimeo.com',
             )
+            cleaner.forms = False
             rendered = cleaner.clean_html(rendered)
 
             # remove div wrapper if there is one

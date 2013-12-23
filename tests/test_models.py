@@ -10,6 +10,23 @@ from markdownext.md_wikilink import parse_wikilinks
 from models import md, WikiPage, UserPreferences, title_grouper, ConflictError
 
 
+class WikiPagePartialUpdateTest(AppEngineTestCase):
+    def setUp(self):
+        super(WikiPagePartialUpdateTest, self).setUp()
+
+    def test_check_checkbox(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'[ ] Item A\n[x] Item B', 0)
+        page.update_content(u'1', 1, partial='checkbox[0]')
+
+        self.assertEqual(u'[x] Item A\n[x] Item B', page.body)
+        self.assertEqual(2, page.revision)
+        
+        page.update_content(u'0', 1, partial='checkbox[1]')
+        self.assertEqual(u'[x] Item A\n[ ] Item B', page.body)
+        self.assertEqual(3, page.revision)
+
+
 class WikiPageUpdateTest(AppEngineTestCase):
     def setUp(self):
         super(WikiPageUpdateTest, self).setUp()

@@ -178,6 +178,26 @@ $(function() {
         });
     })();
 
+    // Checkbox
+    (function() {
+        var selector = 'article input[type="checkbox"]';
+        $(document).on('change', selector, function() {
+            var $this = $(this);
+            var checked = $(this).is(':checked') ? '1' : '0';
+            var revision = parseInt($('.revision').text());
+            var index = $this.index(selector);
+
+            $(selector).prop('disabled', true);
+            $.post('?_method=PUT&partial=checkbox[' + index + ']', {'body': checked, 'revision': revision}, function() {
+                $('.revision').text(revision + 1);
+            }).fail(function() {
+                alert('Failed to update content. Please refresh the page.');
+            }).done(function() {
+                $(selector).prop('disabled', false);
+            });
+        });
+    })();
+
     // Close button
     (function() {
         $(document).on('click', '.message .close', function() {
