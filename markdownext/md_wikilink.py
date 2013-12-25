@@ -45,23 +45,22 @@ def _build_url(label):
     return '/%s' % urllib2.quote(label.replace(' ', '_').encode('utf-8'))
 
 
+def _render_link(text, classname):
+    url = _build_url(text)
+    a = etree.Element('a')
+    a.text = text
+    a.set('href', url)
+    a.set('class', classname)
+    return a
+
+
 def _render_match(m):
     if m.group('plain'):
         text = plain_link(m)
         if text[0] == '=':
-            # treat it as a wikiquery link
-            url = _build_url(text)
-            a = etree.Element('a')
-            a.text = text
-            a.set('href', url)
-            a.set('class', 'wikiquery')
+            a = _render_link(text, 'wikiquery')
         else:
-            url = _build_url(text)
-            a = etree.Element('a')
-            a.text = text
-            a.set('href', url)
-            a.set('class', 'wikipage')
-
+            a = _render_link(text, 'wikipage')
             if m.group('rel'):
                 a.set('itemprop', m.group('rel'))
     elif m.group('date'):
@@ -163,24 +162,3 @@ def date_links(m):
                           u'%s %d' % (month_name, date_num)))
 
     return wikilinks
-
-
-KNOWN_RELS = {
-    u'author': (u'Author of', u'Author'),
-    u'birthDate': (u'Births', u'Birth date'),
-    u'datePublished': (u'Publications', u'Published date'),
-    u'deathDate': (u'Deaths', u'Deaths date'),
-    u'programmingLanguage': (u'Codes', u'Programming language'),
-    u'relatedTo': (u'Related to', u'Related to'),
-}
-
-
-def humane_rel(rel, inlink=True):
-    if rel in KNOWN_RELS:
-        labels = KNOWN_RELS[rel]
-        if inlink:
-            return labels[0]
-        else:
-            return labels[1]
-    else:
-        return rel

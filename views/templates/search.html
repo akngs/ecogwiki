@@ -8,13 +8,13 @@
         <p>Pages related to:</p>
         <ul>
         {% for title in parsed_expression.pos %}
-            <li><a href="{{ title|to_path }}" class="wikipage">{{ title }}</a></li>
+            <li><a href="{{ title|to_abs_path }}" class="wikipage">{{ title }}</a></li>
         {% endfor %}
         </ul>
         <p>but not related to:</p>
         <ul>
         {% for title in parsed_expression.neg %}
-            <li><a href="{{ title|to_path }}" class="wikipage">{{ title }}</a></li>
+            <li><a href="{{ title|to_abs_path }}" class="wikipage">{{ title }}</a></li>
         {% endfor %}
         </ul>
     </header>
@@ -25,9 +25,9 @@
             {% for title, score in positives.items() %}
                 <li>
                     <span class="score">{{ "%.3f"|format(score) }}</span>
-                    <a href="{{ expression|to_path }}_+{{ title }}" rel="nofollow" class="search pos">+</a>
-                    <a href="{{ expression|to_path }}_-{{ title }}" rel="nofollow" class="search neg">-</a>
-                    <a href="{{ title|to_path }}" class="wikipage caret-target matched-title">{{ title }}</a>
+                    <a href="{{ expression|to_abs_path }}_+{{ title }}" rel="nofollow" class="search pos">+</a>
+                    <a href="{{ expression|to_abs_path }}_-{{ title }}" rel="nofollow" class="search neg">-</a>
+                    <a href="{{ title|to_abs_path }}" class="wikipage caret-target matched-title">{{ title }}</a>
                 </li>
             {% endfor %}
             </ul>
@@ -41,9 +41,9 @@
             {% for title, score in negatives.items() %}
                 <li>
                     <span class="score">{{ "%.3f"|format(score) }}</span>
-                    <a href="{{ expression|to_path }}_+{{ title }}" rel="nofollow" class="search pos">+</a>
-                    <a href="{{ expression|to_path }}_-{{ title }}" rel="nofollow" class="search neg">-</a>
-                    <a href="{{ title|to_path }}" class="wikipage caret-target matched-title">{{ title }}</a>
+                    <a href="{{ expression|to_abs_path }}_+{{ title }}" rel="nofollow" class="search pos">+</a>
+                    <a href="{{ expression|to_abs_path }}_-{{ title }}" rel="nofollow" class="search neg">-</a>
+                    <a href="{{ title|to_abs_path }}" class="wikipage caret-target matched-title">{{ title }}</a>
                 </li>
             {% endfor %}
             </ul>

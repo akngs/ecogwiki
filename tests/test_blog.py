@@ -72,6 +72,17 @@ class DefaultBlogUnpublishTest(AppEngineTestCase):
         self.assertEqual(u'Hello 2', older.newer_title)
         self.assertEqual(u'Hello 1', newer.older_title)
 
+    def test_delete_published_page(self):
+        self.login('a@x.com', 'a', is_admin=True)
+
+        middle = WikiPage.get_by_title(u'Hello 2')
+        middle.delete(self.get_cur_user())
+
+        newer, older = WikiPage.get_published_posts(None, 20)
+
+        self.assertEqual(u'Hello 3', older.newer_title)
+        self.assertEqual(u'Hello 1', newer.older_title)
+
 
 class CustomBlogTest(AppEngineTestCase):
     def setUp(self):

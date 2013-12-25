@@ -18,7 +18,7 @@
     <ul>
         {% if preferences.userpage_title %}
         <li>
-            Your user page: <a href="{{ preferences.userpage_title|to_path }}" class="wikipage">{{ preferences.userpage_title }}</a>
+            Your user page: <a href="{{ preferences.userpage_title|to_abs_path }}" class="wikipage">{{ preferences.userpage_title }}</a>
         </li>
         <li class="created_at">
             Created at: <time datetime="{{ preferences.created_at|isodt }}">{{ preferences.created_at|dt }}</time>

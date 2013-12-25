@@ -24,7 +24,7 @@
     {% if titles %}
         <ul>
         {% for title in titles %}
-            <li><a href="{{ title|to_path }}" class="wikipage caret-target">{{ title }}</a></li>
+            <li><a href="{{ title|to_abs_path }}" class="wikipage caret-target">{{ title }}</a></li>
         {% endfor %}
         </ul>
     {% endif %}

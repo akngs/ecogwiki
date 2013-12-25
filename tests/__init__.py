@@ -2,6 +2,7 @@
 import os
 import cache
 import unittest2 as unittest
+from google.appengine.api import users
 from google.appengine.ext import testbed
 
 
@@ -26,3 +27,6 @@ class AppEngineTestCase(unittest.TestCase):
 
     def logout(self):
         self.login(None, None)
+
+    def get_cur_user(self):
+        return users.get_current_user()

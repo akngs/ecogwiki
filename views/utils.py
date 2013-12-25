@@ -3,7 +3,6 @@ import os
 import re
 import main
 import jinja2
-import urllib2
 from pyatom import AtomFeed
 from google.appengine.api import users
 from models import WikiPage, UserPreferences, get_cur_user
@@ -14,38 +13,19 @@ JINJA = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'])
 
 
-def format_short_datetime(value):
+to_rel_path = lambda title: WikiPage.title_to_path(title)
+to_abs_path = lambda title: '/' + to_rel_path(title)
+to_pluspath = lambda title: '/%2B' + to_rel_path(title)
+format_short_datetime = lambda v: _format_datetime(v, '%m-%d %H:%M')
+format_datetime = lambda v: _format_datetime(v, '%Y-%m-%d %H:%M:%S')
+format_iso_datetime = lambda v: _format_datetime(v, '%Y-%m-%dT%H:%M:%SZ')
+
+
+def _format_datetime(value, pattern):
     if value is None:
         return ''
-    return value.strftime('%m-%d %H:%M')
-
-
-def format_datetime(value):
-    if value is None:
-        return ''
-    return value.strftime('%Y-%m-%d %H:%M:%S')
-
-
-def format_iso_datetime(value):
-    if value is None:
-        return ''
-    return value.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-
-def to_path(title):
-    return '/' + WikiPage.title_to_path(title)
-
-
-def to_rel_path(title):
-    return WikiPage.title_to_path(title)
-
-
-def to_pluspath(title):
-    return '/%2B' + WikiPage.title_to_path(title)
-
-
-def urlencode(s):
-    return urllib2.quote(s.encode('utf-8'))
+    else:
+        return value.strftime(pattern)
 
 
 def userpage_link(user):
@@ -60,7 +40,7 @@ def userpage_link(user):
         elif preferences.userpage_title is None or len(preferences.userpage_title.strip()) == 0:
             return '<span class="user email">%s</span>' % email
         else:
-            path = to_path(preferences.userpage_title)
+            path = to_abs_path(preferences.userpage_title)
             return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
 
 
@@ -72,7 +52,7 @@ def has_supported_language(hashbangs):
 JINJA.filters['dt'] = format_datetime
 JINJA.filters['sdt'] = format_short_datetime
 JINJA.filters['isodt'] = format_iso_datetime
-JINJA.filters['to_path'] = to_path
+JINJA.filters['to_abs_path'] = to_abs_path
 JINJA.filters['to_rel_path'] = to_rel_path
 JINJA.filters['to_pluspath'] = to_pluspath
 JINJA.filters['userpage'] = userpage_link
@@ -153,7 +133,7 @@ def obj_to_html(o, key=None):
         if key is not None and key == 'schema':
             return o
         else:
-            return '<a href="%s">%s</a>' % (to_path(o), o)
+            return '<a href="%s">%s</a>' % (to_abs_path(o), o)
     else:
         return str(o)
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import main
 import cache
 import unittest2 as unittest
@@ -391,11 +390,11 @@ class WikiPageGetConfigTest(AppEngineTestCase):
 
     def test_update_by_dot_config_page(self):
         config = WikiPage.get_config()
-        self.assertEqual(config['admin']['email'], 'janghwan@gmail.com')
+        self.assertEqual('janghwan@gmail.com', config['admin']['email'])
 
     def test_updates_partial_configurations(self):
         config = WikiPage.get_config()
-        self.assertEqual(config['service']['title'], '')
+        self.assertEqual('', config['service']['title'])
 
 
 class WikiPageRelatedPageUpdatingTest(AppEngineTestCase):
@@ -976,24 +975,6 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.pagea = WikiPage.get_by_title(u'A')
         self.pagea.update_content(u'Hello', 0)
         self.assertEquals(1, self.pagea.revision)
-
-    def test_delete_published_page(self):
-        self.login('a@x.com', 'a', is_admin=True)
-
-        page1 = WikiPage.get_by_title(u'Hello 1')
-        page1.update_content(u'.pub\nHello 1', 0)
-        page2 = WikiPage.get_by_title(u'Hello 2')
-        page2.update_content(u'.pub\nHello 2', 0)
-        page3 = WikiPage.get_by_title(u'Hello 3')
-        page3.update_content(u'.pub\nHello 3', 0)
-
-        middle = WikiPage.get_by_title(u'Hello 2')
-        middle.delete(users.get_current_user())
-
-        newer, older = WikiPage.get_published_posts(None, 20)
-
-        self.assertEqual(u'Hello 3', older.newer_title)
-        self.assertEqual(u'Hello 1', newer.older_title)
 
 
 class WikiPageHierarchyTest(AppEngineTestCase):

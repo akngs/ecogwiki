@@ -82,7 +82,7 @@ window.fbAsyncInit = function() {
             {% endif %}
 
             {% for abs_path, path in page.paths[:-1] %}
-                <span class="parent"><a href="{{ abs_path|to_path }}">{{ path }}</a></span>
+                <span class="parent"><a href="{{ abs_path|to_abs_path }}">{{ path }}</a></span>
             {% endfor %}
             <span itemprop="name">{{ page.paths[-1][1] }}</span>
 
@@ -164,7 +164,7 @@ window.fbAsyncInit = function() {
                 {% if year_title == sobj.cur_year %}
                     <em class="current">{{ year_title }}</em>
                 {% else %}
-                    <a href="{{ year_title|to_path }}" class="wikipage" rel="nofollow">
+                    <a href="{{ year_title|to_abs_path }}" class="wikipage" rel="nofollow">
                     {{ year_title }}
                     </a>
                 {% endif %}
@@ -236,7 +236,7 @@ window.fbAsyncInit = function() {
                 {% if titles %}
                     <ul>
                     {% for title in titles %}
-                        <li><a href="{{ title|to_path }}" class="wikipage caret-target">{{ title }}</a></li>
+                        <li><a href="{{ title|to_abs_path }}" class="wikipage caret-target">{{ title }}</a></li>
                     {% endfor %}
                     </ul>
                 {% endif %}
