@@ -165,7 +165,7 @@ class PageHandlerTest(AppEngineTestCase):
                          self.browser.res.location)
 
     def test_delete_page_without_permission(self):
-        self.browser.login('ak@gmail.com', 'ak', is_admin=False)
+        self.browser.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.browser.post('/New_page?_method=DELETE')
 
@@ -287,15 +287,15 @@ class HTML5ValidationTest(AppEngineTestCase):
             self._validate('/sp.randomly_update_related_pages', 'text')
             self._validate('/sp.randomly_update_related_pages?recent=1', 'text')
 
-        self.browser.login('user@example.com', 'ak', is_admin=False)
+        self.login('user@example.com', 'ak')
         validate()
-        self._validate('/sp.preferences', 'html', 200)
+        self._validate('/sp.preferences', 'html')
 
-        self.browser.login('user@example.com', 'ak', is_admin=True)
+        self.login('user@example.com', 'ak', is_admin=True)
         validate()
-        self._validate('/sp.preferences', 'html', 200)
+        self._validate('/sp.preferences', 'html')
 
-        self.browser.logout()
+        self.logout()
         validate()
         self._validate('/sp.preferences', 'html', 403)
 
@@ -564,7 +564,7 @@ class Browser(object):
         if len(self.res.body) > 0 and self.res.headers['content-type'].split(';')[0].strip() == 'text/html':
             self.tree = html5parser.fromstring(self.res.body, parser=self.parser)
         if follow_redir and self.res.status_code in [301, 302, 303, 304, 307] and 'location' in self.res.headers:
-            self.get(self.res.headers['location'][16:], follow_redir=True)
+            self.get(self.res.headers['location'][16:])
 
     def post(self, url, content=''):
         req = webapp2.Request.blank(url)
@@ -586,14 +586,6 @@ class Browser(object):
             raise ValueError('Names do not match. Form: [%s], Supplied: [%s]' % (','.join(form_names), ','.join(supplied_names)))
 
         self.post(action_link, urllib.urlencode(fields))
-
-    def login(self, email, user_id, is_admin=False):
-        os.environ['USER_EMAIL'] = email or ''
-        os.environ['USER_ID'] = user_id or ''
-        os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
-
-    def logout(self):
-        self.login(None, None)
 
     def _query_formfields(self, path):
         form = self.query(path)[0]

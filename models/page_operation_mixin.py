@@ -100,7 +100,7 @@ class PageOperationMixin(object):
         rendered = TocGenerator(rendered).add_toc()
 
         # add class for embedded image
-        rendered = PageOperationMixin.re_img.sub(u'<p class="img-container"><img \\1/></p>', rendered)
+        rendered = PageOperationMixin.re_img.sub(ur'<p class="img-container"><img \\1/></p>', rendered)
 
         # add structured data block
         rendered = self.rendered_data + rendered
@@ -334,7 +334,7 @@ class PageOperationMixin(object):
         ss[u'next_month'] = month_names[(month_names.index(month) + 1) %
                                         len(month_names)]
         if m.group('date'):
-            ss[u'cur_date'] = int(m.group('date'), 10)
+            ss[u'cur_date'] = int(m.group('date'))
 
         ss[u'dates'] = range(1, max_date + 1)
         return ss

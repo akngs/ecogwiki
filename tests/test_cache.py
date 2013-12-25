@@ -38,7 +38,7 @@ class WikiPageUpdateTest(AppEngineTestCase):
         self.assertIsNone(memcache.get(cache_key))
 
         # populate cache
-        WikiPage.get_titles(None)
+        WikiPage.get_titles()
         self.assertIsNotNone(memcache.get(cache_key))
 
         # invalidate cache by adding new page
@@ -47,7 +47,7 @@ class WikiPageUpdateTest(AppEngineTestCase):
         self.assertIsNone(memcache.get(cache_key))
 
         # populate cache again
-        WikiPage.get_titles(None)
+        WikiPage.get_titles()
         self.assertIsNotNone(memcache.get(cache_key))
 
         # Should not be invalidated because it's just an update

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 import urllib2
 from markdown.util import etree
@@ -149,7 +150,7 @@ def date_links(m):
         return wikilinks
 
     # handle month and date
-    month_num = int(month, 10)
+    month_num = int(month)
     month_name = ['January', 'February', 'March', 'April', 'May', 'June',
                   'July', 'August', 'September', 'October', 'November',
                   'December'][month_num - 1]
@@ -157,7 +158,7 @@ def date_links(m):
         wikilinks.append((u'%s-%s' % (month, date),
                           u'%s' % month_name))
     else:
-        date_num = int(date, 10)
+        date_num = int(date)
         wikilinks.append((u'%s-%s' % (month, date),
                           u'%s %d' % (month_name, date_num)))
 

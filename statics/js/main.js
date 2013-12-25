@@ -16,31 +16,29 @@ $(function() {
             // if there are multiple children it means it's a wikilink
             if(this.childNodes.length > 1) return;
 
-            var dateStr = this.getAttribute('datetime');
+            var date = new Date(this.getAttribute('datetime'));
+            var year, month, day, hour, min;
+            var result;
             if(this.innerHTML.length == 11) {
-                var date = new Date(dateStr);
-                var month = '0' + (date.getMonth() + 1);
-                var day = '0' + date.getDate();
-                var hour = '0' + date.getHours();
-                var min = '0' + date.getMinutes();
-                var result =
-                    month.substr(month.length - 2) + '-' +
-                        day.substr(day.length - 2) + ' ' +
-                        hour.substr(hour.length - 2) + ':' +
-                        min.substr(min.length - 2)
+                month = '0' + (date.getMonth() + 1);
+                day = '0' + date.getDate();
+                hour = '0' + date.getHours();
+                min = '0' + date.getMinutes();
+                result = month.substr(month.length - 2) + '-' +
+                    day.substr(day.length - 2) + ' ' +
+                    hour.substr(hour.length - 2) + ':' +
+                    min.substr(min.length - 2);
             } else {
-                var date = new Date(dateStr);
-                var year = '' + date.getFullYear();
-                var month = '0' + (date.getMonth() + 1);
-                var day = '0' + date.getDate();
-                var hour = '0' + date.getHours();
-                var min = '0' + date.getMinutes();
-                var result =
-                    year + '-' +
-                        month.substr(month.length - 2) + '-' +
-                        day.substr(day.length - 2) + ' ' +
-                        hour.substr(hour.length - 2) + ':' +
-                        min.substr(min.length - 2)
+                year = '' + date.getFullYear();
+                month = '0' + (date.getMonth() + 1);
+                day = '0' + date.getDate();
+                hour = '0' + date.getHours();
+                min = '0' + date.getMinutes();
+                result = year + '-' +
+                    month.substr(month.length - 2) + '-' +
+                    day.substr(day.length - 2) + ' ' +
+                    hour.substr(hour.length - 2) + ':' +
+                    min.substr(min.length - 2);
             }
             this.innerHTML = result;
         });
@@ -83,7 +81,7 @@ $(function() {
         if($caret_targets.length) navigateFocus(caret_index, true);
 
         // shortcuts
-        var shortcuts = []
+        var shortcuts = [];
         $('.shortcut').each(function() {
             shortcuts.push($(this).data('shortcut').toUpperCase());
         });
@@ -133,7 +131,7 @@ $(function() {
             } else {
                 return true;
             }
-        })
+        });
 
         function navigateFocus(index, isFirstTime) {
             $('.vcaret').removeClass('vcaret');

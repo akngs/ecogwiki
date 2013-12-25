@@ -935,7 +935,7 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.pageb = WikiPage.get_by_title(u'B')
 
     def test_should_be_deleted(self):
-        self._login('a@x.com', 'a', is_admin=True)
+        self.login('a@x.com', 'a', is_admin=True)
         self.pagea.delete(users.get_current_user())
 
         self.pagea = WikiPage.get_by_title(u'A')
@@ -944,16 +944,16 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.assertEquals(0, self.pagea.revision)
 
     def test_only_admin_can_perform_delete(self):
-        self._login('a@x.com', 'a', is_admin=False)
+        self.login('a@x.com', 'a')
         self.assertRaises(RuntimeError, self.pagea.delete, users.get_current_user())
 
     def test_revisions_should_be_deleted_too(self):
-        self._login('a@x.com', 'a', is_admin=True)
+        self.login('a@x.com', 'a', is_admin=True)
         self.pagea.delete(users.get_current_user())
         self.assertEqual(0, self.pagea.revisions.count())
 
     def test_in_out_links(self):
-        self._login('a@x.com', 'a', is_admin=True)
+        self.login('a@x.com', 'a', is_admin=True)
 
         self.pagea.delete(users.get_current_user())
         self.pageb = WikiPage.get_by_title(u'B')
@@ -963,14 +963,14 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.assertEquals(1, len(self.pageb.outlinks))
 
     def test_delete_twice(self):
-        self._login('a@x.com', 'a', is_admin=True)
+        self.login('a@x.com', 'a', is_admin=True)
 
         self.pagea.delete(users.get_current_user())
         self.pagea = WikiPage.get_by_title(u'A')
         self.pagea.delete(users.get_current_user())
 
     def test_delete_and_create(self):
-        self._login('a@x.com', 'a', is_admin=True)
+        self.login('a@x.com', 'a', is_admin=True)
 
         self.pagea.delete(users.get_current_user())
         self.pagea = WikiPage.get_by_title(u'A')
@@ -978,7 +978,7 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.assertEquals(1, self.pagea.revision)
 
     def test_delete_published_page(self):
-        self._login('a@x.com', 'a', is_admin=True)
+        self.login('a@x.com', 'a', is_admin=True)
 
         page1 = WikiPage.get_by_title(u'Hello 1')
         page1.update_content(u'.pub\nHello 1', 0)
@@ -994,11 +994,6 @@ class WikiPageDeleteTest(AppEngineTestCase):
 
         self.assertEqual(u'Hello 3', older.newer_title)
         self.assertEqual(u'Hello 1', newer.older_title)
-
-    def _login(self, email, user_id, is_admin=False):
-        os.environ['USER_EMAIL'] = email or ''
-        os.environ['USER_ID'] = user_id or ''
-        os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
 
 
 class WikiPageHierarchyTest(AppEngineTestCase):

@@ -1,1 +1,1 @@
-__author__ = 'Alan Kang <jania902@gmail.com>'
+# -*- coding: utf-8 -*-

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-import cache
 from models import WikiPage
 import unittest2 as unittest
 from tests import AppEngineTestCase
 from google.appengine.api import users
 from search import parse_wikiquery as p
-from google.appengine.ext import testbed
 
 
 class WikiqueryParserTest(unittest.TestCase):
@@ -76,8 +74,8 @@ class WikiqueryEvaluationTest(AppEngineTestCase):
         WikiPage.get_by_title(u'The Mind\'s I').update_content(u'.schema Book\n[[author::Daniel Dennett]] and [[author::Douglas Hofstadter]]\n[[datePublished::1982]]', 0, u'')
         WikiPage.get_by_title(u'GEB').update_content(u'.schema Book\n{{author::Douglas Hofstadter}}\n[[datePublished::1979]]', 0, u'')
         WikiPage.get_by_title(u'Douglas Hofstadter').update_content(u'.schema Person', 0, u'')
-        for p in WikiPage.query().fetch():
-            p.rebuild_data_index()
+        for page in WikiPage.query().fetch():
+            page.rebuild_data_index()
 
     def test_by_name(self):
         self.assertEqual({u'name': u'GEB'},
@@ -121,12 +119,12 @@ class WikiqueryAclEvaluationTest(AppEngineTestCase):
 
         WikiPage.get_by_title(u'A').update_content(u'.schema Book\n.read all\nHello', 0, u'')
         WikiPage.get_by_title(u'B').update_content(u'.schema Book\n.read a@x.com\nThere', 0, u'')
-        for p in WikiPage.query().fetch():
-            p.rebuild_data_index()
+        for page in WikiPage.query().fetch():
+            page.rebuild_data_index()
 
     def test_anonymous(self):
         self.assertEqual({u'name': u'A'},
-                         WikiPage.wikiquery(u'schema:"Book"', None))
+                         WikiPage.wikiquery(u'schema:"Book"'))
 
     def test_user_with_no_permission(self):
         user = users.User('a@y.com')

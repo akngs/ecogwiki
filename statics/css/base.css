@@ -110,7 +110,7 @@ div.contents {
 }
 .scorebar .bar {
     display: block;
-    width: 0%;
+    width: 0;
     height: 100%;
     background-color: #A6C5F3;
 }
@@ -245,10 +245,10 @@ header h1 {
     line-height: 1.1em;
     margin: 0.3em 0 1em;
 
-    -ms-word-break: break-all;
     word-break: break-all;
     /* Non standard for webkit */
-    word-break: break-word;
+    -ms-word-break: break-all;
+    -webkit-word-break: break-word;
     -webkit-hyphens: auto;
     -moz-hyphens: auto;
     hyphens: auto;
@@ -484,10 +484,10 @@ article .body a[href^="http://"] {
 
 article .body a.plainurl,
 article .body pre {
-    -ms-word-break: break-all;
     word-break: break-all;
     /* Non standard for webkit */
-    word-break: break-word;
+    -ms-word-break: break-all;
+    -webkit-word-break: break-word;
     -webkit-hyphens: auto;
     -moz-hyphens: auto;
     hyphens: auto;
@@ -577,7 +577,7 @@ article .body dd {
 article .body .structured-data {
     max-width: 45%;
     float: right;
-    margin: 0em 0 1em 1em;
+    margin: 0 0 1em 1em;
     padding: 1em;
     border: 1px solid #CCC;
 }

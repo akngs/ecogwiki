@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-import unittest2 as unittest
 from tests import AppEngineTestCase
 from models import WikiPage
-from google.appengine.ext import testbed
 
 
 class DefaultBlogPublishTest(AppEngineTestCase):

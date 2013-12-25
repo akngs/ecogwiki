@@ -22,6 +22,7 @@ def main(sdk_path, test_paths):
 
     suites = unittest2.TestSuite()
     for test_path in test_paths:
+        suite = None
         # tests/ directory
         if os.path.isdir(test_path):
             suite = unittest2.loader.TestLoader().discover(test_path)
@@ -32,7 +33,10 @@ def main(sdk_path, test_paths):
         # tests.module.TestCase
         elif '/' not in test_path and '.' in test_path:
             suite = unittest2.loader.TestLoader().loadTestsFromName(test_path)
-        suites.addTest(suite)
+
+        if suite is not None:
+            suites.addTest(suite)
+
     unittest2.TextTestRunner(verbosity=2).run(suites)
 
 

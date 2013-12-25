@@ -127,7 +127,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if not is_admin_user(user):
             raise RuntimeError('Only admin can delete pages.')
 
-        self.update_content('', self.revision, None, user, dont_create_rev=True, dont_defer=True)
+        self.update_content('', self.revision, user=user, dont_create_rev=True, dont_defer=True)
         self.related_links = {}
         self.modifier = None
         self.updated_at = None
@@ -216,7 +216,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # update model fields
         self.body = new_body
         self.modifier = user
-        self.description = self.make_description(200)
+        self.description = self.make_description()
         self.acl_read = new_md.get('read', '')
         self.acl_write = new_md.get('write', '')
         self.comment = comment
