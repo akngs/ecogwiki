@@ -138,6 +138,10 @@ class PageOperationMixin(object):
 
     @property
     def absolute_url(self):
+        return self.absolute_latest_url
+
+    @property
+    def absolute_latest_url(self):
         return u'/%s' % PageOperationMixin.escape_title(self.title)
 
     @property

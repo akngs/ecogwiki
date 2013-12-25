@@ -150,7 +150,7 @@ window.fbAsyncInit = function() {
 
         {% if page.is_old_revision %}
         <div class="message">
-            <p>You are seeing an old version of the page. Go to <a href="{{ page.absolute_url|e }}">latest version</a></p>
+            <p>You are seeing an old version of the page. Go to <a href="{{ page.absolute_latest_url|e }}">latest version</a></p>
         </div>
         {% endif %}
 

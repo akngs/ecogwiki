@@ -1,11 +1,56 @@
-# -*- coding: utf-8 -*-
+# coding=utf-8
 import os
 import re
 import main
+import json
 import jinja2
 from pyatom import AtomFeed
 from google.appengine.api import users
 from models import WikiPage, UserPreferences, get_cur_user
+
+
+class Representation(object):
+    def __init__(self, content, content_type):
+        self._content = content
+        self._content_type = content_type
+
+    def respond(self, httpres, head):
+        self._respond(httpres, head, self._content_type, self._content)
+
+    def _respond(self, httpres, head, content_type, content):
+        httpres.headers['Content-Type'] = content_type
+        if head:
+            httpres.headers['Content-Length'] = str(len(content))
+        else:
+            httpres.write(content)
+
+
+class TemplateRepresentation(Representation):
+    def __init__(self, content, content_type, httpreq, template_path):
+        super(TemplateRepresentation, self).__init__(content, content_type)
+        self._httpreq = httpreq
+        self._template_path = template_path
+
+    def respond(self, httpres, head):
+        html = template(self._httpreq, self._template_path, self._content)
+        self._respond(httpres, head, self._content_type, html)
+
+
+class JsonRepresentation(Representation):
+    def __init__(self, content, content_type):
+        super(JsonRepresentation, self).__init__(content, content_type)
+
+    def respond(self, httpres, head):
+        self._respond(httpres, head, self._content_type, json.dumps(self._content))
+
+
+class EmptyRepresentation(Representation):
+    def __init__(self, rescode):
+        super(EmptyRepresentation, self).__init__(None, None)
+        self._rescode = rescode
+
+    def respond(self, httpres, head):
+        httpres.status = 400
 
 
 JINJA = jinja2.Environment(

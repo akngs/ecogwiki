@@ -10,13 +10,13 @@ class DefaultBlogPublishTest(AppEngineTestCase):
     def test_first_publish(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'Hello', 0)
-        self.assertEqual(0, len(WikiPage.get_published_posts(None, 20)))
+        self.assertEqual(0, len(WikiPage.get_posts_of(None, 20)))
 
         page.update_content(u'.pub\nHello', 1)
 
         self.assertIsNotNone(page.published_at)
         self.assertIsNone(page.published_to)
-        self.assertEqual(1, len(WikiPage.get_published_posts(None, 20)))
+        self.assertEqual(1, len(WikiPage.get_posts_of(None, 20)))
 
     def test_second_publish(self):
         page1 = WikiPage.get_by_title(u'Hello 1')
@@ -25,7 +25,7 @@ class DefaultBlogPublishTest(AppEngineTestCase):
         page2 = WikiPage.get_by_title(u'Hello 2')
         page2.update_content(u'.pub\nHello 2', 0)
 
-        posts = WikiPage.get_published_posts(None, 20)
+        posts = WikiPage.get_posts_of(None, 20)
 
         self.assertEqual(2, len(posts))
         self.assertEqual(page2.title, posts[1].newer_title)
@@ -49,7 +49,7 @@ class DefaultBlogUnpublishTest(AppEngineTestCase):
         middle = WikiPage.get_by_title(u'Hello 2')
         middle.update_content(u'Hello 2', 1)
 
-        newer, older = WikiPage.get_published_posts(None, 20)
+        newer, older = WikiPage.get_posts_of(None, 20)
 
         self.assertEqual(u'Hello 3', older.newer_title)
         self.assertEqual(u'Hello 1', newer.older_title)
@@ -58,7 +58,7 @@ class DefaultBlogUnpublishTest(AppEngineTestCase):
         oldest = WikiPage.get_by_title(u'Hello 1')
         oldest.update_content(u'Hello 1', 1)
 
-        newer, older = WikiPage.get_published_posts(None, 20)
+        newer, older = WikiPage.get_posts_of(None, 20)
 
         self.assertEqual(u'Hello 3', older.newer_title)
         self.assertEqual(u'Hello 2', newer.older_title)
@@ -67,7 +67,7 @@ class DefaultBlogUnpublishTest(AppEngineTestCase):
         newest = WikiPage.get_by_title(u'Hello 3')
         newest.update_content(u'Hello 3', 1)
 
-        newer, older = WikiPage.get_published_posts(None, 20)
+        newer, older = WikiPage.get_posts_of(None, 20)
 
         self.assertEqual(u'Hello 2', older.newer_title)
         self.assertEqual(u'Hello 1', newer.older_title)
@@ -78,7 +78,7 @@ class DefaultBlogUnpublishTest(AppEngineTestCase):
         middle = WikiPage.get_by_title(u'Hello 2')
         middle.delete(self.get_cur_user())
 
-        newer, older = WikiPage.get_published_posts(None, 20)
+        newer, older = WikiPage.get_posts_of(None, 20)
 
         self.assertEqual(u'Hello 3', older.newer_title)
         self.assertEqual(u'Hello 1', newer.older_title)
@@ -93,7 +93,7 @@ class CustomBlogTest(AppEngineTestCase):
         page.update_content(u'.pub Posts\nHello', 0)
         self.assertIsNotNone(page.published_at)
         self.assertEqual('Posts', page.published_to)
-        self.assertEqual(1, len(WikiPage.get_published_posts('Posts', 20)))
+        self.assertEqual(1, len(WikiPage.get_posts_of('Posts', 20)))
 
     def test_specify_page_to_published_page(self):
         # .pub -> .pub BBS

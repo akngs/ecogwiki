@@ -2,13 +2,89 @@
 import json
 import cache
 import schema
+import search
 import urllib2
 import webapp2
+import operator
 from pyatom import AtomFeed
 from itertools import groupby
+from collections import OrderedDict
 from google.appengine.ext import deferred
 from models import WikiPage, UserPreferences, title_grouper, get_cur_user
-from views.utils import template, set_response_body, get_restype, render_posts_atom
+from resources import RedirectResource, PageResource, RevisionResource, RevisionListResource
+from representations import template, set_response_body, get_restype, render_posts_atom, obj_to_html
+
+
+class PageHandler(webapp2.RequestHandler):
+    def head(self, path):
+        return self.get(path, True)
+
+    def get(self, path, head=False):
+        if path == '':
+            resource = RedirectResource(self.request, self.response, '/Home')
+        elif self.request.path.find('%20') != -1:
+            resource = RedirectResource(self.request, self.response, '/%s' % path.replace(' ', '_'))
+        elif self.request.GET.get('rev') == 'list':
+            resource = RevisionListResource(self.request, self.response, path)
+        elif self.request.GET.get('rev', '') != '':
+            resource = RevisionResource(self.request, self.response, path, self.request.GET.get('rev', ''))
+        else:
+            resource = PageResource(self.request, self.response, path)
+        resource.get(head)
+
+    def post(self, path):
+        method = self.request.GET.get('_method', 'POST')
+        if method == 'DELETE':
+            return self.delete(path)
+        elif method == 'PUT':
+            return self.put(path)
+
+        resource = PageResource(self.request, self.response, path)
+        resource.post()
+
+    def put(self, path):
+        resource = PageResource(self.request, self.response, path)
+        resource.put()
+
+    def delete(self, path):
+        resource = PageResource(self.request, self.response, path)
+        resource.delete()
+
+
+class RelatedPagesHandler(webapp2.RequestHandler):
+    def head(self, path):
+        return self.get(path, True)
+
+    def get(self, path, head=False):
+        cache.create_prc()
+        expression = WikiPage.path_to_title(path)
+        parsed_expression = search.parse_expression(expression)
+        scoretable = WikiPage.search(expression)
+        positives = dict([(k, v) for k, v in scoretable.items() if v >= 0.0])
+        positives = OrderedDict(sorted(positives.iteritems(),
+                                       key=operator.itemgetter(1),
+                                       reverse=True)[:20])
+        negatives = dict([(k, abs(v)) for k, v in scoretable.items() if v < 0.0])
+        negatives = OrderedDict(sorted(negatives.iteritems(),
+                                       key=operator.itemgetter(1),
+                                       reverse=True)[:20])
+        result = {
+            'expression': expression,
+            'parsed_expression': parsed_expression,
+            'positives': positives,
+            'negatives': negatives
+        }
+
+        restype = get_restype(self.request, 'html')
+        if restype == 'html':
+            self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+            html = template(self.request, 'search.html', result)
+            set_response_body(self.response, html, head)
+        elif restype == 'json':
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            set_response_body(self.response, json.dumps(result), head)
+        else:
+            self.abort(400, 'Unknown type: %s' % restype)
 
 
 class SpecialPageHandler(webapp2.RequestHandler):
@@ -202,13 +278,13 @@ class SpecialPageHandler(webapp2.RequestHandler):
         restype = get_restype(self.request, 'html')
 
         if restype == 'html':
-            pages = WikiPage.get_published_posts(None, 200)
+            pages = WikiPage.get_posts_of(None, 200)
             rendered = template(self.request, 'wiki_sp_posts.html',
                                 {'pages': pages})
             self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.response, rendered, head)
         elif restype == 'atom':
-            pages = WikiPage.get_published_posts(None, 20)
+            pages = WikiPage.get_posts_of(None, 20)
             rendered = render_posts_atom(self.request, None, pages)
             self.response.headers['Content-Type'] = 'text/xml; charset=utf-8'
             set_response_body(self.response, rendered, head)
@@ -291,5 +367,41 @@ class SpecialPageHandler(webapp2.RequestHandler):
             titles = WikiPage.get_titles(user)
             self.response.headers['Content-Type'] = 'application/json'
             set_response_body(self.response, json.dumps(list(titles)), head)
+        else:
+            self.abort(400, 'Unknown type: %s' % restype)
+
+
+class WikiqueryHandler(webapp2.RequestHandler):
+    def head(self, path):
+        return self.get(path, True)
+
+    def get(self, path, head=False):
+        cache.create_prc()
+        query = WikiPage.path_to_title(path)
+        user = get_cur_user()
+        view = self.request.GET.get('view', 'default')
+        restype = get_restype(self.request, 'html')
+        result = WikiPage.wikiquery(query, user)
+
+        if restype == 'html':
+            if view == 'default':
+                html = template(self.request, 'wikiquery.html', {
+                    'query': query,
+                    'result': obj_to_html(result),
+                })
+                self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+                set_response_body(self.response, html, head)
+            elif view == 'bodyonly':
+                html = template(self.request, 'wikipage_bodyonly.html', {
+                    'title': u'Search: %s ' % query,
+                    'body': obj_to_html(result),
+                })
+                self.response.headers['Content-Type'] = 'text/html; charset=utf-8'
+                set_response_body(self.response, html, head)
+            else:
+                self.abort(400, 'Unknown view: %s' % view)
+        elif restype == 'json':
+            self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            set_response_body(self.response, json.dumps(result), head)
         else:
             self.abort(400, 'Unknown type: %s' % restype)

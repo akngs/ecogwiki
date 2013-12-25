@@ -415,7 +415,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if self.published_at is not None and self.published_to == title:
             return
 
-        posts = WikiPage.get_published_posts(title, 20)
+        posts = WikiPage.get_posts_of(title, 1)
 
         if len(posts) > 0:
             latest = posts[0]
@@ -516,6 +516,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # done
         self.related_links = related_links
+
+    def get_posts(self, limit):
+        return WikiPage.get_posts_of(self.title, limit)
 
     def _schema_item_to_links(self, name, values):
         itemtype = self.itemtype
@@ -709,7 +712,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return titles
 
     @classmethod
-    def get_published_posts(cls, title, limit):
+    def get_posts_of(cls, title, limit):
         q = cls.query(ancestor=cls._key())
         q = q.filter(cls.published_to == title)
         q = q.filter(cls.published_at != None)
@@ -791,6 +794,10 @@ class WikiPage(ndb.Model, PageOperationMixin):
             return set(pages1).union(pages2)
         else:
             raise ValueError('Invalid operator: %s' % op)
+
+    @classmethod
+    def get_by_path(cls, path, follow_redirect=False):
+        return cls.get_by_title(cls.path_to_title(path), follow_redirect)
 
     @classmethod
     def get_by_title(cls, title, follow_redirect=False):
