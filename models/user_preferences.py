@@ -21,6 +21,11 @@ class UserPreferences(ndb.Model):
         return preferences
 
     @classmethod
-    def get_by_email(cls, email):
-        keyid = ndb.Key(cls, email).string_id()
-        return cls.get_by_id(keyid)
+    def get_by_user(cls, user):
+        keyid = ndb.Key(cls, user.email()).string_id()
+        prefs = cls.get_by_id(keyid)
+        if prefs is None:
+            prefs = cls(id=keyid)
+            prefs.user = user
+            prefs.created_at = datetime.now()
+        return prefs

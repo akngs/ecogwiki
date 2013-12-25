@@ -8,7 +8,7 @@ from pyatom import AtomFeed
 from itertools import groupby
 from collections import OrderedDict
 from models.utils import title_grouper
-from models import WikiPage, WikiPageRevision, ConflictError
+from models import WikiPage, WikiPageRevision, ConflictError, UserPreferences
 from representations import Representation, EmptyRepresentation, JsonRepresentation, TemplateRepresentation, get_cur_user, get_restype, render_posts_atom, format_iso_datetime, template, set_response_body, obj_to_html
 
 
@@ -473,3 +473,50 @@ class ChangeListResource(Resource):
                      url='%s%s' % (host, page.absolute_url),
                      updated=page.updated_at)
         return Representation(feed.to_string(), 'text/xml; charset=utf-8')
+
+
+class UserPreferencesResource(Resource):
+    def load(self):
+        if self.user is None:
+            return None
+        else:
+            return UserPreferences.get_by_user(self.user)
+
+    def get(self, head):
+        if self.user is None:
+            self.res.status = 403
+            TemplateRepresentation({
+                'page': {
+                    'absolute_url': '/sp.preferences',
+                    'title': 'User preferences',
+                }
+            }, self.req, '403.html').respond(self.res, head)
+            return
+        else:
+            representation = self.get_representation(self.load())
+            representation.respond(self.res, head)
+
+    def post(self):
+        if self.user is None:
+            self.res.status = 403
+            TemplateRepresentation({
+                'page': {
+                    'absolute_url': '/sp.preferences',
+                    'title': 'User preferences',
+                }
+            }, self.req, '403.html').respond(self.res)
+            return
+
+        prefs = self.load()
+        prefs.userpage_title = self.req.POST['userpage_title']
+        prefs.put()
+
+        self.res.headers['X-Message'] = 'Successfully updated.'
+        representation = self.get_representation(prefs)
+        representation.respond(self.res, False)
+
+    def represent_html_default(self, prefs):
+        return TemplateRepresentation({
+            'preferences': prefs,
+            'message': self.res.headers.get('X-Message', None),
+        }, self.req, 'wiki_sp_preferences.html')

@@ -84,13 +84,12 @@ def userpage_link(user):
     if user is None:
         return '<span class="user">Anonymous</span>'
     else:
-        email = user.email()
-        preferences = UserPreferences.get_by_email(email)
+        preferences = UserPreferences.get_by_user(user)
 
         if preferences is None:
-            return '<span class="user email">%s</span>' % email
+            return '<span class="user email">%s</span>' % user.email()
         elif preferences.userpage_title is None or len(preferences.userpage_title.strip()) == 0:
-            return '<span class="user email">%s</span>' % email
+            return '<span class="user email">%s</span>' % user.email()
         else:
             path = to_abs_path(preferences.userpage_title)
             return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
@@ -153,7 +152,7 @@ def template(req, path, data):
     user = get_cur_user()
     preferences = None
     if user is not None:
-        preferences = UserPreferences.get_by_email(user.email())
+        preferences = UserPreferences.get_by_user(user)
 
     data['is_local'] = req.host_url.startswith('http://localhost')
     data['is_mobile'] = is_mobile(req)

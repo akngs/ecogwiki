@@ -897,27 +897,13 @@ class UserPreferencesTest(AppEngineTestCase):
         super(UserPreferencesTest, self).setUp()
         self.user = users.User('user@example.com')
 
-    def test_save_once(self):
-        self.assertEqual(0, UserPreferences.query().count())
+    def test_get_by_user(self):
+        prefs = UserPreferences.get_by_user(self.user)
+        self.assertEquals(None, prefs.userpage_title)
 
-        preferences = UserPreferences.save(self.user, u'김경수')
-        self.assertEqual(1, UserPreferences.query().count())
-        self.assertEqual(self.user, preferences.user)
-        self.assertEqual(u'김경수', preferences.userpage_title)
-
-    def test_save_twice(self):
-        UserPreferences.save(self.user, u'김경수')
-        preferences = UserPreferences.save(self.user, u'나부군')
-
-        self.assertEqual(1, UserPreferences.query().count())
-        self.assertEqual(self.user, preferences.user)
-        self.assertEqual(u'나부군', preferences.userpage_title)
-
-    def test_get_by_email(self):
-        self.assertEquals(None, UserPreferences.get_by_email('user@example.com'))
-        UserPreferences.save(self.user, u'김경수')
-
-        self.assertEquals(u'김경수', UserPreferences.get_by_email('user@example.com').userpage_title)
+        prefs.userpage_title = u'김경수'
+        prefs.put()
+        self.assertEquals(u'김경수', UserPreferences.get_by_user(self.user).userpage_title)
 
 
 class WikiPageDeleteTest(AppEngineTestCase):
