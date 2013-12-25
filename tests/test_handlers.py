@@ -21,7 +21,7 @@ class ContentTypeTest(AppEngineTestCase):
 
     def tearDown(self):
         super(ContentTypeTest, self).tearDown()
-        self.browser.logout()
+        self.logout()
 
     def test_get_default_content_type(self):
         p = WikiPage.get_by_title(u'Test')
@@ -74,7 +74,7 @@ class PageHandlerTest(AppEngineTestCase):
 
     def tearDown(self):
         super(PageHandlerTest, self).tearDown()
-        self.browser.logout()
+        self.logout()
 
     def test_get_sp_chages(self):
         for _ in range(2):
@@ -134,7 +134,7 @@ class PageHandlerTest(AppEngineTestCase):
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_new_page_should_be_shown_in_sp_changes(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
         for _ in range(2):
@@ -145,7 +145,7 @@ class PageHandlerTest(AppEngineTestCase):
                              link_texts)
 
     def test_new_page_should_be_shown_in_sp_index(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
         for _ in range(2):
@@ -165,7 +165,7 @@ class PageHandlerTest(AppEngineTestCase):
                          self.browser.res.location)
 
     def test_delete_page_without_permission(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.browser.post('/New_page?_method=DELETE')
 
@@ -212,7 +212,7 @@ class RevisionTest(AppEngineTestCase):
         self.assertEqual(u'Hello there', self.browser.res.body)
 
     def test_rev_acl(self):
-        self.browser.login('a@x.com', 'a')
+        self.login('a@x.com', 'a')
         page = WikiPage.get_by_title(u'A')
         page.update_content(u'Hello', 0)
         page.update_content(u'.read a@x.com\nHello there', 1)
@@ -222,7 +222,7 @@ class RevisionTest(AppEngineTestCase):
         self.browser.get('/A?_type=txt&rev=2')
         self.assertEqual(200, self.browser.res.status_code)
 
-        self.browser.logout()
+        self.logout()
         self.browser.get('/A?_type=txt&rev=1')
         self.assertEqual(200, self.browser.res.status_code)
         self.browser.get('/A?_type=txt&rev=2')
@@ -255,7 +255,7 @@ class HTML5ValidationTest(AppEngineTestCase):
 
     def tearDown(self):
         super(HTML5ValidationTest, self).tearDown()
-        self.browser.logout()
+        self.logout()
 
     def test_normal_pages(self):
         for title, _ in self.fixtures:
@@ -327,10 +327,10 @@ class PageResourceTest(AppEngineTestCase):
 
     def tearDown(self):
         super(PageResourceTest, self).setUp()
-        self.browser.logout()
+        self.logout()
 
     def test_create_new_page(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -346,7 +346,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(u'Hello', page.body)
 
     def test_provide_placeholder_with_param_when_editing_new_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.login('ak@gmailcom', 'ak')
 
         # GET edit form of "New page"
         self.browser.get('/New_page?view=edit&body=some%20pre%20value')
@@ -354,7 +354,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(body.text, 'some pre value')
 
     def test_no_placeholder_when_editing_existing_page(self):
-        self.browser.login('ak@gmailcom', 'ak')
+        self.login('ak@gmailcom', 'ak')
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -366,7 +366,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(body.text, 'Hello')
 
     def test_update_existing_page(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -387,7 +387,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(2, page.revision)
 
     def test_preview(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -408,7 +408,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(1, page.revision)
 
     def test_append_to_non_existing_page(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -424,7 +424,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(u'Hello', page.body)
 
     def test_append_to_existing_page(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -445,7 +445,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(2, page.revision)
 
     def test_delete_non_existing_page(self):
-        self.browser.login('ak@gmail.com', 'ak', is_admin=True)
+        self.login('ak@gmail.com', 'ak', is_admin=True)
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -461,7 +461,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(0, page.revision)
 
     def test_delete_existing_page(self):
-        self.browser.login('ak@gmail.com', 'ak', is_admin=True)
+        self.login('ak@gmail.com', 'ak', is_admin=True)
 
         # Create page
         page = WikiPage.get_by_title(u'New page')
@@ -481,7 +481,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(0, page.revision)
 
     def test_redirect_in_absolute_path(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
 
         # GET edit form of "New/page"
         self.browser.get('/New/page')
@@ -493,13 +493,13 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual('http://localhost/New/page', self.browser.res.headers['Location'])
 
     def test_root(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
         self.browser.get('/', follow_redir=False)
         self.assertEqual('http://localhost/Home', self.browser.res.headers['location'])
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
 
     def test_root_with_querystring(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
         self.browser.get('/?_type=txt', follow_redir=False)
         self.assertEqual('http://localhost/Home?_type=txt', self.browser.res.headers['location'])
 
@@ -522,7 +522,7 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
 
     def test_checkbox(self):
-        self.browser.login('ak@gmail.com', 'ak')
+        self.login('ak@gmail.com', 'ak')
 
         page = WikiPage.get_by_title(u'New page')
         page.update_content(u'[ ] Hello', 0)
@@ -543,7 +543,7 @@ class SearchResultResourceTest(AppEngineTestCase):
 
     def tearDown(self):
         super(SearchResultResourceTest, self).tearDown()
-        self.browser.logout()
+        self.logout()
 
     def test_representations(self):
         self.browser.get('/sp.search?q=H')

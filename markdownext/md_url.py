@@ -47,27 +47,9 @@ class UrlPattern(Pattern):
                 a.set('itemprop', m.group('itemprop'))
             return a
         elif m.group('youtube'):
-            vid = m.group('youtube_vid')
-            div = etree.Element('div')
-            div.set('class', 'video youtube')
-            iframe = etree.SubElement(div, 'iframe')
-            iframe.set('width', '640')
-            iframe.set('height', '390')
-            iframe.set('frameborder', '0')
-            iframe.set('allowfullscreen', 'true')
-            iframe.set('src', 'http://www.youtube.com/embed/%s' % vid)
-            return div
+            return self._create_video(m, 'youtube', 640, 390, 'http://www.youtube.com/embed/%s')
         elif m.group('vimeo'):
-            vid = m.group('vimeo_vid')
-            div = etree.Element('div')
-            div.set('class', 'video vimeo')
-            iframe = etree.SubElement(div, 'iframe')
-            iframe.set('width', '500')
-            iframe.set('height', '281')
-            iframe.set('frameborder', '0')
-            iframe.set('allowfullscreen', 'true')
-            iframe.set('src', 'http://player.vimeo.com/video/%s' % vid)
-            return div
+            return self._create_video(m, 'vimeo', 500, 281, 'http://player.vimeo.com/video/%s')
         elif m.group('email'):
             url = m.group('email')
             a = etree.Element('a')
@@ -77,3 +59,15 @@ class UrlPattern(Pattern):
             return a
         else:
             raise Exception()
+
+    def _create_video(self, m, vtype, width, height, url):
+        vid = m.group('%s_vid' % vtype)
+        div = etree.Element('div')
+        div.set('class', 'video %s' % vtype)
+        iframe = etree.SubElement(div, 'iframe')
+        iframe.set('width', str(width))
+        iframe.set('height', str(height))
+        iframe.set('frameborder', '0')
+        iframe.set('allowfullscreen', 'true')
+        iframe.set('src', url % vid)
+        return div
