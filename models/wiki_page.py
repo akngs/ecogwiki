@@ -719,7 +719,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return list(q.order(-cls.published_at).fetch(limit=limit))
 
     @classmethod
-    def get_changes(cls, user, limit=7, include_body=False):
+    def get_changes(cls, user, limit=7):
         q = WikiPage.query(ancestor=WikiPage._key())
         q = q.filter(WikiPage.updated_at != None)
 
@@ -727,18 +727,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
             date_from = datetime.now() - timedelta(days=limit)
             q = q.filter(WikiPage.updated_at >= date_from)
 
-        if include_body:
-            pages = q.order(-WikiPage.updated_at).fetch()
-        else:
-            prjs = [
-                WikiPage.title,
-                WikiPage.updated_at,
-                WikiPage.modifier,
-                WikiPage.comment,
-                WikiPage.acl_write,
-                WikiPage.acl_read,
-            ]
-            pages = q.order(-WikiPage.updated_at).fetch(projection=prjs)
+        prjs = [
+            WikiPage.title,
+            WikiPage.updated_at,
+            WikiPage.modifier,
+            WikiPage.comment,
+            WikiPage.acl_write,
+            WikiPage.acl_read,
+        ]
+        pages = q.order(-WikiPage.updated_at).fetch(projection=prjs)
 
         default_permission = WikiPage.get_default_permission()
         return [page for page in pages if page.can_read(user, default_permission)]

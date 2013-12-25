@@ -4,13 +4,17 @@ import cache
 import urllib2
 import search
 import operator
+from pyatom import AtomFeed
+from itertools import groupby
 from collections import OrderedDict
+from models.utils import title_grouper
 from models import WikiPage, WikiPageRevision, ConflictError
-from representations import Representation, EmptyRepresentation, JsonRepresentation, TemplateRepresentation, get_cur_user, get_restype, render_posts_atom, format_iso_datetime, template, set_response_body
+from representations import Representation, EmptyRepresentation, JsonRepresentation, TemplateRepresentation, get_cur_user, get_restype, render_posts_atom, format_iso_datetime, template, set_response_body, obj_to_html
 
 
 class Resource(object):
     def __init__(self, req, res):
+        cache.create_prc()
         self.user = get_cur_user()
         self.req = req
         self.res = res
@@ -49,7 +53,6 @@ class RedirectResource(Resource):
 class PageLikeResource(Resource):
     def __init__(self, req, res, path):
         super(PageLikeResource, self).__init__(req, res)
-        cache.create_prc()
         self.path = path
 
     def represent_html_default(self, page):
@@ -59,36 +62,29 @@ class PageLikeResource(Resource):
             return Representation(content, content_type)
 
         if page.metadata.get('redirect', None) is not None:
-            content_type = None
-            content = None
-            return Representation(content, content_type)
+            return Representation(None, None)
         else:
             content = {
                 'page': page,
                 'message': self.res.headers.get('X-Message', None),
             }
-            content_type = 'text/html; charset=utf-8'
             if page.metadata.get('schema', None) == 'Blog':
                 content['posts'] = page.get_posts(20)
-            return TemplateRepresentation(content, content_type, self.req, 'wikipage.html')
+            return TemplateRepresentation(content, self.req, 'wikipage.html')
 
     def represent_html_bodyonly(self, page):
         content = {
             'title': page.title,
             'body': page.rendered_body,
         }
-        content_type = 'text/html; charset=utf-8'
-        return TemplateRepresentation(content, content_type, self.req, 'wikipage_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
 
     def represent_atom_default(self, page):
         content = render_posts_atom(self.req, page.title, page.get_posts(20))
-        content_type = 'text/xml; charset=utf-8'
-        return Representation(content, content_type)
+        return Representation(content, 'text/xml; charset=utf-8')
 
     def represent_txt_default(self, page):
-        content = page.body
-        content_type = 'text/plain; charset=utf-8'
-        return Representation(content, content_type)
+        return Representation(page.body, 'text/plain; charset=utf-8')
 
     def represent_json_default(self, page):
         content = {
@@ -101,8 +97,7 @@ class PageLikeResource(Resource):
             'acl_write': page.acl_write,
             'data': page.data,
         }
-        content_type = 'application/json; charset=utf-8'
-        return Representation(content, content_type)
+        return JsonRepresentation(content)
 
     def _403(self, page, head=False):
         self.res.status = 403
@@ -121,6 +116,7 @@ class PageResource(PageLikeResource):
         if not page.can_read(self.user):
             self._403(head, page)
             return
+
         if get_restype(self.req, 'html') == 'html':
             redirect = page.metadata.get('redirect', None)
             if redirect is not None:
@@ -220,9 +216,7 @@ class PageResource(PageLikeResource):
     def represent_html_edit(self, page):
         if page.revision == 0 and self.req.GET.get('body'):
             page.body = self.req.GET.get('body')
-        content = {'page': page}
-        content_type = 'text/html; charset=utf-8'
-        return TemplateRepresentation(content, content_type, self.req, 'wikipage.form.html')
+        return TemplateRepresentation({'page': page}, self.req, 'wikipage.form.html')
 
 
 class RevisionResource(PageLikeResource):
@@ -245,16 +239,14 @@ class RevisionResource(PageLikeResource):
 
         if not page.can_read(self.user):
             self._403(page, head)
-            return
-
-        representation = self.get_representation(page)
-        representation.respond(self.res, head)
+        else:
+            representation = self.get_representation(page)
+            representation.respond(self.res, head)
 
 
 class RevisionListResource(Resource):
     def __init__(self, req, res, path):
         super(RevisionListResource, self).__init__(req, res)
-        cache.create_prc()
         self.path = path
 
     def load(self):
@@ -273,8 +265,7 @@ class RevisionListResource(Resource):
         representation.respond(self.res, head)
 
     def represent_html_default(self, content):
-        content_type = 'text/html; charset=utf-8'
-        return TemplateRepresentation(content, content_type, self.req, 'history.html')
+        return TemplateRepresentation(content, self.req, 'history.html')
 
     def represent_json_default(self, content):
         content = [
@@ -285,14 +276,12 @@ class RevisionListResource(Resource):
             }
             for rev in content['revisions']
         ]
-        content_type = 'application/json; charset=utf-8'
-        return JsonRepresentation(content, content_type)
+        return JsonRepresentation(content)
 
 
 class RelatedPagesResource(Resource):
     def __init__(self, req, res, path):
         super(RelatedPagesResource, self).__init__(req, res)
-        cache.create_prc()
         self.path = path
 
     def load(self):
@@ -319,9 +308,168 @@ class RelatedPagesResource(Resource):
         representation.respond(self.res, head)
 
     def represent_html_default(self, content):
-        content_type = 'text/html; charset=utf-8'
-        return TemplateRepresentation(content, content_type, self.req, 'search.html')
+        return TemplateRepresentation(content, self.req, 'search.html')
 
     def represent_json_default(self, content):
-        content_type = 'application/json; charset=utf-8'
-        return JsonRepresentation(content, content_type)
+        return JsonRepresentation(content)
+
+
+class WikiqueryResource(Resource):
+    def __init__(self, req, res, path):
+        super(WikiqueryResource, self).__init__(req, res)
+        self.path = path
+
+    def load(self):
+        query = WikiPage.path_to_title(self.path)
+        return {
+            'result': WikiPage.wikiquery(query, self.user),
+            'query': query
+        }
+
+    def get(self, head):
+        representation = self.get_representation(self.load())
+        representation.respond(self.res, head)
+
+    def represent_html_default(self, content):
+        content = {
+            'query': content['query'],
+            'result': obj_to_html(content['result']),
+        }
+        return TemplateRepresentation(content, self.req, 'wikiquery.html')
+
+    def represent_html_bodyonly(self, content):
+        content = {
+            'title': u'Search: %s ' % content['query'],
+            'body': obj_to_html(content['result']),
+        }
+        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
+
+    def represent_json_default(self, content):
+        return JsonRepresentation(content)
+
+
+class TitleListResource(Resource):
+    def load(self):
+        return list(WikiPage.get_titles(self.user))
+
+    def get(self, head):
+        representation = self.get_representation(self.load())
+        representation.respond(self.res, head)
+
+    def represent_json_default(self, titles):
+        return JsonRepresentation(titles)
+
+
+class SearchResultResource(Resource):
+    def load(self):
+        query = self.req.GET.get('q', '')
+        if len(query) == 0:
+            return {
+                'query': query,
+                'page': None,
+            }
+        else:
+            return {
+                'query': query,
+                'page': WikiPage.get_by_path(query),
+            }
+
+    def get(self, head):
+        content = self.load()
+        if get_restype(self.req, 'html') == 'html':
+            redir = self.req.GET.get('redir', '0') == '1' and content['page'].revision != 0
+            if redir:
+                quoted_path = urllib2.quote(content['query'].encode('utf8').replace(' ', '_'))
+                self.res.location = '/' + quoted_path
+                self.res.status = 303
+                return
+
+        representation = self.get_representation(content)
+        representation.respond(self.res, head)
+
+    def represent_html_default(self, content):
+        return TemplateRepresentation(content, self.req, 'wiki_sp_search.html')
+
+    def represent_html_bodyonly(self, content):
+        return TemplateRepresentation(content, self.req, 'wiki_sp_search_bodyonly.html')
+
+    def represent_json_default(self, content):
+        if content['query'] is None or len(content['query']) == 0:
+            titles = []
+        else:
+            titles = WikiPage.get_titles(self.user)
+            titles = [t for t in titles if t.find(content['query']) != -1]
+
+        return JsonRepresentation([content['query'], titles])
+
+
+class TitleIndexResource(Resource):
+    def load(self):
+        return WikiPage.get_index(self.user)
+
+    def get(self, head):
+        representation = self.get_representation(self.load())
+        representation.respond(self.res, head)
+
+    def represent_html_default(self, pages):
+        page_group = groupby(pages, lambda p: title_grouper(p.title))
+        return TemplateRepresentation({'page_group': page_group}, self.req, 'wiki_sp_index.html')
+
+    def represent_atom_default(self, pages):
+        config = WikiPage.get_config()
+        host = self.req.host_url
+        url = "%s/sp.index?_type=atom" % host
+        feed = AtomFeed(title="%s: title index" % config['service']['title'],
+                        feed_url=url,
+                        url="%s/" % host,
+                        author=config['admin']['email'])
+        for page in pages:
+            feed.add(title=page.title,
+                     content_type="html",
+                     author=page.modifier,
+                     url='%s%s' % (host, page.absolute_url),
+                     updated=page.updated_at)
+        return Representation(feed.to_string(), 'text/xml; charset=utf-8')
+
+
+class PostListResource(Resource):
+    def load(self):
+        return WikiPage.get_posts_of(None, 20)
+
+    def get(self, head):
+        representation = self.get_representation(self.load())
+        representation.respond(self.res, head)
+
+    def represent_html_default(self, posts):
+        return TemplateRepresentation({'pages': posts}, self.req, 'wiki_sp_posts.html')
+
+    def represent_atom_default(self, posts):
+        return Representation(render_posts_atom(self.req, None, posts), 'text/xml; charset=utf-8')
+
+
+class ChangeListResource(Resource):
+    def load(self):
+        return WikiPage.get_changes(self.user)
+
+    def get(self, head):
+        representation = self.get_representation(self.load())
+        representation.respond(self.res, head)
+
+    def represent_html_default(self, pages):
+        return TemplateRepresentation({'pages': pages}, self.req, 'wiki_sp_changes.html')
+
+    def represent_atom_default(self, pages):
+        config = WikiPage.get_config()
+        host = self.req.host_url
+        url = "%s/sp.changes?_type=atom" % host
+        feed = AtomFeed(title="%s: changes" % config['service']['title'],
+                        feed_url=url,
+                        url="%s/" % host,
+                        author=config['admin']['email'])
+        for page in pages:
+            feed.add(title=page.title,
+                     content_type="html",
+                     author=page.modifier,
+                     url='%s%s' % (host, page.absolute_url),
+                     updated=page.updated_at)
+        return Representation(feed.to_string(), 'text/xml; charset=utf-8')

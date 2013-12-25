@@ -26,7 +26,14 @@ class Representation(object):
 
 
 class TemplateRepresentation(Representation):
-    def __init__(self, content, content_type, httpreq, template_path):
+    def __init__(self, content, httpreq, template_path):
+        if template_path.endswith('.html'):
+            content_type = 'text/html; charset=utf-8'
+        elif template_path.endswith('.xml'):
+            content_type = 'text/xml; charset=utf-8'
+        else:
+            content_type = 'text/plain; charset=utf-8'
+
         super(TemplateRepresentation, self).__init__(content, content_type)
         self._httpreq = httpreq
         self._template_path = template_path
@@ -37,8 +44,8 @@ class TemplateRepresentation(Representation):
 
 
 class JsonRepresentation(Representation):
-    def __init__(self, content, content_type):
-        super(JsonRepresentation, self).__init__(content, content_type)
+    def __init__(self, content):
+        super(JsonRepresentation, self).__init__(content, 'application/json; charset=utf-8')
 
     def respond(self, httpres, head):
         self._respond(httpres, head, self._content_type, json.dumps(self._content))
