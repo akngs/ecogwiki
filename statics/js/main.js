@@ -17,23 +17,18 @@ $(function() {
             if(this.childNodes.length > 1) return;
 
             var date = new Date(this.getAttribute('datetime'));
-            var year, month, day, hour, min;
+            var month = '0' + (date.getMonth() + 1);
+            var day = '0' + date.getDate();
+            var hour = '0' + date.getHours();
+            var min = '0' + date.getMinutes();
             var result;
             if(this.innerHTML.length == 11) {
-                month = '0' + (date.getMonth() + 1);
-                day = '0' + date.getDate();
-                hour = '0' + date.getHours();
-                min = '0' + date.getMinutes();
                 result = month.substr(month.length - 2) + '-' +
                     day.substr(day.length - 2) + ' ' +
                     hour.substr(hour.length - 2) + ':' +
                     min.substr(min.length - 2);
             } else {
-                year = '' + date.getFullYear();
-                month = '0' + (date.getMonth() + 1);
-                day = '0' + date.getDate();
-                hour = '0' + date.getHours();
-                min = '0' + date.getMinutes();
+                var year = '' + date.getFullYear();
                 result = year + '-' +
                     month.substr(month.length - 2) + '-' +
                     day.substr(day.length - 2) + ' ' +
