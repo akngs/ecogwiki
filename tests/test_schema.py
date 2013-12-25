@@ -28,7 +28,7 @@ class SchemaTest(AppEngineTestCase):
 
     def test_incoming_links(self):
         self.assertEqual(u'Related People', schema.humane_property('Person', 'relatedTo', True))
-        self.assertEqual(u'Children', schema.humane_property('Person', 'parent', True))
+        self.assertEqual(u'Children (People)', schema.humane_property('Person', 'parent', True))
 
 
 class CustomSchemaTest(AppEngineTestCase):
