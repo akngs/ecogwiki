@@ -31,20 +31,14 @@ if prc is None:
 
 
 def add_recent_email(email):
-    key = 'view\trecentemails'
-    try:
-        emails = get_recent_emails()
-        if len(emails) > 0 and emails[-1] == email:
-            return
-        if email in emails:
-            emails.remove(email)
-        emails.append(email)
-
-        value = emails[-max_recent_users:]
-        memcache.set(key, value)
-        prc.set(key, value)
-    except:
-        return None
+    emails = get_recent_emails()
+    if len(emails) > 0 and emails[-1] == email:
+        return
+    if email in emails:
+        emails.remove(email)
+    emails.append(email)
+    value = emails[-max_recent_users:]
+    _set_cache('view\trecentemails', value)
 
 
 def get_recent_emails():
@@ -90,53 +84,26 @@ def del_titles():
 
 
 def set_schema_set(value):
-    key = 'schema_set'
-    try:
-        memcache.set(key, value)
-        prc.set(key, value)
-    except:
-        return None
+    _set_cache('schema_set', value)
 
 
 def set_schema(key, value):
-    key = 'schema\t%s' % key
-    try:
-        memcache.set(key, value)
-        prc.set(key, value)
-    except:
-        return None
+    _set_cache('schema\t%s' % key, value)
 
 
 def set_schema_property(prop_name, prop):
-    key = 'schema\tprop\t%s' % prop_name
-    try:
-        memcache.set(key, prop)
-        prc.set(key, prop)
-    except:
-        return None
+    _set_cache('schema\tprop\t%s' % prop_name, prop)
 
 
 def set_config(value):
-    key = 'model\tconfig'
-    try:
-        memcache.set(key, value)
-        prc.set(key, value)
-    except:
-        return None
+    _set_cache('model\tconfig', value)
 
 
 def set_rendered_body(title, value):
-    key = 'model\trendered_body\t%s' % title
-    try:
-        memcache.set(key, value)
-        prc.set(key, value)
-    except:
-        return None
+    _set_cache('model\trendered_body\t%s' % title, value)
 
 
 def set_wikiquery(q, email, value):
-    key = 'model\twikiquery\t%s\t%s' % (q, email)
-
     # adaptive expiration time
     exp_sec = 60
     if type(value) == list:
@@ -149,6 +116,90 @@ def set_wikiquery(q, email, value):
         elif len(value) < 500:
             exp_sec = 60 * 60 * 24
 
+    _set_cache('model\twikiquery\t%s\t%s' % (q, email), value, exp_sec)
+
+
+def set_data(title, value):
+    _set_cache('model\tdata\t%s' % title, value)
+
+
+def set_metadata(title, value):
+    _set_cache('model\tmetadata\t%s' % title, value)
+
+
+def set_hashbangs(title, value):
+    _set_cache('model\thashbangs\t%s' % title, value)
+
+
+def get_schema_set():
+    return _get_cache('schema_set')
+
+
+def get_schema(key):
+    return _get_cache('schema\t%s' % key)
+
+
+def get_schema_property(prop_name):
+    return _get_cache('schema\tprop\t%s' % prop_name)
+
+
+def get_config():
+    return _get_cache('model\tconfig')
+
+
+def get_rendered_body(title):
+    return _get_cache('model\trendered_body\t%s' % title)
+
+
+def get_wikiquery(q, email):
+    return _get_cache('model\twikiquery\t%s\t%s' % (q, email))
+
+
+def get_data(title):
+    return _get_cache('model\tdata\t%s' % title)
+
+
+def get_metadata(title):
+    return _get_cache('model\tmetadata\t%s' % title)
+
+
+def get_hashbangs(title):
+    return _get_cache('model\thashbangs\t%s' % title)
+
+
+def del_schema_set():
+    _del_cache('schema_set')
+
+
+def del_schema(key):
+    _del_cache('schema\t%s' % key)
+
+
+def del_schema_property(prop_name):
+    _del_cache('schema\tprop\t%s' % prop_name)
+
+
+def del_config():
+    _del_cache('model\tconfig')
+
+
+def del_rendered_body(title):
+    _del_cache('model\trendered_body\t%s' % title)
+
+
+def del_data(title):
+    _del_cache('model\tdata\t%s' % title)
+
+
+def del_metadata(title):
+    _del_cache('model\tmetadata\t%s' % title)
+
+
+def del_hashbangs(title):
+    _del_cache('model\thashbangs\t%s' % title)
+
+
+def _set_cache(key, value, exp_sec=0):
     try:
         memcache.set(key, value, exp_sec)
         prc.set(key, value)
@@ -156,35 +207,7 @@ def set_wikiquery(q, email, value):
         return None
 
 
-def set_data(title, value):
-    key = 'model\tdata\t%s' % title
-    try:
-        memcache.set(key, value)
-        prc.set(key, value)
-    except:
-        return None
-
-
-def set_metadata(title, value):
-    key = 'model\tmetadata\t%s' % title
-    try:
-        memcache.set(key, value)
-        prc.set(key, value)
-    except:
-        return None
-
-
-def set_hashbangs(title, value):
-    key = 'model\thashbangs\t%s' % title
-    try:
-        memcache.set(key, value)
-        prc.set(key, value)
-    except:
-        return None
-
-
-def get_schema_set():
-    key = 'schema_set'
+def _get_cache(key):
     if prc.get(key) is None:
         try:
             prc.set(key, memcache.get(key))
@@ -193,153 +216,9 @@ def get_schema_set():
     return prc.get(key)
 
 
-def get_schema(key):
-    key = 'schema\t%s' % key
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
-def get_schema_property(prop_name):
-    key = 'schema\tprop\t%s' % prop_name
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
-def get_config():
-    key = 'model\tconfig'
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
-def get_rendered_body(title):
-    key = 'model\trendered_body\t%s' % title
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
-def get_wikiquery(q, email):
-    key = 'model\twikiquery\t%s\t%s' % (q, email)
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
-def get_data(title):
-    key = 'model\tdata\t%s' % title
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
-def get_metadata(title):
-    key = 'model\tmetadata\t%s' % title
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
-def get_hashbangs(title):
-    key = 'model\thashbangs\t%s' % title
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
-def del_schema_set():
-    key = 'schema_set'
+def _del_cache(key):
     try:
         memcache.delete(key)
         prc.set(key, None)
     except:
-        return None
-
-
-def del_schema(key):
-    key = 'schema\t%s' % key
-    try:
-        memcache.delete(key)
-        prc.set(key, None)
-    except:
-        return None
-
-
-def del_schema_property(prop_name):
-    key = 'schema\tprop\t%s' % prop_name
-    try:
-        memcache.delete(key)
-        prc.set(key, None)
-    except:
-        return None
-
-
-def del_config():
-    key = 'model\tconfig'
-    try:
-        memcache.delete(key)
-        prc.set(key, None)
-    except:
-        return None
-
-
-def del_rendered_body(title):
-    key = 'model\trendered_body\t%s' % title
-    try:
-        memcache.delete(key)
-        prc.set(key, None)
-    except:
-        return None
-
-
-def del_data(title):
-    key = 'model\tdata\t%s' % title
-    try:
-        memcache.delete(key)
-        prc.set(key, None)
-    except:
-        return None
-
-
-def del_metadata(title):
-    key = 'model\tmetadata\t%s' % title
-    try:
-        memcache.delete(key)
-        prc.set(key, None)
-    except:
-        return None
-
-
-def del_hashbangs(title):
-    key = 'model\thashbangs\t%s' % title
-    try:
-        memcache.delete(key)
-        prc.set(key, None)
-    except:
-        return None
+        pass
