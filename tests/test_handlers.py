@@ -537,12 +537,7 @@ class PageResourceTest(AppEngineTestCase):
 class SearchResultResourceTest(AppEngineTestCase):
     def setUp(self):
         super(SearchResultResourceTest, self).setUp()
-        self.oauth_stub = OAuthStub(self.testbed)
         self.browser = Browser()
-
-    def tearDown(self):
-        super(SearchResultResourceTest, self).tearDown()
-        self.logout()
 
     def test_representations(self):
         self.browser.get('/sp.search?q=H')

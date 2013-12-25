@@ -1,8 +1,9 @@
-# coding=utf-8
+    # coding=utf-8
 import json
 import cache
 import urllib2
 import search
+import schema
 import operator
 from pyatom import AtomFeed
 from itertools import groupby
@@ -520,3 +521,39 @@ class UserPreferencesResource(Resource):
             'preferences': prefs,
             'message': self.res.headers.get('X-Message', None),
         }, self.req, 'wiki_sp_preferences.html')
+
+
+class SchemaResource(Resource):
+    def __init__(self, req, res, path):
+        super(SchemaResource, self).__init__(req, res)
+        self.path = path
+
+    def load(self):
+        tokens = self.path.split('/')[1:]
+        if tokens[0] == 'types':
+            return schema.get_schema(tokens[1])
+        elif tokens[0] == 'properties':
+            return schema.get_property(tokens[1])
+        else:
+            return None
+
+    def get(self, head):
+        representation = self.get_representation(self.load())
+        representation.respond(self.res, head)
+
+    def represent_html_default(self, data):
+        content = {
+            'title': data['id'],
+            'body': obj_to_html(data),
+        }
+        return TemplateRepresentation(content, self.req, 'schema.html')
+
+    def represent_html_bodyonly(self, data):
+        content = {
+            'title': data['id'],
+            'body': obj_to_html(data),
+        }
+        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
+
+    def represent_json_default(self, data):
+        return JsonRepresentation(data)
