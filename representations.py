@@ -4,7 +4,6 @@ import re
 import main
 import json
 import jinja2
-from pyatom import AtomFeed
 from google.appengine.api import users
 from models import WikiPage, UserPreferences, get_cur_user
 
@@ -110,41 +109,6 @@ JINJA.filters['userpage'] = userpage_link
 JINJA.filters['has_supported_language'] = has_supported_language
 
 
-def render_posts_atom(req, title, pages):
-    host = req.host_url
-    config = WikiPage.get_config()
-    if title is None:
-        feed_title = '%s: posts' % config['service']['title']
-        url = "%s/sp.posts?_type=atom" % host
-    else:
-        feed_title = title
-        url = "%s/%s?_type=atom" % (WikiPage.title_to_path(title), host)
-
-    feed = AtomFeed(title=feed_title,
-                    feed_url=url,
-                    url="%s/" % host,
-                    author=config['admin']['email'])
-    for page in pages:
-        feed.add(title=page.title,
-                 content_type="html",
-                 content=page.rendered_body,
-                 author=page.modifier,
-                 url='%s%s' % (host, page.absolute_url),
-                 updated=page.published_at)
-    return feed.to_string()
-
-
-def get_restype(req, default):
-    return str(req.GET.get('_type', default))
-
-
-def set_response_body(res, resbody, head):
-    if head:
-        res.headers['Content-Length'] = str(len(resbody))
-    else:
-        res.write(resbody)
-
-
 def template(req, path, data):
     t = JINJA.get_template('templates/%s' % path)
     config = WikiPage.get_config()
@@ -172,46 +136,3 @@ def is_mobile(req):
     if 'User-Agent' not in req.headers:
         return False
     return re.match(p, req.headers['User-Agent']) is not None
-
-
-def obj_to_html(o, key=None):
-    obj_type = type(o)
-    if isinstance(o, dict):
-        return render_dict(o)
-    elif obj_type == list:
-        return render_list(o)
-    elif obj_type == str or obj_type == unicode:
-        if key is not None and key == 'schema':
-            return o
-        else:
-            return '<a href="%s">%s</a>' % (to_abs_path(o), o)
-    else:
-        return str(o)
-
-
-def render_dict(o):
-    if len(o) == 1:
-        return obj_to_html(o.values()[0])
-    else:
-        html = ['<dl class="wq wq-dict">']
-        for key, value in o.items():
-            html.append('<dt class="wq-key-%s">' % key)
-            html.append(key)
-            html.append('</dt>')
-            html.append('<dd class="wq-value-%s">' % key)
-            html.append(obj_to_html(value, key))
-            html.append('</dd>')
-        html.append('</dl>')
-
-        return '\n'.join(html)
-
-
-def render_list(o):
-    html = ['<ul class="wq wq-list">']
-    for value in o:
-        html.append('<li>')
-        html.append(obj_to_html(value))
-        html.append('</li>')
-    html.append('</ul>')
-
-    return '\n'.join(html)

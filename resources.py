@@ -1,4 +1,4 @@
-    # coding=utf-8
+# coding=utf-8
 import json
 import cache
 import urllib2
@@ -10,26 +10,35 @@ from itertools import groupby
 from collections import OrderedDict
 from models.utils import title_grouper
 from models import WikiPage, WikiPageRevision, ConflictError, UserPreferences
-from representations import Representation, EmptyRepresentation, JsonRepresentation, TemplateRepresentation, get_cur_user, get_restype, render_posts_atom, format_iso_datetime, template, set_response_body, obj_to_html
+from representations import Representation, EmptyRepresentation, JsonRepresentation, TemplateRepresentation, get_cur_user, format_iso_datetime, template, to_abs_path
 
 
 class Resource(object):
-    def __init__(self, req, res):
+    def __init__(self, req, res, default_restype='html', default_view='default'):
         cache.create_prc()
         self.user = get_cur_user()
         self.req = req
         self.res = res
+        self.default_restype = default_restype
+        self.default_view = default_view
+
+    def load(self):
+        """Load data related to this resource"""
+        return None
+
+    def get(self, head):
+        """Default implementation of GET"""
+        representation = self.get_representation(self.load())
+        representation.respond(self.res, head)
 
     def get_representation(self, content):
-        default_restype = 'html'
-        default_view = 'default'
-        restype = get_restype(self.req, default_restype)
-        view = self.req.GET.get('view', default_view)
+        restype = get_restype(self.req, self.default_restype)
+        view = self.req.GET.get('view', self.default_view)
         try:
             method = getattr(self, 'represent_%s_%s' % (restype, view))
         except:
             try:
-                method = getattr(self, 'represent_%s_%s' % (default_restype, view))
+                method = getattr(self, 'represent_%s_%s' % (self.default_restype, view))
             except:
                 method = None
 
@@ -261,10 +270,6 @@ class RevisionListResource(Resource):
             'revisions': revisions,
         }
 
-    def get(self, head):
-        representation = self.get_representation(self.load())
-        representation.respond(self.res, head)
-
     def represent_html_default(self, content):
         return TemplateRepresentation(content, self.req, 'history.html')
 
@@ -304,10 +309,6 @@ class RelatedPagesResource(Resource):
             'negatives': negatives,
         }
 
-    def get(self, head):
-        representation = self.get_representation(self.load())
-        representation.respond(self.res, head)
-
     def represent_html_default(self, content):
         return TemplateRepresentation(content, self.req, 'search.html')
 
@@ -326,10 +327,6 @@ class WikiqueryResource(Resource):
             'result': WikiPage.wikiquery(query, self.user),
             'query': query
         }
-
-    def get(self, head):
-        representation = self.get_representation(self.load())
-        representation.respond(self.res, head)
 
     def represent_html_default(self, content):
         content = {
@@ -350,12 +347,11 @@ class WikiqueryResource(Resource):
 
 
 class TitleListResource(Resource):
+    def __init__(self, req, res):
+        super(TitleListResource, self).__init__(req, res, default_restype='json')
+
     def load(self):
         return list(WikiPage.get_titles(self.user))
-
-    def get(self, head):
-        representation = self.get_representation(self.load())
-        representation.respond(self.res, head)
 
     def represent_json_default(self, titles):
         return JsonRepresentation(titles)
@@ -408,10 +404,6 @@ class TitleIndexResource(Resource):
     def load(self):
         return WikiPage.get_index(self.user)
 
-    def get(self, head):
-        representation = self.get_representation(self.load())
-        representation.respond(self.res, head)
-
     def represent_html_default(self, pages):
         page_group = groupby(pages, lambda p: title_grouper(p.title))
         return TemplateRepresentation({'page_group': page_group}, self.req, 'wiki_sp_index.html')
@@ -437,10 +429,6 @@ class PostListResource(Resource):
     def load(self):
         return WikiPage.get_posts_of(None, 20)
 
-    def get(self, head):
-        representation = self.get_representation(self.load())
-        representation.respond(self.res, head)
-
     def represent_html_default(self, posts):
         return TemplateRepresentation({'pages': posts}, self.req, 'wiki_sp_posts.html')
 
@@ -451,10 +439,6 @@ class PostListResource(Resource):
 class ChangeListResource(Resource):
     def load(self):
         return WikiPage.get_changes(self.user)
-
-    def get(self, head):
-        representation = self.get_representation(self.load())
-        representation.respond(self.res, head)
 
     def represent_html_default(self, pages):
         return TemplateRepresentation({'pages': pages}, self.req, 'wiki_sp_changes.html')
@@ -537,10 +521,6 @@ class SchemaResource(Resource):
         else:
             return None
 
-    def get(self, head):
-        representation = self.get_representation(self.load())
-        representation.respond(self.res, head)
-
     def represent_html_default(self, data):
         content = {
             'title': data['id'],
@@ -557,3 +537,81 @@ class SchemaResource(Resource):
 
     def represent_json_default(self, data):
         return JsonRepresentation(data)
+
+
+def get_restype(req, default):
+    return str(req.GET.get('_type', default))
+
+
+def set_response_body(res, resbody, head):
+    if head:
+        res.headers['Content-Length'] = str(len(resbody))
+    else:
+        res.write(resbody)
+
+
+def render_posts_atom(req, title, pages):
+    host = req.host_url
+    config = WikiPage.get_config()
+    if title is None:
+        feed_title = '%s: posts' % config['service']['title']
+        url = "%s/sp.posts?_type=atom" % host
+    else:
+        feed_title = title
+        url = "%s/%s?_type=atom" % (WikiPage.title_to_path(title), host)
+
+    feed = AtomFeed(title=feed_title,
+                    feed_url=url,
+                    url="%s/" % host,
+                    author=config['admin']['email'])
+    for page in pages:
+        feed.add(title=page.title,
+                 content_type="html",
+                 content=page.rendered_body,
+                 author=page.modifier,
+                 url='%s%s' % (host, page.absolute_url),
+                 updated=page.published_at)
+    return feed.to_string()
+
+
+def obj_to_html(o, key=None):
+    obj_type = type(o)
+    if isinstance(o, dict):
+        return render_dict(o)
+    elif obj_type == list:
+        return render_list(o)
+    elif obj_type == str or obj_type == unicode:
+        if key is not None and key == 'schema':
+            return o
+        else:
+            return '<a href="%s">%s</a>' % (to_abs_path(o), o)
+    else:
+        return str(o)
+
+
+def render_dict(o):
+    if len(o) == 1:
+        return obj_to_html(o.values()[0])
+    else:
+        html = ['<dl class="wq wq-dict">']
+        for key, value in o.items():
+            html.append('<dt class="wq-key-%s">' % key)
+            html.append(key)
+            html.append('</dt>')
+            html.append('<dd class="wq-value-%s">' % key)
+            html.append(obj_to_html(value, key))
+            html.append('</dd>')
+        html.append('</dl>')
+
+        return '\n'.join(html)
+
+
+def render_list(o):
+    html = ['<ul class="wq wq-list">']
+    for value in o:
+        html.append('<li>')
+        html.append(obj_to_html(value))
+        html.append('</li>')
+    html.append('</ul>')
+
+    return '\n'.join(html)
