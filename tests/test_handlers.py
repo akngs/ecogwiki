@@ -112,7 +112,6 @@ class PageHandlerTest(AppEngineTestCase):
             self.assertEqual(['Home'], link_texts)
 
     def test_post_in_json(self):
-        self.browser.logout()
         self.oauth_stub.login('jh@gmail.com', 'jh')
 
         self.browser.post('/New_page?_type=json', 'body=[[Link!]]&revision=0')
@@ -126,7 +125,6 @@ class PageHandlerTest(AppEngineTestCase):
         self.assertEqual(403, self.browser.res.status_code)
 
     def test_put_in_json(self):
-        self.browser.logout()
         self.oauth_stub.login('jh@gmail.com', 'jh')
 
         self.browser.post('/New_page?_method=PUT&_type=json', 'body=[[Link!]]&revision=0')

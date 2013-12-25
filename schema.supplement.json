@@ -25,7 +25,7 @@
             "reversed_label": "Supported %s"
         },
         "parent": {
-            "reversed_label": "Children"
+            "reversed_label": "Children (%s)"
         },
         "programmingLanguage": {
             "reversed_label": "%s Written"
@@ -34,7 +34,7 @@
             "reversed_label": "Related %s"
         },
         "spouse": {
-            "reversed_label": "Spouse"
+            "reversed_label": "Spouse (%s)"
         }
     },
     "types": {

@@ -65,7 +65,6 @@ class PageOperationMixin(object):
             for rel, links in self.inlinks.items():
                 itemtype, rel = rel.split('/')
                 lines.append(u'## %s' % schema.humane_property(itemtype, rel, True))
-
                 # remove dups and sort
                 links = list(set(links))
                 links.sort()

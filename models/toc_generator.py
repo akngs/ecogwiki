@@ -106,7 +106,6 @@ class TocGenerator(object):
     def generate_path(self, outlines):
         result = []
         self._generate_children_path(result, None, outlines)
-
         duplicates = {x for x in result if result.count(x) > 1}
         if len(duplicates) > 0:
             raise ValueError("Duplicate paths not allowed: %s" % duplicates.pop())
