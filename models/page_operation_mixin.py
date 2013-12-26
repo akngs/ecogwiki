@@ -255,7 +255,7 @@ class PageOperationMixin(object):
 
         if u'all' in acl or len(acl) == 0:
             return True
-        elif u'login' in acl and user is not None:
+        elif user is not None and u'login' in acl:
             return True
         elif user is not None and (user.email() in acl or user.email() in self.acl_write.split(',')):
             return True
