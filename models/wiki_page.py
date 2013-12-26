@@ -824,14 +824,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return page
 
     @classmethod
-    def title_to_path(cls, title):
-        return PageOperationMixin.escape_title(title)
-
-    @classmethod
-    def path_to_title(cls, path):
-        return urllib2.unquote(path).decode('utf-8').replace('_', ' ')
-
-    @classmethod
     def similar_titles(cls, titles, target):
         normalized_target = cls.normalize_title(target)
         if len(normalized_target) == 0:

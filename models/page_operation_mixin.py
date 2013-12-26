@@ -142,19 +142,19 @@ class PageOperationMixin(object):
 
     @property
     def absolute_latest_url(self):
-        return u'/%s' % PageOperationMixin.escape_title(self.title)
+        return u'/%s' % PageOperationMixin.title_to_path(self.title)
 
     @property
     def revision_list_url(self):
-        return u'/%s?rev=list' % PageOperationMixin.escape_title(self.title)
+        return u'/%s?rev=list' % PageOperationMixin.title_to_path(self.title)
 
     @property
     def absolute_newer_url(self):
-        return u'/%s' % PageOperationMixin.escape_title(self.newer_title)
+        return u'/%s' % PageOperationMixin.title_to_path(self.newer_title)
 
     @property
     def absolute_older_url(self):
-        return u'/%s' % PageOperationMixin.escape_title(self.older_title)
+        return u'/%s' % PageOperationMixin.title_to_path(self.older_title)
 
     @property
     def data(self):
@@ -352,8 +352,12 @@ class PageOperationMixin(object):
             return True
 
     @staticmethod
-    def escape_title(path):
+    def title_to_path(path):
         return urllib2.quote(path.replace(u' ', u'_').encode('utf-8'))
+
+    @classmethod
+    def path_to_title(cls, path):
+        return urllib2.unquote(path).decode('utf-8').replace('_', ' ')
 
     @staticmethod
     def parse_data(title, itemtype, body):

@@ -15,7 +15,7 @@ class WikiPageRevision(ndb.Model, PageOperationMixin):
 
     @property
     def absolute_url(self):
-        return u'/%s?rev=%d' % (PageOperationMixin.escape_title(self.title), int(self.revision))
+        return u'/%s?rev=%d' % (PageOperationMixin.title_to_path(self.title), int(self.revision))
 
     @property
     def is_old_revision(self):
