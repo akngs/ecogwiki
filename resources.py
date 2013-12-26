@@ -1,6 +1,5 @@
 # coding=utf-8
 import json
-import caching
 import urllib2
 import search
 import schema
