@@ -2,8 +2,8 @@
 import os
 import caching
 import unittest2 as unittest
-from google.appengine.api import users
 from google.appengine.ext import testbed
+from models import get_cur_user, is_admin_user
 
 
 class AppEngineTestCase(unittest.TestCase):
@@ -29,4 +29,7 @@ class AppEngineTestCase(unittest.TestCase):
         self.login(None, None)
 
     def get_cur_user(self):
-        return users.get_current_user()
+        return get_cur_user()
+
+    def is_admin(self):
+        return is_admin_user(self.get_cur_user())

@@ -18,10 +18,6 @@ class ContentTypeTest(AppEngineTestCase):
         super(ContentTypeTest, self).setUp()
         self.browser = Browser()
 
-    def tearDown(self):
-        super(ContentTypeTest, self).tearDown()
-        self.logout()
-
     def test_get_default_content_type(self):
         p = WikiPage.get_by_title(u'Test')
         p.update_content(u'Hello', 0)
@@ -70,10 +66,6 @@ class PageHandlerTest(AppEngineTestCase):
             page.update_content(body, 0, None)
 
         self.browser = Browser()
-
-    def tearDown(self):
-        super(PageHandlerTest, self).tearDown()
-        self.logout()
 
     def test_get_sp_chages(self):
         for _ in range(2):
@@ -252,10 +244,6 @@ class HTML5ValidationTest(AppEngineTestCase):
             # update again to create revisions
             page.update_content(body + u'!', 1, None)
 
-    def tearDown(self):
-        super(HTML5ValidationTest, self).tearDown()
-        self.logout()
-
     def test_normal_pages(self):
         for title, _ in self.fixtures:
             path = WikiPage.title_to_path(title)
@@ -321,12 +309,7 @@ class HTML5ValidationTest(AppEngineTestCase):
 class PageResourceTest(AppEngineTestCase):
     def setUp(self):
         super(PageResourceTest, self).setUp()
-        self.oauth_stub = OAuthStub(self.testbed)
         self.browser = Browser()
-
-    def tearDown(self):
-        super(PageResourceTest, self).setUp()
-        self.logout()
 
     def test_create_new_page(self):
         self.login('ak@gmail.com', 'ak')
