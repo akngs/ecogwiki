@@ -20,35 +20,7 @@ def get_schema_set():
         fullpath = os.path.join(os.path.dirname(__file__), schema_file)
         try:
             with open(fullpath) as f:
-                addon = json.load(f)
-                # assign if it's the first one
-                if schema_set is None:
-                    schema_set = addon
-                    continue
-
-                # else, perform merge for properties...
-                for k, v in addon['properties'].items():
-                    if k not in schema_set['properties']:
-                        schema_set['properties'][k] = {}
-                    for key_to_add, value_to_add in v.items():
-                        schema_set['properties'][k][key_to_add] = value_to_add
-
-                # ...and types
-                for k, v in addon['types'].items():
-                    if k not in schema_set['types']:
-                        schema_set['types'][k] = {}
-
-                        # modify supertype-subtype relationships
-                        for supertype in v['supertypes']:
-                            schema_set['types'][supertype]['subtypes'].append(k)
-
-                            # inherit properties of supertypes
-                            if 'properties' not in v:
-                                v['properties'] = []
-                            v['properties'] += schema_set['types'][supertype]['properties']
-
-                    for key_to_add, value_to_add in v.items():
-                        schema_set['types'][k][key_to_add] = value_to_add
+                schema_set = _merge_schema_set(json.load(f), schema_set)
         except IOError:
             pass
 
@@ -124,3 +96,36 @@ def get_itemtype_path(itemtype):
         return '/'.join(parts)
     except KeyError:
         raise ValueError('Unsupported schema: %s' % itemtype)
+
+
+def _merge_schema_set(addon, schema_set):
+    if schema_set is None:
+        return addon
+
+    # perform merge for properties...
+    for prop_key, prop_value in addon['properties'].items():
+        props = schema_set['properties']
+        if prop_key not in props:
+            props[prop_key] = {}
+        for key_to_add, value_to_add in prop_value.items():
+            props[prop_key][key_to_add] = value_to_add
+
+    # ...and types
+    for type_key, type_value in addon['types'].items():
+        types = schema_set['types']
+        if type_key not in types:
+            types[type_key] = {}
+
+            # modify supertype-subtype relationships
+            for supertype in type_value['supertypes']:
+                types[supertype]['subtypes'].append(type_key)
+
+                # inherit properties of supertypes
+                if 'properties' not in type_value:
+                    type_value['properties'] = []
+                type_value['properties'] += types[supertype]['properties']
+
+        for key_to_add, value_to_add in type_value.items():
+            types[type_key][key_to_add] = value_to_add
+
+    return schema_set
