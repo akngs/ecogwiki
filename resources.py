@@ -400,10 +400,10 @@ class SearchResultResource(Resource):
         representation.respond(self.res, head)
 
     def represent_html_default(self, content):
-        return TemplateRepresentation(content, self.req, 'wiki_sp_search.html')
+        return TemplateRepresentation(content, self.req, 'sp_search.html')
 
     def represent_html_bodyonly(self, content):
-        return TemplateRepresentation(content, self.req, 'wiki_sp_search_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'sp_search_bodyonly.html')
 
     def represent_json_default(self, content):
         if content['query'] is None or len(content['query']) == 0:
@@ -421,7 +421,7 @@ class TitleIndexResource(Resource):
 
     def represent_html_default(self, pages):
         page_group = groupby(pages, lambda p: title_grouper(p.title))
-        return TemplateRepresentation({'page_group': page_group}, self.req, 'wiki_sp_index.html')
+        return TemplateRepresentation({'page_group': page_group}, self.req, 'sp_index.html')
 
     def represent_atom_default(self, pages):
         config = WikiPage.get_config()
@@ -445,7 +445,7 @@ class PostListResource(Resource):
         return WikiPage.get_posts_of(None, 20)
 
     def represent_html_default(self, posts):
-        return TemplateRepresentation({'pages': posts}, self.req, 'wiki_sp_posts.html')
+        return TemplateRepresentation({'pages': posts}, self.req, 'sp_posts.html')
 
     def represent_atom_default(self, posts):
         return Representation(render_posts_atom(self.req, None, posts), 'text/xml; charset=utf-8')
@@ -456,7 +456,7 @@ class ChangeListResource(Resource):
         return WikiPage.get_changes(self.user)
 
     def represent_html_default(self, pages):
-        return TemplateRepresentation({'pages': pages}, self.req, 'wiki_sp_changes.html')
+        return TemplateRepresentation({'pages': pages}, self.req, 'sp_changes.html')
 
     def represent_atom_default(self, pages):
         config = WikiPage.get_config()
@@ -523,7 +523,7 @@ class UserPreferencesResource(Resource):
         return TemplateRepresentation({
             'preferences': prefs,
             'message': self.res.headers.get('X-Message', None),
-        }, self.req, 'wiki_sp_preferences.html')
+        }, self.req, 'sp_preferences.html')
 
 
 class SchemaResource(Resource):
