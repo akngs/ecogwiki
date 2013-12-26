@@ -111,7 +111,11 @@ class PageLikeResource(Resource):
     def _403(self, page, head=False):
         self.res.status = 403
         self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
-        html = template(self.req, '403.html', {'page': page})
+        html = template(self.req, 'error_with_messages.html', {
+            'page': page,
+            'description': 'You don\'t have a permission',
+            'errors': [],
+        })
         set_response_body(self.res, html, head)
 
 
@@ -157,7 +161,11 @@ class PageResource(PageLikeResource):
             self.res.status = 303
             self.res.headers['X-Message'] = 'Successfully updated.'
         except ValueError as e:
-            html = template(self.req, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
+            html = template(self.req, 'error_with_messages.html', {
+                'page': page,
+                'description': 'Cannot accept the data for following reasons',
+                'errors': [e.message]
+            })
             self.res.status = 406
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.res, html, False)
@@ -206,7 +214,11 @@ class PageResource(PageLikeResource):
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.res, html, False)
         except ValueError as e:
-            html = template(self.req, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
+            html = template(self.req, 'error_with_messages.html', {
+                'page': page,
+                'description': 'Cannot accept the data for following reasons',
+                'errors': [e.message]
+            })
             self.res.status = 406
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.res, html, False)
@@ -219,7 +231,11 @@ class PageResource(PageLikeResource):
             self.res.status = 204
         except RuntimeError as e:
             self.res.status = 403
-            html = template(self.req, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
+            html = template(self.req, 'error_with_messages.html', {
+                'page': page,
+                'description': 'You don\'t have a permission to delete the page',
+                'errors': [e.message]
+            })
             set_response_body(self.res, html, False)
 
     def represent_html_edit(self, page):
@@ -473,8 +489,10 @@ class UserPreferencesResource(Resource):
                 'page': {
                     'absolute_url': '/sp.preferences',
                     'title': 'User preferences',
-                }
-            }, self.req, '403.html').respond(self.res, head)
+                },
+                'description': 'You don\'t have a permission',
+                'errors': [],
+            }, self.req, 'error_with_messages.html').respond(self.res, head)
             return
         else:
             representation = self.get_representation(self.load())
@@ -487,8 +505,10 @@ class UserPreferencesResource(Resource):
                 'page': {
                     'absolute_url': '/sp.preferences',
                     'title': 'User preferences',
-                }
-            }, self.req, '403.html').respond(self.res)
+                },
+                'description': 'You don\'t have a permission',
+                'errors': [],
+            }, self.req, 'error_with_messages.html').respond(self.res, False)
             return
 
         prefs = self.load()

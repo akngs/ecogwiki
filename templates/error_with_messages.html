@@ -11,13 +11,14 @@
     </header>
     <section class="body">
         <div class="error">
-            <p>Cannot accept the data for following reasons:</p>
+            <p>{{ description }}:</p>
+            {% if errors %}
             <ul>
             {% for error in errors %}
                 <li>{{ error }}</li>
             {% endfor %}
             </ul>
-            <p>Why don't you <a href="#" onclick="history.back();">go back</a> and correct it?</p>
+            {% endif %}
         </div>
     </section>
 </article>
