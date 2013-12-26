@@ -480,18 +480,17 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def update_related_links(self, max_distance=5):
         """Update related_links score table by random walk"""
         if len(self.outlinks) == 0:
-            return
-
-        if self.related_links is None:
-            self.related_links = {}
+            return False
 
         # random walk
         score_table = self.related_links
-        WikiPage._update_related_links(self, self, 0.1, score_table,
-                                       max_distance)
+        updated = WikiPage._update_related_links(self, self, 0.1, score_table, max_distance)
+        if not updated:
+            return False
 
         self.related_links = score_table
         self.normalize_related_links()
+        return True
 
     def normalize_related_links(self):
         related_links = self.related_links
@@ -634,33 +633,31 @@ class WikiPage(ndb.Model, PageOperationMixin):
     @classmethod
     def randomly_update_related_links(cls, iteration, recent=False):
         if recent:
-            titles = [p.title for p in WikiPage.get_changes(None)][:iteration]
+            titles = [p.title for p in WikiPage.get_changes(None, limit=iteration)]
         else:
             titles = WikiPage.get_titles()
 
         if len(titles) > iteration:
             titles = random.sample(titles, iteration)
-        for title in titles:
-            page = cls.get_by_title(title, follow_redirect=True)
-            page.update_related_links()
-            page.put()
+
+        pages = [cls.get_by_title(title, follow_redirect=True) for title in titles]
+        updates = [p for p in pages if p.update_related_links()]
+        ndb.put_multi(updates)
+
         return titles
 
     @classmethod
     def _update_related_links(cls, start_page, page, score, score_table,
                               distance):
         if distance == 0:
-            return
+            return False
 
         #if l != start_page.title
         nested_links = [l for l in page.outlinks.values()]
-        links = []
-        for l in nested_links:
-            links += l
+        links = reduce(lambda a, b: a + b, nested_links, [])
         links = [l for l in links if l != start_page.title]
-
         if len(links) == 0:
-            return
+            return False
 
         next_page = WikiPage.get_by_title(random.choice(links), follow_redirect=True)
         next_link = next_page.title
@@ -672,8 +669,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # update target page's relate links
         if next_page.revision > 0:
-            if next_page.related_links is None:
-                next_page.related_links = {}
             if start_page.title not in next_page.related_links:
                 next_page.related_links[start_page.title] = 0.0
 
@@ -682,8 +677,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             next_page.normalize_related_links()
             next_page.put()
 
-        cls._update_related_links(start_page, next_page, next_score,
-                                  score_table, distance - 1)
+        cls._update_related_links(start_page, next_page, next_score, score_table, distance - 1)
+        return True
 
     @classmethod
     def get_index(cls, user=None):
