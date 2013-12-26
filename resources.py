@@ -111,7 +111,7 @@ class PageLikeResource(Resource):
     def _403(self, page, head=False):
         self.res.status = 403
         self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
-        html = template(self.req, 'error_with_messages.html', {
+        html = template(self.req, 'error.html', {
             'page': page,
             'description': 'You don\'t have a permission',
             'errors': [],
@@ -161,7 +161,7 @@ class PageResource(PageLikeResource):
             self.res.status = 303
             self.res.headers['X-Message'] = 'Successfully updated.'
         except ValueError as e:
-            html = template(self.req, 'error_with_messages.html', {
+            html = template(self.req, 'error.html', {
                 'page': page,
                 'description': 'Cannot accept the data for following reasons',
                 'errors': [e.message]
@@ -214,7 +214,7 @@ class PageResource(PageLikeResource):
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.res, html, False)
         except ValueError as e:
-            html = template(self.req, 'error_with_messages.html', {
+            html = template(self.req, 'error.html', {
                 'page': page,
                 'description': 'Cannot accept the data for following reasons',
                 'errors': [e.message]
@@ -231,7 +231,7 @@ class PageResource(PageLikeResource):
             self.res.status = 204
         except RuntimeError as e:
             self.res.status = 403
-            html = template(self.req, 'error_with_messages.html', {
+            html = template(self.req, 'error.html', {
                 'page': page,
                 'description': 'You don\'t have a permission to delete the page',
                 'errors': [e.message]
@@ -492,7 +492,7 @@ class UserPreferencesResource(Resource):
                 },
                 'description': 'You don\'t have a permission',
                 'errors': [],
-            }, self.req, 'error_with_messages.html').respond(self.res, head)
+            }, self.req, 'error.html').respond(self.res, head)
             return
         else:
             representation = self.get_representation(self.load())
@@ -508,7 +508,7 @@ class UserPreferencesResource(Resource):
                 },
                 'description': 'You don\'t have a permission',
                 'errors': [],
-            }, self.req, 'error_with_messages.html').respond(self.res, False)
+            }, self.req, 'error.html').respond(self.res, False)
             return
 
         prefs = self.load()
