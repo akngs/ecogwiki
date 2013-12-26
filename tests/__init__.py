@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import cache
+import caching
 import unittest2 as unittest
 from google.appengine.api import users
 from google.appengine.ext import testbed
@@ -14,7 +14,7 @@ class AppEngineTestCase(unittest.TestCase):
         self.testbed.init_memcache_stub()
         self.testbed.init_taskqueue_stub()
         self.testbed.init_user_stub()
-        cache.prc.flush_all()
+        caching.prc.flush_all()
 
     def tearDown(self):
         self.testbed.deactivate()

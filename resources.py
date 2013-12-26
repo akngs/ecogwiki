@@ -1,6 +1,6 @@
 # coding=utf-8
 import json
-import cache
+import caching
 import urllib2
 import search
 import schema
@@ -15,7 +15,7 @@ from representations import Representation, EmptyRepresentation, JsonRepresentat
 
 class Resource(object):
     def __init__(self, req, res, default_restype='html', default_view='default'):
-        cache.create_prc()
+        caching.create_prc()
         self.user = get_cur_user()
         self.req = req
         self.res = res

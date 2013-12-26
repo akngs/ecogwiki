@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import cache
+import caching
 import webapp2
 from models import WikiPage
 from google.appengine.ext import deferred
@@ -116,18 +116,18 @@ class SpecialPageHandler(webapp2.RequestHandler):
             representation = TemplateRepresentation({}, self.request, 'opensearch.xml')
             representation.respond(self.response, head)
         elif path == u'randomly_update_related_pages':
-            cache.create_prc()
+            caching.create_prc()
             recent = self.request.GET.get('recent', '0')
             titles = WikiPage.randomly_update_related_links(50, recent == '1')
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             self.response.write('\n'.join(titles))
         elif path == u'rebuild_data_index':
-            cache.create_prc()
+            caching.create_prc()
             deferred.defer(WikiPage.rebuild_all_data_index, 0)
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             self.response.write('Done! (queued)')
         elif path == u'fix_comment':
-            cache.create_prc()
+            caching.create_prc()
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             index = int(self.request.GET.get('index', '0'))
             pages = WikiPage.query().fetch(100, offset=index * 100)
@@ -136,7 +136,7 @@ class SpecialPageHandler(webapp2.RequestHandler):
                 page.put()
         elif path == u'gcstest':
             import cloudstorage as gcs
-            cache.create_prc()
+            caching.create_prc()
             f = gcs.open(
                 '/ecogwiki/test.txt', 'w',
                 content_type='text/plain',
