@@ -86,7 +86,7 @@ class PageLikeResource(Resource):
             'title': page.title,
             'body': page.rendered_body,
         }
-        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
     def represent_atom_default(self, page):
         content = render_posts_atom(self.req, page.title, page.get_posts(20))
@@ -181,7 +181,7 @@ class PageResource(PageLikeResource):
 
         if preview == '1':
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = template(self.req, 'wikipage_bodyonly.html', {
+            html = template(self.req, 'generic_bodyonly.html', {
                 'title': page.title,
                 'body': page.preview_rendered_body(new_body)
             })
@@ -355,7 +355,7 @@ class WikiqueryResource(Resource):
             'title': u'Search: %s ' % content['query'],
             'body': obj_to_html(content['result']),
         }
-        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
     def represent_json_default(self, content):
         return JsonRepresentation(content)
@@ -552,7 +552,7 @@ class SchemaResource(Resource):
             'title': data['id'],
             'body': obj_to_html(data),
         }
-        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
     def represent_json_default(self, data):
         return JsonRepresentation(data)
