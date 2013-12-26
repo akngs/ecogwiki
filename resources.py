@@ -345,10 +345,10 @@ class WikiqueryResource(Resource):
 
     def represent_html_default(self, content):
         content = {
-            'query': content['query'],
-            'result': obj_to_html(content['result']),
+            'title': content['query'],
+            'body': obj_to_html(content['result']),
         }
-        return TemplateRepresentation(content, self.req, 'wikiquery.html')
+        return TemplateRepresentation(content, self.req, 'generic.html')
 
     def represent_html_bodyonly(self, content):
         content = {
@@ -545,7 +545,7 @@ class SchemaResource(Resource):
             'title': data['id'],
             'body': obj_to_html(data),
         }
-        return TemplateRepresentation(content, self.req, 'schema.html')
+        return TemplateRepresentation(content, self.req, 'generic.html')
 
     def represent_html_bodyonly(self, data):
         content = {
