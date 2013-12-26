@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import caching
 import webapp2
 from models import WikiPage
 from google.appengine.ext import deferred
@@ -17,8 +16,8 @@ class PageHandler(webapp2.RequestHandler):
     def get(self, path, head=False):
         if path == '':
             resource = RedirectResource(self.request, self.response, '/Home')
-        elif self.request.path.find('%20') != -1:
-            resource = RedirectResource(self.request, self.response, '/%s' % path.replace(' ', '_'))
+        elif self.request.path.find(' ') != -1:
+            resource = RedirectResource(self.request, self.response, '/%s' % WikiPage.title_to_path(path))
         elif self.request.GET.get('rev') == 'list':
             resource = RevisionListResource(self.request, self.response, path)
         elif self.request.GET.get('rev', '') != '':
