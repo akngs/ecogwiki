@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import main
-import cache
+import caching
 import unittest2 as unittest
 from itertools import groupby
 from tests import AppEngineTestCase
@@ -584,9 +584,6 @@ class RedirectionTest(AppEngineTestCase):
         WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
         WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
         WikiPage.get_by_title(u'B').update_content(u'.redirect D', 1, dont_defer=True)
-
-        # flush thread-local cache
-        cache.prc.flush_all()
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')

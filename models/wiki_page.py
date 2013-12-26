@@ -2,10 +2,10 @@
 import re
 import yaml
 import main
-import cache
 import random
 import schema
 import search
+import caching
 import logging
 import urllib2
 import operator
@@ -53,34 +53,34 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     @property
     def rendered_body(self):
-        value = cache.get_rendered_body(self.title)
+        value = caching.get_rendered_body(self.title)
         if value is None:
             value = super(WikiPage, self).rendered_body
-            cache.set_rendered_body(self.title, value)
+            caching.set_rendered_body(self.title, value)
         return value
 
     @property
     def data(self):
-        value = cache.get_data(self.title)
+        value = caching.get_data(self.title)
         if value is None:
             value = super(WikiPage, self).data
-            cache.set_data(self.title, value)
+            caching.set_data(self.title, value)
         return value
 
     @property
     def metadata(self):
-        value = cache.get_metadata(self.title)
+        value = caching.get_metadata(self.title)
         if value is None:
             value = super(WikiPage, self).metadata
-            cache.set_metadata(self.title, value)
+            caching.set_metadata(self.title, value)
         return value
 
     @property
     def hashbangs(self):
-        value = cache.get_hashbangs(self.title)
+        value = caching.get_hashbangs(self.title)
         if value is None:
             value = super(WikiPage, self).hashbangs
-            cache.set_hashbangs(self.title, value)
+            caching.set_hashbangs(self.title, value)
         return value
 
     @property
@@ -137,7 +137,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         keys = [r.key for r in self.revisions]
         ndb.delete_multi(keys)
 
-        cache.del_titles()
+        caching.del_titles()
 
     def update_content(self, content, base_revision, comment='', user=None, force_update=False, dont_create_rev=False, dont_defer=False, partial='all'):
         if partial == 'all':
@@ -208,10 +208,10 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 new_body = merged
 
         # delete rendered body, metadata, data cache
-        cache.del_rendered_body(self.title)
-        cache.del_hashbangs(self.title)
-        cache.del_metadata(self.title)
-        cache.del_data(self.title)
+        caching.del_rendered_body(self.title)
+        caching.del_hashbangs(self.title)
+        caching.del_metadata(self.title)
+        caching.del_data(self.title)
 
         # update model fields
         self.body = new_body
@@ -278,9 +278,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # delete config and title cache
         if self.title == '.config':
-            cache.del_config()
+            caching.del_config()
         if self.revision == 1:
-            cache.del_titles()
+            caching.del_titles()
 
         return True
 
@@ -332,18 +332,18 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     page.del_outlink(source.title, rel)
                     page.add_outlink(target.title, rel)
                     page.put()
-                    cache.del_rendered_body(page.title)
-                    cache.del_hashbangs(page.title)
+                    caching.del_rendered_body(page.title)
+                    caching.del_hashbangs(page.title)
 
                 target.add_inlinks(source.inlinks[rel], rel)
                 del source.inlinks[rel]
 
             source.put()
-            cache.del_rendered_body(source.title)
-            cache.del_hashbangs(source.title)
+            caching.del_rendered_body(source.title)
+            caching.del_hashbangs(source.title)
             target.put()
-            cache.del_rendered_body(target.title)
-            cache.del_hashbangs(target.title)
+            caching.del_rendered_body(target.title)
+            caching.del_hashbangs(target.title)
 
         # 2. update in/out links
         cur_outlinks = self.outlinks or {}
@@ -365,8 +365,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
                             page.put().delete()
                         else:
                             page.put()
-                        cache.del_rendered_body(page.title)
-                        cache.del_hashbangs(page.title)
+                        caching.del_rendered_body(page.title)
+                        caching.del_hashbangs(page.title)
                     except ValueError:
                         pass
         else:
@@ -389,8 +389,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
                     page = WikiPage.get_by_title(title)
                     page.add_inlink(self.title, rel)
                     page.put()
-                    cache.del_rendered_body(page.title)
-                    cache.del_hashbangs(page.title)
+                    caching.del_rendered_body(page.title)
+                    caching.del_hashbangs(page.title)
             for rel, titles in removed_outlinks.items():
                 for title in titles:
                     page = WikiPage.get_by_title(title, follow_redirect=True)
@@ -400,8 +400,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
                             page.put().delete()
                         else:
                             page.put()
-                        cache.del_rendered_body(page.title)
-                        cache.del_hashbangs(page.title)
+                        caching.del_rendered_body(page.title)
+                        caching.del_hashbangs(page.title)
                     except ValueError:
                         pass
 
@@ -429,27 +429,27 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if save:
             self.put()
 
-        cache.del_rendered_body(self.title)
-        cache.del_hashbangs(self.title)
+        caching.del_rendered_body(self.title)
+        caching.del_hashbangs(self.title)
         if self.newer_title:
-            cache.del_rendered_body(self.newer_title)
-            cache.del_hashbangs(self.newer_title)
+            caching.del_rendered_body(self.newer_title)
+            caching.del_hashbangs(self.newer_title)
         if self.older_title:
-            cache.del_rendered_body(self.older_title)
-            cache.del_hashbangs(self.older_title)
+            caching.del_rendered_body(self.older_title)
+            caching.del_hashbangs(self.older_title)
 
     def _unpublish(self, save):
         if self.published_at is None:
             return
 
-        cache.del_rendered_body(self.title)
-        cache.del_hashbangs(self.title)
+        caching.del_rendered_body(self.title)
+        caching.del_hashbangs(self.title)
         if self.newer_title:
-            cache.del_rendered_body(self.newer_title)
-            cache.del_hashbangs(self.newer_title)
+            caching.del_rendered_body(self.newer_title)
+            caching.del_hashbangs(self.newer_title)
         if self.older_title:
-            cache.del_rendered_body(self.older_title)
-            cache.del_hashbangs(self.older_title)
+            caching.del_rendered_body(self.older_title)
+            caching.del_hashbangs(self.older_title)
 
         older = WikiPage.get_by_title(self.older_title)
         newer = WikiPage.get_by_title(self.newer_title)
@@ -592,7 +592,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     @classmethod
     def get_config(cls):
-        result = cache.get_config()
+        result = caching.get_config()
         if result is None:
             result = main.DEFAULT_CONFIG
 
@@ -612,7 +612,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
             merge_dict(result, user_config)
 
-            cache.set_config(result)
+            caching.set_config(result)
         return result
 
     @classmethod
@@ -704,10 +704,10 @@ class WikiPage(ndb.Model, PageOperationMixin):
     @classmethod
     def get_titles(cls, user=None):
         email = user.email() if user is not None else u'None'
-        titles = cache.get_titles(email)
+        titles = caching.get_titles(email)
         if titles is None:
             titles = {page.title for page in cls.get_index(user)}
-            cache.set_titles(email, titles)
+            caching.set_titles(email, titles)
 
         return titles
 
@@ -743,7 +743,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
     @classmethod
     def wikiquery(cls, q, user=None):
         email = user.email() if user is not None else 'None'
-        results = cache.get_wikiquery(q, email)
+        results = caching.get_wikiquery(q, email)
         if results is None:
             page_query, attrs = search.parse_wikiquery(q)
             titles = cls._evaluate_pages(page_query)
@@ -761,7 +761,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             if len(results) == 1:
                 results = results[0]
 
-            cache.set_wikiquery(q, email, results)
+            caching.set_wikiquery(q, email, results)
         return results
 
     @classmethod

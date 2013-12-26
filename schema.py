@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-import cache
+import caching
 
 
 SCHEMA_FILE_TO_LOAD = [
@@ -12,7 +12,7 @@ SCHEMA_FILE_TO_LOAD = [
 
 
 def get_schema_set():
-    schema_set = cache.get_schema_set()
+    schema_set = caching.get_schema_set()
     if schema_set is not None:
         return schema_set
 
@@ -52,12 +52,12 @@ def get_schema_set():
         except IOError:
             pass
 
-    cache.set_schema_set(schema_set)
+    caching.set_schema_set(schema_set)
     return schema_set
 
 
 def get_schema(itemtype):
-    schema = cache.get_schema(itemtype)
+    schema = caching.get_schema(itemtype)
     if schema is not None:
         return schema
 
@@ -71,19 +71,19 @@ def get_schema(itemtype):
             schema['plural_label'] = u'%ses' % schema['label']
         else:
             schema['plural_label'] = u'%ss' % schema['label']
-    cache.set_schema(itemtype, schema)
+    caching.set_schema(itemtype, schema)
     return schema
 
 
 def get_property(prop_name):
-    prop = cache.get_schema_property(prop_name)
+    prop = caching.get_schema_property(prop_name)
     if prop is not None:
         return prop
 
     prop = get_schema_set()['properties'][prop_name]
     if 'reversed_label' not in prop:
         prop['reversed_label'] = '[%%s] %s' % prop['label']
-    cache.set_schema_property(prop_name, prop)
+    caching.set_schema_property(prop_name, prop)
     return prop
 
 

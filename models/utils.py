@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import cache
+import caching
 import markdown
 from markdown.extensions.def_list import DefListExtension
 from markdown.extensions.attr_list import AttrListExtension
@@ -62,7 +62,7 @@ def get_cur_user():
             pass
 
     if user is not None:
-        cache.add_recent_email(user.email())
+        caching.add_recent_email(user.email())
     return user
 
 
