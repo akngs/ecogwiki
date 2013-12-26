@@ -44,7 +44,7 @@ class WikiPageUpdateTest(AppEngineTestCase):
         # invalidate cache by adding new page
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'Hello', 0)
-        self.assertIsNone(memcache.get(cache_key))
+        self.assertEqual(set(), memcache.get(cache_key))
 
         # populate cache again
         WikiPage.get_titles()

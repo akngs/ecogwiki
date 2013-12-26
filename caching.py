@@ -1,33 +1,17 @@
 # -*- coding: utf-8 -*-
 from google.appengine.api import memcache
-import threading
+from cache import memory
+from cache import layered
 
 
-prc = None
+c = layered.Client([memory.Client(), memcache.Client()])
+
+
 max_recent_users = 20
 
 
-class PerRequestCache(threading.local):
-    def get(self, key):
-        if key in self.__dict__:
-            return self.__dict__[key]
-        else:
-            return None
-
-    def set(self, key, value):
-        self.__dict__[key] = value
-
-    def flush_all(self):
-        self.__dict__.clear()
-
-
-def create_prc():
-    global prc
-    prc = PerRequestCache()
-
-
-if prc is None:
-    create_prc()
+def flush_all():
+    c.flush_all()
 
 
 def add_recent_email(email):
@@ -43,32 +27,27 @@ def add_recent_email(email):
 
 def get_recent_emails():
     key = 'view\trecentemails'
-    if prc.get(key) is None:
-        try:
-            emails = memcache.get(key)
-            if emails is None:
-                memcache.flush_all()
-                prc.flush_all()
-                prc.set(key, [])
-            else:
-                prc.set(key, emails)
-        except:
-            pass
-
-    return prc.get(key)
+    try:
+        emails = c.get(key)
+        if emails is None:
+            c.flush_all()
+            emails = []
+        return emails
+    except:
+        return []
 
 
 def set_titles(email, content):
     try:
         add_recent_email(email)
-        memcache.set('model\ttitles\t%s' % email, content)
+        c.set('model\ttitles\t%s' % email, content)
     except:
         return None
 
 
 def get_titles(email):
     try:
-        return memcache.get('model\ttitles\t%s' % email)
+        return c.get('model\ttitles\t%s' % email)
     except:
         return None
 
@@ -78,7 +57,7 @@ def del_titles():
         emails = get_recent_emails()
         keys = ['model\ttitles\t%s' % email
                 for email in emails + ['None']]
-        memcache.delete_multi(keys)
+        c.delete_multi(keys)
     except:
         return None
 
@@ -201,24 +180,49 @@ def del_hashbangs(title):
 
 def _set_cache(key, value, exp_sec=0):
     try:
-        memcache.set(key, value, exp_sec)
-        prc.set(key, value)
+        c.set(key, value, exp_sec)
+    except:
+        pass
+
+
+def _get_cache(key):
+    try:
+        return c.get(key)
     except:
         return None
 
 
-def _get_cache(key):
-    if prc.get(key) is None:
-        try:
-            prc.set(key, memcache.get(key))
-        except:
-            pass
-    return prc.get(key)
-
-
 def _del_cache(key):
     try:
-        memcache.delete(key)
-        prc.set(key, None)
+        c.delete(key)
     except:
         pass
+
+
+# import threading
+#
+#
+# prc = None
+#
+#
+# class PerRequestCache(threading.local):
+#     def get(self, key):
+#         if key in self.__dict__:
+#             return self.__dict__[key]
+#         else:
+#             return None
+#
+#     def set(self, key, value):
+#         self.__dict__[key] = value
+#
+#     def flush_all(self):
+#         self.__dict__.clear()
+#
+#
+# def create_prc():
+#     global prc
+#     prc = PerRequestCache()
+#
+#
+# if prc is None:
+#     create_prc()

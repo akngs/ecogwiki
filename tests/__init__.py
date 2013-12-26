@@ -14,7 +14,7 @@ class AppEngineTestCase(unittest.TestCase):
         self.testbed.init_memcache_stub()
         self.testbed.init_taskqueue_stub()
         self.testbed.init_user_stub()
-        caching.prc.flush_all()
+        caching.flush_all()
 
     def tearDown(self):
         self.testbed.deactivate()

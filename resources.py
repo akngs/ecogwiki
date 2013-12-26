@@ -15,7 +15,6 @@ from representations import Representation, EmptyRepresentation, JsonRepresentat
 
 class Resource(object):
     def __init__(self, req, res, default_restype='html', default_view='default'):
-        caching.create_prc()
         self.user = get_cur_user()
         self.req = req
         self.res = res

@@ -585,9 +585,6 @@ class RedirectionTest(AppEngineTestCase):
         WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
         WikiPage.get_by_title(u'B').update_content(u'.redirect D', 1, dont_defer=True)
 
-        # flush thread-local cache
-        caching.prc.flush_all()
-
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')
         c = WikiPage.get_by_title(u'C')
