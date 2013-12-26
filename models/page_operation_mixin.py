@@ -100,7 +100,7 @@ class PageOperationMixin(object):
         rendered = TocGenerator(rendered).add_toc()
 
         # add class for embedded image
-        rendered = PageOperationMixin.re_img.sub(ur'<p class="img-container"><img \\1/></p>', rendered)
+        rendered = PageOperationMixin.re_img.sub(ur'<p class="img-container"><img\1/></p>', rendered)
 
         # add structured data block
         rendered = self.rendered_data + rendered
