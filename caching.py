@@ -197,32 +197,3 @@ def _del_cache(key):
         c.delete(key)
     except:
         pass
-
-
-# import threading
-#
-#
-# prc = None
-#
-#
-# class PerRequestCache(threading.local):
-#     def get(self, key):
-#         if key in self.__dict__:
-#             return self.__dict__[key]
-#         else:
-#             return None
-#
-#     def set(self, key, value):
-#         self.__dict__[key] = value
-#
-#     def flush_all(self):
-#         self.__dict__.clear()
-#
-#
-# def create_prc():
-#     global prc
-#     prc = PerRequestCache()
-#
-#
-# if prc is None:
-#     create_prc()

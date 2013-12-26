@@ -86,7 +86,7 @@ class PageLikeResource(Resource):
             'title': page.title,
             'body': page.rendered_body,
         }
-        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
     def represent_atom_default(self, page):
         content = render_posts_atom(self.req, page.title, page.get_posts(20))
@@ -111,7 +111,11 @@ class PageLikeResource(Resource):
     def _403(self, page, head=False):
         self.res.status = 403
         self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
-        html = template(self.req, '403.html', {'page': page})
+        html = template(self.req, 'error.html', {
+            'page': page,
+            'description': 'You don\'t have a permission',
+            'errors': [],
+        })
         set_response_body(self.res, html, head)
 
 
@@ -157,7 +161,11 @@ class PageResource(PageLikeResource):
             self.res.status = 303
             self.res.headers['X-Message'] = 'Successfully updated.'
         except ValueError as e:
-            html = template(self.req, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
+            html = template(self.req, 'error.html', {
+                'page': page,
+                'description': 'Cannot accept the data for following reasons',
+                'errors': [e.message]
+            })
             self.res.status = 406
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.res, html, False)
@@ -173,7 +181,7 @@ class PageResource(PageLikeResource):
 
         if preview == '1':
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = template(self.req, 'wikipage_bodyonly.html', {
+            html = template(self.req, 'generic_bodyonly.html', {
                 'title': page.title,
                 'body': page.preview_rendered_body(new_body)
             })
@@ -206,7 +214,11 @@ class PageResource(PageLikeResource):
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.res, html, False)
         except ValueError as e:
-            html = template(self.req, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
+            html = template(self.req, 'error.html', {
+                'page': page,
+                'description': 'Cannot accept the data for following reasons',
+                'errors': [e.message]
+            })
             self.res.status = 406
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.res, html, False)
@@ -219,7 +231,11 @@ class PageResource(PageLikeResource):
             self.res.status = 204
         except RuntimeError as e:
             self.res.status = 403
-            html = template(self.req, 'error_with_messages.html', {'page': page, 'errors': [e.message]})
+            html = template(self.req, 'error.html', {
+                'page': page,
+                'description': 'You don\'t have a permission to delete the page',
+                'errors': [e.message]
+            })
             set_response_body(self.res, html, False)
 
     def represent_html_edit(self, page):
@@ -329,17 +345,17 @@ class WikiqueryResource(Resource):
 
     def represent_html_default(self, content):
         content = {
-            'query': content['query'],
-            'result': obj_to_html(content['result']),
+            'title': content['query'],
+            'body': obj_to_html(content['result']),
         }
-        return TemplateRepresentation(content, self.req, 'wikiquery.html')
+        return TemplateRepresentation(content, self.req, 'generic.html')
 
     def represent_html_bodyonly(self, content):
         content = {
             'title': u'Search: %s ' % content['query'],
             'body': obj_to_html(content['result']),
         }
-        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
     def represent_json_default(self, content):
         return JsonRepresentation(content)
@@ -384,10 +400,10 @@ class SearchResultResource(Resource):
         representation.respond(self.res, head)
 
     def represent_html_default(self, content):
-        return TemplateRepresentation(content, self.req, 'wiki_sp_search.html')
+        return TemplateRepresentation(content, self.req, 'sp_search.html')
 
     def represent_html_bodyonly(self, content):
-        return TemplateRepresentation(content, self.req, 'wiki_sp_search_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'sp_search_bodyonly.html')
 
     def represent_json_default(self, content):
         if content['query'] is None or len(content['query']) == 0:
@@ -405,7 +421,7 @@ class TitleIndexResource(Resource):
 
     def represent_html_default(self, pages):
         page_group = groupby(pages, lambda p: title_grouper(p.title))
-        return TemplateRepresentation({'page_group': page_group}, self.req, 'wiki_sp_index.html')
+        return TemplateRepresentation({'page_group': page_group}, self.req, 'sp_index.html')
 
     def represent_atom_default(self, pages):
         config = WikiPage.get_config()
@@ -429,7 +445,7 @@ class PostListResource(Resource):
         return WikiPage.get_posts_of(None, 20)
 
     def represent_html_default(self, posts):
-        return TemplateRepresentation({'pages': posts}, self.req, 'wiki_sp_posts.html')
+        return TemplateRepresentation({'pages': posts}, self.req, 'sp_posts.html')
 
     def represent_atom_default(self, posts):
         return Representation(render_posts_atom(self.req, None, posts), 'text/xml; charset=utf-8')
@@ -440,7 +456,7 @@ class ChangeListResource(Resource):
         return WikiPage.get_changes(self.user)
 
     def represent_html_default(self, pages):
-        return TemplateRepresentation({'pages': pages}, self.req, 'wiki_sp_changes.html')
+        return TemplateRepresentation({'pages': pages}, self.req, 'sp_changes.html')
 
     def represent_atom_default(self, pages):
         config = WikiPage.get_config()
@@ -473,8 +489,10 @@ class UserPreferencesResource(Resource):
                 'page': {
                     'absolute_url': '/sp.preferences',
                     'title': 'User preferences',
-                }
-            }, self.req, '403.html').respond(self.res, head)
+                },
+                'description': 'You don\'t have a permission',
+                'errors': [],
+            }, self.req, 'error.html').respond(self.res, head)
             return
         else:
             representation = self.get_representation(self.load())
@@ -487,8 +505,10 @@ class UserPreferencesResource(Resource):
                 'page': {
                     'absolute_url': '/sp.preferences',
                     'title': 'User preferences',
-                }
-            }, self.req, '403.html').respond(self.res)
+                },
+                'description': 'You don\'t have a permission',
+                'errors': [],
+            }, self.req, 'error.html').respond(self.res, False)
             return
 
         prefs = self.load()
@@ -503,7 +523,7 @@ class UserPreferencesResource(Resource):
         return TemplateRepresentation({
             'preferences': prefs,
             'message': self.res.headers.get('X-Message', None),
-        }, self.req, 'wiki_sp_preferences.html')
+        }, self.req, 'sp_preferences.html')
 
 
 class SchemaResource(Resource):
@@ -525,14 +545,14 @@ class SchemaResource(Resource):
             'title': data['id'],
             'body': obj_to_html(data),
         }
-        return TemplateRepresentation(content, self.req, 'schema.html')
+        return TemplateRepresentation(content, self.req, 'generic.html')
 
     def represent_html_bodyonly(self, data):
         content = {
             'title': data['id'],
             'body': obj_to_html(data),
         }
-        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
     def represent_json_default(self, data):
         return JsonRepresentation(data)
