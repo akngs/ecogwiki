@@ -7,7 +7,6 @@ import schema
 import search
 import caching
 import logging
-import urllib2
 import operator
 from bzrlib.merge3 import Merge3
 from collections import OrderedDict
@@ -326,17 +325,19 @@ class WikiPage(ndb.Model, PageOperationMixin):
             else:
                 target = self
 
+            updates = []
             for rel, titles in source.inlinks.items():
                 for t in titles:
                     page = WikiPage.get_by_title(t)
                     page.del_outlink(source.title, rel)
                     page.add_outlink(target.title, rel)
-                    page.put()
+                    updates.append(page)
                     caching.del_rendered_body(page.title)
                     caching.del_hashbangs(page.title)
 
                 target.add_inlinks(source.inlinks[rel], rel)
                 del source.inlinks[rel]
+            ndb.put_multi(updates)
 
             source.put()
             caching.del_rendered_body(source.title)
@@ -356,54 +357,63 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         if self.acl_read:
             # delete all inlinks of target pages if there's read restriction
+            updates = []
+            deletes = []
             for rel, titles in cur_outlinks.items():
                 for title in titles:
                     page = WikiPage.get_by_title(title)
                     try:
                         page.del_inlink(title)
-                        if len(page.inlinks) == 0 and page.revision == 0:
-                            page.put().delete()
+                        if len(page.inlinks) == 0 and page.revision == 0 and page.key:
+                            deletes.append(page.key)
                         else:
-                            page.put()
+                            updates.append(page)
                         caching.del_rendered_body(page.title)
                         caching.del_hashbangs(page.title)
                     except ValueError:
                         pass
+            ndb.put_multi(updates)
+            ndb.delete_multi(deletes)
         else:
             # update all inlinks of target pages
             added_outlinks = {}
             for rel, titles in new_outlinks.items():
                 added_outlinks[rel] = titles
                 if rel in cur_outlinks:
-                    added_outlinks[rel] =\
-                        set(added_outlinks[rel]).difference(cur_outlinks[rel])
+                    added_outlinks[rel] = set(added_outlinks[rel]).difference(cur_outlinks[rel])
             removed_outlinks = {}
             for rel, titles in cur_outlinks.items():
                 removed_outlinks[rel] = titles
                 if rel in new_outlinks:
-                    removed_outlinks[rel] =\
-                        set(removed_outlinks[rel]).difference(new_outlinks[rel])
+                    removed_outlinks[rel] = set(removed_outlinks[rel]).difference(new_outlinks[rel])
 
+            updates = []
             for rel, titles in added_outlinks.items():
                 for title in titles:
                     page = WikiPage.get_by_title(title)
                     page.add_inlink(self.title, rel)
-                    page.put()
+                    updates.append(page)
                     caching.del_rendered_body(page.title)
                     caching.del_hashbangs(page.title)
+            ndb.put_multi(updates)
+
+            updates = []
+            deletes = []
             for rel, titles in removed_outlinks.items():
                 for title in titles:
                     page = WikiPage.get_by_title(title, follow_redirect=True)
                     try:
                         page.del_inlink(self.title, rel)
-                        if page.inlinks == {} and page.revision == 0:
-                            page.put().delete()
+                        if len(page.inlinks) == 0 and page.revision == 0 and page.key:
+                            deletes.append(page.key)
                         else:
-                            page.put()
+                            updates.append(page)
                         caching.del_rendered_body(page.title)
                         caching.del_hashbangs(page.title)
                     except ValueError:
                         pass
+            ndb.put_multi(updates)
+            ndb.delete_multi(deletes)
 
         # update outlinks of this page
         self.outlinks = new_outlinks
