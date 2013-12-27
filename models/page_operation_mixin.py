@@ -15,7 +15,7 @@ from models import TocGenerator
 
 
 class PageOperationMixin(object):
-    re_img = re.compile(ur'<(.+?)><img( .+? )/></(.+?)>')
+    re_img = re.compile(ur'<(.+?)>[\n\t\s]*<img( .+? )/>[\n\t\s]*</(.+?)>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
     re_yaml_schema = re.compile(ur'(?:\s{4}|\t)#!yaml/schema[\n\r]+(((?:\s{4}|\t).+[\n\r]+?)+)')
