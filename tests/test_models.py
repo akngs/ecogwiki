@@ -188,10 +188,15 @@ class WikiPageWikiLinkParserTest(unittest.TestCase):
 
 
 class WikiPageRenderingTest(AppEngineTestCase):
-    def test_embedded_image(self):
+    def test_embedded_image_in_p(self):
         page = WikiPage.get_by_title('Test')
         page.update_content(u'![Test](http://x.com/x.jpg)', 0)
         self.assertEqual(u'<p class="img-container"><img alt="Test" src="http://x.com/x.jpg"></p>', page.rendered_body)
+
+    def test_embedded_image_in_li(self):
+        page = WikiPage.get_by_title('Test')
+        page.update_content(u'*   ![Test](http://x.com/x.jpg)', 0)
+        self.assertEqual(u'<ul>\n<li class="img-container"><img alt="Test" src="http://x.com/x.jpg"></li>\n</ul>', page.rendered_body)
 
     def test_strikethrough(self):
         actual = md.convert(u'Hello ~~AK~~?')
