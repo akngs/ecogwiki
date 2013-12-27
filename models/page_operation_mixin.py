@@ -15,7 +15,7 @@ from models import TocGenerator
 
 
 class PageOperationMixin(object):
-    re_img = re.compile(ur'<p><img( .+? )/></p>')
+    re_img = re.compile(ur'<(.+?)><img( .+? )/></(.+?)>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
     re_yaml_schema = re.compile(ur'(?:\s{4}|\t)#!yaml/schema[\n\r]+(((?:\s{4}|\t).+[\n\r]+?)+)')
@@ -100,7 +100,7 @@ class PageOperationMixin(object):
         rendered = TocGenerator(rendered).add_toc()
 
         # add class for embedded image
-        rendered = PageOperationMixin.re_img.sub(ur'<p class="img-container"><img\1/></p>', rendered)
+        rendered = PageOperationMixin.re_img.sub(ur'<\1 class="img-container"><img\2/></\3>', rendered)
 
         # add structured data block
         rendered = self.rendered_data + rendered
