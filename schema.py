@@ -2,6 +2,7 @@
 import os
 import json
 import caching
+import urllib2
 
 
 SCHEMA_FILE_TO_LOAD = [
@@ -129,3 +130,46 @@ def _merge_schema_set(addon, schema_set):
             types[type_key][key_to_add] = value_to_add
 
     return schema_set
+
+
+def to_html(o, key=None):
+    obj_type = type(o)
+    if isinstance(o, dict):
+        return render_dict(o)
+    elif obj_type == list:
+        return render_list(o)
+    elif obj_type == str or obj_type == unicode:
+        if key is not None and key == 'schema':
+            return o
+        else:
+            return '<a href="/%s">%s</a>' % (urllib2.quote(o.replace(u' ', u'_').encode('utf-8')), o)
+    else:
+        return str(o)
+
+
+def render_dict(o):
+    if len(o) == 1:
+        return schema_to_html(o.values()[0])
+    else:
+        html = ['<dl class="wq wq-dict">']
+        for key, value in o.items():
+            html.append('<dt class="wq-key-%s">' % key)
+            html.append(key)
+            html.append('</dt>')
+            html.append('<dd class="wq-value-%s">' % key)
+            html.append(schema_to_html(value, key))
+            html.append('</dd>')
+        html.append('</dl>')
+
+        return '\n'.join(html)
+
+
+def render_list(o):
+    html = ['<ul class="wq wq-list">']
+    for value in o:
+        html.append('<li>')
+        html.append(schema_to_html(value))
+        html.append('</li>')
+    html.append('</ul>')
+
+    return '\n'.join(html)

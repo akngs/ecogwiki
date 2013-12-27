@@ -9,7 +9,7 @@ from itertools import groupby
 from collections import OrderedDict
 from models.utils import title_grouper
 from models import WikiPage, WikiPageRevision, ConflictError, UserPreferences
-from representations import Representation, EmptyRepresentation, JsonRepresentation, TemplateRepresentation, get_cur_user, format_iso_datetime, template, to_abs_path
+from representations import Representation, EmptyRepresentation, JsonRepresentation, TemplateRepresentation, get_cur_user, format_iso_datetime, template
 
 
 class Resource(object):
@@ -345,14 +345,14 @@ class WikiqueryResource(Resource):
     def represent_html_default(self, content):
         content = {
             'title': content['query'],
-            'body': obj_to_html(content['result']),
+            'body': schema.to_html(content['result']),
         }
         return TemplateRepresentation(content, self.req, 'generic.html')
 
     def represent_html_bodyonly(self, content):
         content = {
             'title': u'Search: %s ' % content['query'],
-            'body': obj_to_html(content['result']),
+            'body': schema.to_html(content['result']),
         }
         return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
@@ -542,14 +542,14 @@ class SchemaResource(Resource):
     def represent_html_default(self, data):
         content = {
             'title': data['id'],
-            'body': obj_to_html(data),
+            'body': schema.to_html(data),
         }
         return TemplateRepresentation(content, self.req, 'generic.html')
 
     def represent_html_bodyonly(self, data):
         content = {
             'title': data['id'],
-            'body': obj_to_html(data),
+            'body': schema.to_html(data),
         }
         return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
@@ -590,46 +590,3 @@ def render_posts_atom(req, title, pages):
                  url='%s%s' % (host, page.absolute_url),
                  updated=page.published_at)
     return feed.to_string()
-
-
-def obj_to_html(o, key=None):
-    obj_type = type(o)
-    if isinstance(o, dict):
-        return render_dict(o)
-    elif obj_type == list:
-        return render_list(o)
-    elif obj_type == str or obj_type == unicode:
-        if key is not None and key == 'schema':
-            return o
-        else:
-            return '<a href="%s">%s</a>' % (to_abs_path(o), o)
-    else:
-        return str(o)
-
-
-def render_dict(o):
-    if len(o) == 1:
-        return obj_to_html(o.values()[0])
-    else:
-        html = ['<dl class="wq wq-dict">']
-        for key, value in o.items():
-            html.append('<dt class="wq-key-%s">' % key)
-            html.append(key)
-            html.append('</dt>')
-            html.append('<dd class="wq-value-%s">' % key)
-            html.append(obj_to_html(value, key))
-            html.append('</dd>')
-        html.append('</dl>')
-
-        return '\n'.join(html)
-
-
-def render_list(o):
-    html = ['<ul class="wq wq-list">']
-    for value in o:
-        html.append('<li>')
-        html.append(obj_to_html(value))
-        html.append('</li>')
-    html.append('</ul>')
-
-    return '\n'.join(html)

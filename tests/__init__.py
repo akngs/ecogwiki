@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
+import random
 import caching
 import unittest2 as unittest
 from google.appengine.ext import testbed
-from models import get_cur_user, is_admin_user
+from models import get_cur_user, is_admin_user, WikiPage
 
 
 class AppEngineTestCase(unittest.TestCase):
@@ -33,3 +34,11 @@ class AppEngineTestCase(unittest.TestCase):
 
     def is_admin(self):
         return is_admin_user(self.get_cur_user())
+
+    def update_page(self, content, title=None):
+        if title is None:
+            title = u'Temp_%d' % int(random.random() * 10000000)
+        page = WikiPage.get_by_title(title)
+        page.update_content(content, page.revision, dont_defer=True)
+        return page
+
