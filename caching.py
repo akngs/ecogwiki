@@ -4,7 +4,7 @@ from cache import memory
 from cache import layered
 
 
-c = layered.Client([memory.Client(), memcache.Client()])
+c = layered.Client([memory.Client(default_time=60 * 10), memcache.Client()])
 
 
 max_recent_users = 20
