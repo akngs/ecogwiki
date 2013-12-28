@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import json
 import caching
 import urllib2
@@ -99,6 +100,63 @@ def get_itemtype_path(itemtype):
         raise ValueError('Unsupported schema: %s' % itemtype)
 
 
+def validate(itemtype, data):
+    try:
+        schema_item = get_schema(itemtype)
+    except KeyError:
+        raise ValueError('Unknown itemtype: %s' % itemtype)
+
+    unknown_props = set(data.keys()).difference(schema_item['properties'] + schema_item['specific_properties'] + ['schema'])
+    if len(unknown_props) > 0:
+        raise ValueError('Unknown properties: %s' % ','.join(unknown_props))
+
+    for key, value in data.items():
+        validate_prop(key, value)
+
+
+def validate_prop(key, value):
+    type_names = get_property(key)['ranges']
+    for t in type_names:
+        try:
+            if t == 'Boolean':
+                pass
+            elif t == 'Date':
+                validate_prop_as_date(value)
+            elif t == 'DateTime':
+                pass
+            elif t == 'Number':
+                pass
+            elif t == 'Float':
+                pass
+            elif t == 'Integer':
+                pass
+            elif t == 'Text':
+                pass
+            elif t == 'URL':
+                pass
+            elif t == 'Time':
+                pass
+            else:
+                validate_prop_as_thing(value, t)
+            return
+        except ValueError:
+            pass
+    raise ValueError()
+
+
+def validate_prop_as_date(value):
+    p_date = ur'(?P<y>\d+)-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>(0[1-9]|[12][0-9]|3[01]|\?\?))( (?P<bce>BCE))?'
+    if re.match(p_date, value) is None:
+        raise ValueError('Invalid date: %s' % value)
+
+
+def validate_prop_as_thing(value, itemtype):
+    try:
+        get_schema(itemtype)
+    except KeyError:
+        raise ValueError('Unknown itemtype: %s' % itemtype)
+
+
 def _merge_schema_set(addon, schema_set):
     if schema_set is None:
         return addon
@@ -149,7 +207,7 @@ def to_html(o, key=None):
 
 def render_dict(o):
     if len(o) == 1:
-        return schema_to_html(o.values()[0])
+        return to_html(o.values()[0])
     else:
         html = ['<dl class="wq wq-dict">']
         for key, value in o.items():
@@ -168,7 +226,7 @@ def render_list(o):
     html = ['<ul class="wq wq-list">']
     for value in o:
         html.append('<li>')
-        html.append(schema_to_html(value))
+        html.append(to_html(value))
         html.append('</li>')
     html.append('</ul>')
 

@@ -159,3 +159,29 @@ class SchemaIndexTest(AppEngineTestCase):
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456780').count())
         self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'datePublished', SchemaDataIndex.value == u'2013').count())
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'dateModified', SchemaDataIndex.value == u'2013').count())
+
+
+class TypeAwarenessTest(AppEngineTestCase):
+    def setUp(self):
+        super(TypeAwarenessTest, self).setUp()
+
+    def test_update_page_should_perform_validation(self):
+        self.assertRaises(ValueError, self.update_page, u'.schema UnknownSchema')
+
+    def test_unknown_itemtype(self):
+        self.assertRaises(ValueError, schema.validate, u'UnknownSchema', {})
+
+    def test_invalid_property(self):
+        self.assertRaises(ValueError, schema.validate, u'UnknownSchema', {u'unknownProp': u'Hello'})
+
+    def test_valid_date_value(self):
+        try:
+            schema.validate(u'Person', {u'birthDate': u'1979'})
+            schema.validate(u'Person', {u'birthDate': u'1979-03-27'})
+            schema.validate(u'Person', {u'birthDate': u'300 BCE'})
+            schema.validate(u'Person', {u'birthDate': u'300-01-01 BCE'})
+        except ValueError:
+            self.fail()
+
+    def test_invalid_date_value(self):
+        self.assertRaises(ValueError, schema.validate, u'Person', {u'birthDate': u'19790327'})

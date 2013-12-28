@@ -671,19 +671,19 @@ class WikiPageLinksTest(AppEngineTestCase):
         self.assertEquals({u'Article/relatedTo': [u'A', u'Hello World']}, links)
 
     def test_rel(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[birthDate::1979]]', 0, dont_defer=True)
+        WikiPage.get_by_title(u'A').update_content(u'.schema Person\n[[birthDate::1979]]', 0, dont_defer=True)
         a = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
-        self.assertEqual({u'Article/birthDate': [u'1979']}, a.outlinks)
-        self.assertEqual({u'Article/birthDate': [u'A']}, year.inlinks)
+        self.assertEqual({u'Person/birthDate': [u'1979']}, a.outlinks)
+        self.assertEqual({u'Person/birthDate': [u'A']}, year.inlinks)
 
     def test_update_rel(self):
         WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'[[birthDate::1979]]', 1, dont_defer=True)
+        WikiPage.get_by_title(u'A').update_content(u'.schema Person\n[[birthDate::1979]]', 1, dont_defer=True)
         a = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
-        self.assertEqual({u'Article/birthDate': [u'1979']}, a.outlinks)
-        self.assertEqual({u'Article/birthDate': [u'A']}, year.inlinks)
+        self.assertEqual({u'Person/birthDate': [u'1979']}, a.outlinks)
+        self.assertEqual({u'Person/birthDate': [u'A']}, year.inlinks)
 
     def test_add_schema(self):
         WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 0, dont_defer=True)

@@ -403,6 +403,8 @@ class PageOperationMixin(object):
             else:
                 dedup[key] = value
 
+        schema.validate(itemtype, dedup)
+
         return dedup
 
     @staticmethod
