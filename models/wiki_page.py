@@ -175,6 +175,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         new_md = PageOperationMixin.parse_metadata(new_body)
         try:
             PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
+        except ValueError as e:
+            raise e
         except Exception:
             raise ValueError('Invalid schema data')
 

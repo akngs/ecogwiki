@@ -9,8 +9,7 @@ from markdown.inlinepatterns import Pattern
 RE_WIKILINK = ur'\[\[' \
               ur'((?P<rel>[^\]=]+?)\:\:)?' \
               ur'(' \
-              ur'(?P<date>(?P<y>\d+)-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>(0[1-9]|[12][0-9]|3[01]|\?\?))' \
-              ur'( (?P<bce>BCE))?)|' \
+              ur'(?P<date>(?P<y>\d+)(-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>(0[1-9]|[12][0-9]|3[01]|\?\?)))?( (?P<bce>BCE))?)|' \
               ur'(?P<plain>.+?)' \
               ur')\]\]'
 
@@ -56,7 +55,7 @@ def _render_link(text, classname):
 
 def _render_match(m):
     if m.group('plain'):
-        text = plain_link(m)
+        text = m.group('plain')
         if text[0] == '=':
             a = _render_link(text, 'wikiquery')
         else:
@@ -118,7 +117,7 @@ def parse_wikilinks(itemtype, text):
             wikilinks[rel] = []
 
         if m.group('plain'):
-            wikilinks[rel].append(plain_link(m))
+            wikilinks[rel].append(m.group('plain'))
         elif m.group('date'):
             links = date_links(m)
             for link in links:
@@ -127,10 +126,6 @@ def parse_wikilinks(itemtype, text):
             raise Exception('Should not reach here')
 
     return wikilinks
-
-
-def plain_link(m):
-    return m.group('plain')
 
 
 def date_links(m):
@@ -146,6 +141,8 @@ def date_links(m):
     wikilinks.append(('%s' % year, '%s%s' % (year, bce_str), bce))
 
     if month == '??' and date == '??':
+        return wikilinks
+    if month is None and date is None:
         return wikilinks
 
     # handle month and date

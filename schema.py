@@ -100,28 +100,31 @@ def get_itemtype_path(itemtype):
         raise ValueError('Unsupported schema: %s' % itemtype)
 
 
-def validate(itemtype, data):
+def convert_type(itemtype, data):
     try:
         schema_item = get_schema(itemtype)
     except KeyError:
         raise ValueError('Unknown itemtype: %s' % itemtype)
 
-    unknown_props = set(data.keys()).difference(schema_item['properties'] + schema_item['specific_properties'] + ['schema'])
+    props = set(data.keys()).difference({'schema'})
+    unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'])
     if len(unknown_props) > 0:
         raise ValueError('Unknown properties: %s' % ','.join(unknown_props))
 
-    for key, value in data.items():
-        validate_prop(key, value)
+    for prop in props:
+        convert_prop(prop, data[prop])
+
+    return data
 
 
-def validate_prop(key, value):
+def convert_prop(key, value):
     type_names = get_property(key)['ranges']
     for t in type_names:
         try:
             if t == 'Boolean':
                 pass
             elif t == 'Date':
-                validate_prop_as_date(value)
+                convert_prop_as_date(value)
             elif t == 'DateTime':
                 pass
             elif t == 'Number':
@@ -137,20 +140,20 @@ def validate_prop(key, value):
             elif t == 'Time':
                 pass
             else:
-                validate_prop_as_thing(value, t)
+                convert_prop_as_thing(value, t)
             return
         except ValueError:
             pass
     raise ValueError()
 
 
-def validate_prop_as_date(value):
-    p_date = ur'(?P<y>\d+)-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>(0[1-9]|[12][0-9]|3[01]|\?\?))( (?P<bce>BCE))?'
+def convert_prop_as_date(value):
+    p_date = ur'(?P<y>\d+)(-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>(0[1-9]|[12][0-9]|3[01]|\?\?)))?( (?P<bce>BCE))?'
     if re.match(p_date, value) is None:
         raise ValueError('Invalid date: %s' % value)
 
 
-def validate_prop_as_thing(value, itemtype):
+def convert_prop_as_thing(value, itemtype):
     try:
         get_schema(itemtype)
     except KeyError:
@@ -215,7 +218,7 @@ def render_dict(o):
             html.append(key)
             html.append('</dt>')
             html.append('<dd class="wq-value-%s">' % key)
-            html.append(schema_to_html(value, key))
+            html.append(to_html(value, key))
             html.append('</dd>')
         html.append('</dl>')
 

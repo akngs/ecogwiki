@@ -403,7 +403,7 @@ class PageOperationMixin(object):
             else:
                 dedup[key] = value
 
-        schema.validate(itemtype, dedup)
+        #typed_data = schema.convert_type(itemtype, dedup)
 
         return dedup
 

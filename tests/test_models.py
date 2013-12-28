@@ -156,6 +156,12 @@ class WikiPageWikiLinkParserTest(unittest.TestCase):
         self.assertEqual({u'Article/relatedTo': [u'A']},
                          parse_wikilinks('Article', u'[[A]]'))
 
+    def test_yyyy(self):
+        self.assertEqual({u'Article/relatedTo': [u'1979']},
+                         parse_wikilinks('Article', u'[[1979]]'))
+        self.assertEqual({u'Article/relatedTo': [u'1979 BCE']},
+                         parse_wikilinks('Article', u'[[1979 BCE]]'))
+
     def test_yyyymmdd(self):
         self.assertEqual({u'Article/relatedTo': [u'1979', u'March 27']},
                          parse_wikilinks('Article', u'[[1979-03-27]]'))
