@@ -7,7 +7,6 @@ import schema
 import operator
 import urllib2
 from collections import OrderedDict
-from markdownext import md_wikilink 
 from lxml.html.clean import Cleaner
 
 from models import md, is_admin_user
@@ -123,7 +122,7 @@ class PageOperationMixin(object):
 
     def _render_data_item(self, name, value):
         if isinstance(value, schema.Property) and value.is_link():
-            return u'<span itemprop="%s">%s</span>' % (name, value.get_link())
+            return u'<span itemprop="%s">%s</span>' % (name, value.render_link())
         else:
             return u'<span itemprop="%s">%s</span>' % (name, value.rawvalue)
 

@@ -277,7 +277,7 @@ class Property(object):
     def is_link(self):
         return False
 
-    def get_link(self):
+    def render_link(self):
         return u''
 
 
@@ -300,7 +300,7 @@ class ThingProperty(Property):
     def is_link(self):
         return True
 
-    def get_link(self):
+    def render_link(self):
         return md_wikilink.render_wikilink(self.rawvalue)
 
 
@@ -459,7 +459,7 @@ class DateProperty(TypeProperty):
     def is_link(self):
         return True
 
-    def get_link(self):
+    def render_link(self):
         return md_wikilink.render_wikilink(self.rawvalue)
 
 
@@ -483,7 +483,7 @@ class IsbnProperty(TypeProperty):
     def is_link(self):
         return True
 
-    def get_link(self):
+    def render_link(self):
         url = None
         if self.value[:2] == '89':
             url = u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=978%s' % self.value
