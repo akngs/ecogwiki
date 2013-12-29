@@ -226,3 +226,7 @@ class TypeConversionTest(AppEngineTestCase):
 
     def test_invalid_url(self):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Code', {u'codeRepository': u'See http://github.org'})
+
+    def test_thing(self):
+        data = schema.SchemaConverter.convert(u'Code', {u'programmingLanguage': u'JavaScript'})
+        self.assertEqual('JavaScript', data['programmingLanguage'].value)

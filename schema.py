@@ -223,7 +223,6 @@ class SchemaConverter(object):
                     return TimeProperty(t, value)
                 else:
                     return ThingProperty(t, value)
-                return
             except ValueError:
                 pass
         raise ValueError()
