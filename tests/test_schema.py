@@ -247,16 +247,19 @@ class TypeConversionTest(AppEngineTestCase):
     def test_isbn(self):
         data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'1234512345'})
         self.assertEqual('1234512345', data['isbn'].value)
-        self.assertEqual(u'http://www.amazon.com/gp/product/1234512345', data['isbn'].link)
+        self.assertEqual(u'<a href="http://www.amazon.com/gp/product/1234512345" class="isbn" itemprop="isbn">1234512345</a>',
+                         data['isbn'].get_link())
 
     def test_isbn_kr(self):
         data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'8912345123'})
         self.assertEqual('8912345123', data['isbn'].value)
-        self.assertEqual(u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123', data['isbn'].link)
+        self.assertEqual(u'<a href="http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123" class="isbn" itemprop="isbn">8912345123</a>',
+                         data['isbn'].get_link())
 
         data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'9788912345123'})
         self.assertEqual('9788912345123', data['isbn'].value)
-        self.assertEqual(u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123', data['isbn'].link)
+        self.assertEqual(u'<a href="http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123" class="isbn" itemprop="isbn">9788912345123</a>',
+                         data['isbn'].get_link())
 
     def test_list_value(self):
         data = schema.SchemaConverter.convert(u'Book', {u'author': [u'AK', u'CK']})

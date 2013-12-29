@@ -4,6 +4,7 @@ import re
 import json
 import caching
 import urllib2
+from markdownext import md_wikilink
 
 
 SCHEMA_FILE_TO_LOAD = [
@@ -273,8 +274,11 @@ class Property(object):
             return False
         return True
 
-    def is_wikilink(self):
+    def is_link(self):
         return False
+
+    def get_link(self):
+        return u''
 
 
 class ThingProperty(Property):
@@ -293,8 +297,11 @@ class ThingProperty(Property):
             return False
         return True
 
-    def is_wikilink(self):
+    def is_link(self):
         return True
+
+    def get_link(self):
+        return md_wikilink.render_wikilink(self.rawvalue)
 
 
 class TypeProperty(Property):
@@ -449,8 +456,11 @@ class DateProperty(TypeProperty):
     def is_year_only(self):
         return self.month is None and self.day is None
 
-    def is_wikilink(self):
+    def is_link(self):
         return True
+
+    def get_link(self):
+        return md_wikilink.render_wikilink(self.rawvalue)
 
 
 class IsbnProperty(TypeProperty):
@@ -463,16 +473,23 @@ class IsbnProperty(TypeProperty):
             raise ValueError('Invalid ISBN: %s' % value)
         self.value = value
 
-        if self.value[:2] == '89':
-            self.link = u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=978%s' % self.value
-        elif self.value[:5] == '97889':
-            self.link = u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=%s' % self.value
-        else:
-            self.link = u'http://www.amazon.com/gp/product/%s' % self.value
-
     def __eq__(self, o):
         if not super(IsbnProperty, self).__eq__(o):
             return False
         if o.value != self.value:
             return False
         return True
+
+    def is_link(self):
+        return True
+
+    def get_link(self):
+        url = None
+        if self.value[:2] == '89':
+            url = u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=978%s' % self.value
+        elif self.value[:5] == '97889':
+            url = u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=%s' % self.value
+        else:
+            url = u'http://www.amazon.com/gp/product/%s' % self.value
+
+        return u'<a href="%s" class="isbn" itemprop="isbn">%s</a>' % (url, self.value)

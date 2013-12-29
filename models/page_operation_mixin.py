@@ -122,10 +122,10 @@ class PageOperationMixin(object):
         return rendered
 
     def _render_data_item(self, name, value):
-        if type(value) == schema.Property and value.is_wikilink():
-            return u'<span itemprop="%s">%s</span>' % (name, md_wikilink.render_wikilink(value.rawvalue))
+        if isinstance(value, schema.Property) and value.is_link():
+            return u'<span itemprop="%s">%s</span>' % (name, value.get_link())
         else:
-            return u'<span itemprop="%s">%s</span>' % (name, value)
+            return u'<span itemprop="%s">%s</span>' % (name, value.rawvalue)
 
     @property
     def paths(self):

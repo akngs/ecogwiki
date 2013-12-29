@@ -532,7 +532,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return WikiPage.get_posts_of(self.title, limit)
 
     def _schema_item_to_links(self, name, value):
-        if isinstance(value, schema.ThingProperty) and value.is_wikilink():
+        if isinstance(value, schema.ThingProperty) and value.is_link():
             return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value.rawvalue))
         elif type(value) == str:
             return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value))
