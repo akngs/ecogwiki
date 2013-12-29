@@ -222,6 +222,12 @@ class SchemaConverter(object):
         return dict((prop, self.convert_prop(prop, self._data[prop])) for prop in props)
 
     def convert_prop(self, key, value):
+        if type(value) is list:
+            return [self._convert_prop(key, v) for v in value]
+        else:
+            return self._convert_prop(key, value)
+
+    def _convert_prop(self, key, value):
         type_names = get_property(key)['ranges']
         for t in type_names:
             try:
@@ -261,6 +267,9 @@ class Property(object):
             return False
         return True
 
+    def is_wikilink(self):
+        return False
+
 
 class ThingProperty(Property):
     def __init__(self, t, value):
@@ -279,6 +288,9 @@ class ThingProperty(Property):
             return False
         if o.value != self.value:
             return False
+        return True
+
+    def is_wikilink(self):
         return True
 
 
@@ -428,6 +440,9 @@ class DateProperty(TypeProperty):
 
     def is_year_only(self):
         return self.month is None and self.day is None
+
+    def is_wikilink(self):
+        return True
 
 
 class IsbnProperty(TypeProperty):

@@ -251,3 +251,10 @@ class TypeConversionTest(AppEngineTestCase):
         data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'9788912345123'})
         self.assertEqual('9788912345123', data['isbn'].value)
         self.assertEqual(u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123', data['isbn'].link)
+
+    def test_list_value(self):
+        data = schema.SchemaConverter.convert(u'Book', {u'author': [u'AK', u'CK']})
+        self.assertEqual(list, type(data['author']))
+        self.assertEqual(2, len(data['author']))
+        self.assertEqual(u'AK', data['author'][0].value)
+        self.assertEqual(u'CK', data['author'][1].value)
