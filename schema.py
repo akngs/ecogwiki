@@ -100,66 +100,6 @@ def get_itemtype_path(itemtype):
         raise ValueError('Unsupported schema: %s' % itemtype)
 
 
-def convert_type(itemtype, data):
-    try:
-        schema_item = get_schema(itemtype)
-    except KeyError:
-        raise ValueError('Unknown itemtype: %s' % itemtype)
-
-    props = set(data.keys()).difference({'schema'})
-    unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'])
-    if len(unknown_props) > 0:
-        raise ValueError('Unknown properties: %s' % ','.join(unknown_props))
-
-    for prop in props:
-        convert_prop(prop, data[prop])
-
-    return data
-
-
-def convert_prop(key, value):
-    type_names = get_property(key)['ranges']
-    for t in type_names:
-        try:
-            if t == 'Boolean':
-                pass
-            elif t == 'Date':
-                convert_prop_as_date(value)
-            elif t == 'DateTime':
-                pass
-            elif t == 'Number':
-                pass
-            elif t == 'Float':
-                pass
-            elif t == 'Integer':
-                pass
-            elif t == 'Text':
-                pass
-            elif t == 'URL':
-                pass
-            elif t == 'Time':
-                pass
-            else:
-                convert_prop_as_thing(value, t)
-            return
-        except ValueError:
-            pass
-    raise ValueError()
-
-
-def convert_prop_as_date(value):
-    p_date = ur'(?P<y>\d+)(-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>(0[1-9]|[12][0-9]|3[01]|\?\?)))?( (?P<bce>BCE))?'
-    if re.match(p_date, value) is None:
-        raise ValueError('Invalid date: %s' % value)
-
-
-def convert_prop_as_thing(value, itemtype):
-    try:
-        get_schema(itemtype)
-    except KeyError:
-        raise ValueError('Unknown itemtype: %s' % itemtype)
-
-
 def _merge_schema_set(addon, schema_set):
     if schema_set is None:
         return addon
@@ -234,3 +174,69 @@ def render_list(o):
     html.append('</ul>')
 
     return '\n'.join(html)
+
+
+def convert_type(itemtype, data):
+    converter = SchemaConverter(itemtype, data)
+    converter.convert()
+    return data
+
+
+class SchemaConverter(object):
+    def __init__(self, itemtype, data):
+        self._itemtype = itemtype
+        self._data = data
+
+    def convert(self):
+        try:
+            schema_item = get_schema(self._itemtype)
+        except KeyError:
+            raise ValueError('Unknown itemtype: %s' % self._itemtype)
+
+        props = set(self._data.keys()).difference({'schema'})
+        unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'])
+        if len(unknown_props) > 0:
+            raise ValueError('Unknown properties: %s' % ','.join(unknown_props))
+
+        for prop in props:
+            self.convert_prop(prop, self._data[prop])
+
+    def convert_prop(self, key, value):
+        type_names = get_property(key)['ranges']
+        for t in type_names:
+            try:
+                if t == 'Boolean':
+                    pass
+                elif t == 'Date':
+                    self.convert_prop_as_date(value)
+                elif t == 'DateTime':
+                    pass
+                elif t == 'Number':
+                    pass
+                elif t == 'Float':
+                    pass
+                elif t == 'Integer':
+                    pass
+                elif t == 'Text':
+                    pass
+                elif t == 'URL':
+                    pass
+                elif t == 'Time':
+                    pass
+                else:
+                    self.convert_prop_as_thing(value, t)
+                return
+            except ValueError:
+                pass
+        raise ValueError()
+
+    def convert_prop_as_date(self, value):
+        p_date = ur'(?P<y>\d+)(-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>(0[1-9]|[12][0-9]|3[01]|\?\?)))?( (?P<bce>BCE))?'
+        if re.match(p_date, value) is None:
+            raise ValueError('Invalid date: %s' % value)
+
+    def convert_prop_as_thing(self, value, itemtype):
+        try:
+            get_schema(itemtype)
+        except KeyError:
+            raise ValueError('Unknown itemtype: %s' % itemtype)
