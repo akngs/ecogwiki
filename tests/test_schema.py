@@ -30,6 +30,13 @@ class SchemaTest(AppEngineTestCase):
         self.assertEqual(u'Related People', schema.humane_property('Person', 'relatedTo', True))
         self.assertEqual(u'Children (People)', schema.humane_property('Person', 'parent', True))
 
+    def test_datatype(self):
+        self.assertEqual('Boolean', schema.get_datatype('Boolean')['label'])
+
+    def test_custom_datatype(self):
+        isbn = schema.get_datatype('ISBN')
+        self.assertEqual(['DataType'], isbn['ancestors'])
+
 
 class CustomSchemaTest(AppEngineTestCase):
     def setUp(self):
@@ -230,3 +237,17 @@ class TypeConversionTest(AppEngineTestCase):
     def test_thing(self):
         data = schema.SchemaConverter.convert(u'Code', {u'programmingLanguage': u'JavaScript'})
         self.assertEqual('JavaScript', data['programmingLanguage'].value)
+
+    def test_isbn(self):
+        data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'1234512345'})
+        self.assertEqual('1234512345', data['isbn'].value)
+        self.assertEqual(u'http://www.amazon.com/gp/product/1234512345', data['isbn'].link)
+
+    def test_isbn_kr(self):
+        data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'8912345123'})
+        self.assertEqual('8912345123', data['isbn'].value)
+        self.assertEqual(u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123', data['isbn'].link)
+
+        data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'9788912345123'})
+        self.assertEqual('9788912345123', data['isbn'].value)
+        self.assertEqual(u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123', data['isbn'].link)

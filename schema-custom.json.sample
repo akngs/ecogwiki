@@ -1,4 +1,6 @@
 {
+  "datatypes": {
+  },
   "properties": {
     "politicalParty": {
       "comment": "Political party.",

@@ -1,4 +1,22 @@
 {
+    "datatypes": {
+        "ISBN": {
+            "ancestors": [
+                "DataType"
+            ],
+            "comment": "",
+            "comment_plain": "",
+            "id": "ISBN",
+            "label": "ISBN",
+            "properties": [],
+            "specific_properties": [],
+            "subtypes": [],
+            "supertypes": [
+                "DataType"
+            ],
+            "url": "http://www.ecogwiki.com/sp.schema/datatypes/ISBN"
+        }
+    },
     "properties": {
         "author": {
             "reversed_label": "Authored %s"
@@ -20,6 +38,11 @@
         },
         "foundingDate": {
             "reversed_label": "%s Founded"
+        },
+        "isbn": {
+            "ranges": [
+                "ISBN"
+            ]
         },
         "operatingSystem": {
             "reversed_label": "Supported %s"

@@ -74,6 +74,10 @@ def set_schema_property(prop_name, prop):
     _set_cache('schema\tprop\t%s' % prop_name, prop)
 
 
+def set_schema_datatype(type_name, prop):
+    _set_cache('schema\tdatatype\t%s' % type_name, prop)
+
+
 def set_config(value):
     _set_cache('model\tconfig', value)
 
@@ -122,6 +126,10 @@ def get_schema_property(prop_name):
     return _get_cache('schema\tprop\t%s' % prop_name)
 
 
+def get_schema_datatype(type_name):
+    return _get_cache('schema\tdatatype\t%s' % type_name)
+
+
 def get_config():
     return _get_cache('model\tconfig')
 
@@ -156,6 +164,10 @@ def del_schema(key):
 
 def del_schema_property(prop_name):
     _del_cache('schema\tprop\t%s' % prop_name)
+
+
+def del_schema_datatype(type_name):
+    _del_cache('schema\tdatatype\t%s' % type_name)
 
 
 def del_config():

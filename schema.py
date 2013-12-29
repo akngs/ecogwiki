@@ -49,6 +49,16 @@ def get_schema(itemtype):
     return schema
 
 
+def get_datatype(type_name):
+    datatype = caching.get_schema_datatype(type_name)
+    if datatype is not None:
+        return datatype
+
+    datatype = get_schema_set()['datatypes'][type_name]
+    caching.set_schema_datatype(type_name, datatype)
+    return datatype
+
+
 def get_property(prop_name):
     prop = caching.get_schema_property(prop_name)
     if prop is not None:
@@ -105,30 +115,42 @@ def _merge_schema_set(addon, schema_set):
         return addon
 
     # perform merge for properties...
-    for prop_key, prop_value in addon['properties'].items():
-        props = schema_set['properties']
-        if prop_key not in props:
-            props[prop_key] = {}
-        for key_to_add, value_to_add in prop_value.items():
-            props[prop_key][key_to_add] = value_to_add
+    if 'properties' in addon:
+        for prop_key, prop_value in addon['properties'].items():
+            props = schema_set['properties']
+            if prop_key not in props:
+                props[prop_key] = {}
+            for key_to_add, value_to_add in prop_value.items():
+                props[prop_key][key_to_add] = value_to_add
+
+    # ...and datatypes...
+    if 'datatypes' in addon:
+        for dtype_key, dtype_value in addon['datatypes'].items():
+            dtypes = schema_set['datatypes']
+            if dtype_key not in dtypes:
+                dtypes[dtype_key] = {}
+
+            for key_to_add, value_to_add in dtype_value.items():
+                dtypes[dtype_key][key_to_add] = value_to_add
 
     # ...and types
-    for type_key, type_value in addon['types'].items():
-        types = schema_set['types']
-        if type_key not in types:
-            types[type_key] = {}
+    if 'types' in addon:
+        for type_key, type_value in addon['types'].items():
+            types = schema_set['types']
+            if type_key not in types:
+                types[type_key] = {}
 
-            # modify supertype-subtype relationships
-            for supertype in type_value['supertypes']:
-                types[supertype]['subtypes'].append(type_key)
+                # modify supertype-subtype relationships
+                for supertype in type_value['supertypes']:
+                    types[supertype]['subtypes'].append(type_key)
 
-                # inherit properties of supertypes
-                if 'properties' not in type_value:
-                    type_value['properties'] = []
-                type_value['properties'] += types[supertype]['properties']
+                    # inherit properties of supertypes
+                    if 'properties' not in type_value:
+                        type_value['properties'] = []
+                    type_value['properties'] += types[supertype]['properties']
 
-        for key_to_add, value_to_add in type_value.items():
-            types[type_key][key_to_add] = value_to_add
+            for key_to_add, value_to_add in type_value.items():
+                types[type_key][key_to_add] = value_to_add
 
     return schema_set
 
@@ -221,6 +243,8 @@ class SchemaConverter(object):
                     return URLProperty(t, value)
                 elif t == 'Time':
                     return TimeProperty(t, value)
+                elif t == 'ISBN':
+                    return IsbnProperty(t, value)
                 else:
                     return ThingProperty(t, value)
             except ValueError:
@@ -404,3 +428,27 @@ class DateProperty(TypeProperty):
 
     def is_year_only(self):
         return self.month is None and self.day is None
+
+
+class IsbnProperty(TypeProperty):
+    P_ISBN = ur'[\dxX]{10,13}'
+
+    def __init__(self, t, value):
+        super(IsbnProperty, self).__init__(t, value)
+        m = re.match(IsbnProperty.P_ISBN, value)
+        if m is None:
+            raise ValueError('Invalid ISBN: %s' % value)
+        self.value = value
+
+        if self.value[:2] == '89':
+            self.link = u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=978%s' % self.value
+        elif self.value[:5] == '97889':
+            self.link = u'http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=%s' % self.value
+        else:
+            self.link = u'http://www.amazon.com/gp/product/%s' % self.value
+
+    def __eq__(self, o):
+        if not super(IsbnProperty, self).__eq__(o):
+            return False
+        if o.value != self.value:
+            return False
