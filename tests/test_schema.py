@@ -192,3 +192,10 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-13-05'})
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-05-40'})
 
+    def test_boolean_value(self):
+        for l in [u'1', u'true', u'TRUE', u'yes', u'YES']:
+            data = schema.SchemaConverter.convert(u'Article', {u'isFamilyFriendly': l})
+            self.assertTrue(data['isFamilyFriendly'].value)
+        for l in [u'0', u'false', u'FALSE', u'no', u'NO']:
+            data = schema.SchemaConverter.convert(u'Article', {u'isFamilyFriendly': l})
+            self.assertFalse(data['isFamilyFriendly'].value)

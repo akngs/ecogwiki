@@ -204,7 +204,7 @@ class SchemaConverter(object):
         for t in type_names:
             try:
                 if t == 'Boolean':
-                    pass
+                    return BooleanProperty(t, value)
                 elif t == 'Date':
                     return DateProperty(t, value)
                 elif t == 'DateTime':
@@ -270,6 +270,23 @@ class TypeProperty(Property):
         if not super(TypeProperty, self).__eq__(o):
             return False
         if o.datatype != self.datatype:
+            return False
+
+
+class BooleanProperty(TypeProperty):
+    def __init__(self, t, value):
+        super(BooleanProperty, self).__init__(t, value)
+        if value.lower() in ('1', 'yes', 'true'):
+            self.value = True
+        elif value.lower() in ('0', 'no', 'false'):
+            self.value = False
+        else:
+            raise ValueError('Invalid boolean: %s' % value)
+
+    def __eq__(self, o):
+        if not super(BooleanProperty, self).__eq__(o):
+            return False
+        if o.value != self.value:
             return False
 
 
