@@ -208,7 +208,7 @@ class SchemaConverter(object):
                 elif t == 'Date':
                     return DateProperty(t, value)
                 elif t == 'DateTime':
-                    pass
+                    return DateTimeProperty(t, value)
                 elif t == 'Number':
                     pass
                 elif t == 'Float':
@@ -216,7 +216,7 @@ class SchemaConverter(object):
                 elif t == 'Integer':
                     pass
                 elif t == 'Text':
-                    pass
+                    return TextProperty(t, value)
                 elif t == 'URL':
                     pass
                 elif t == 'Time':
@@ -288,6 +288,23 @@ class BooleanProperty(TypeProperty):
             return False
         if o.value != self.value:
             return False
+
+
+class TextProperty(TypeProperty):
+    def __init__(self, t, value):
+        super(TextProperty, self).__init__(t, value)
+        self.value = value
+
+    def __eq__(self, o):
+        if not super(TextProperty, self).__eq__(o):
+            return False
+        if o.value != self.value:
+            return False
+
+
+class DateTimeProperty(TextProperty):
+    # TODO implement this
+    pass
 
 
 class DateProperty(TypeProperty):

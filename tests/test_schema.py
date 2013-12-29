@@ -199,3 +199,7 @@ class TypeConversionTest(AppEngineTestCase):
         for l in [u'0', u'false', u'FALSE', u'no', u'NO']:
             data = schema.SchemaConverter.convert(u'Article', {u'isFamilyFriendly': l})
             self.assertFalse(data['isFamilyFriendly'].value)
+
+    def test_text_value(self):
+        data = schema.SchemaConverter.convert(u'Person', {u'jobTitle': u'Visualization engineer'})
+        self.assertEqual(u'Visualization engineer', data['jobTitle'].value)
