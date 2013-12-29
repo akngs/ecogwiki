@@ -89,19 +89,21 @@ class EmbeddedSchemaDataTest(AppEngineTestCase):
     def test_no_data(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'Hello', 0)
-        self.assertEquals({'name': u'Hello', 'schema': u'Thing/CreativeWork/Article/'}, page.data)
+        self.assertEquals(['name', 'schema'], page.data.keys())
+        self.assertEqual(u'Hello', page.data['name'].rawvalue)
+        self.assertEqual(u'Thing/CreativeWork/Article/', page.data['schema'].rawvalue)
 
     def test_author_and_isbn(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}', 0)
-        self.assertEqual(u'AK', page.data['author'])
-        self.assertEqual(u'123456789', page.data['isbn'])
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}', 0)
+        self.assertEqual(u'AK', page.data['author'].rawvalue)
+        self.assertEqual(u'1234567890', page.data['isbn'].rawvalue)
 
     def test_multiple_authors(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.schema Book\n[[author::AK]] and [[author::TK]]', 0, dont_defer=True)
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEqual([u'AK', u'TK'], page.data['author'])
+        self.assertEqual([u'AK', u'TK'], [v.rawvalue for v in page.data['author']])
 
     def test_normal_links(self):
         page_a = WikiPage.get_by_title(u'A')
@@ -118,31 +120,34 @@ class YamlSchemaDataTest(AppEngineTestCase):
 
     def test_yaml(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "123456789"\n\nHello', 0, dont_defer=True)
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello', 0, dont_defer=True)
         self.assertEqual({u'Book/author': [u'AK']}, page.outlinks)
-        self.assertEquals({'name': u'Hello', 'isbn': u'123456789', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'}, page.data)
+        self.assertEquals({'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'},
+                          dict((k, v.rawvalue) for k, v in page.data.items()))
 
     def test_list_value(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\nHello', 0, dont_defer=True)
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEquals([u'AK', u'TK'], page.data['author'])
+        self.assertEquals([u'AK', u'TK'], [v.rawvalue for v in page.data['author']])
 
     def test_mix_with_embedded_data(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::123456789}}\n\n[[author::JK]]', 0, dont_defer=True)
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::1234567890}}\n\n[[author::JK]]', 0, dont_defer=True)
         self.assertEqual({u'Book/author': [u'AK', u'JK', u'TK']}, page.outlinks)
-        self.assertEquals({'name': u'Hello', 'isbn': u'123456789', 'schema': u'Thing/CreativeWork/Book/', 'author': [u'AK', u'TK', u'JK']}, page.data)
+        self.assertEqual([u'AK', u'TK', u'JK'], [v.rawvalue for v in page.data['author']])
+        self.assertEqual(u'1234567890', page.data['isbn'].rawvalue)
+        self.assertEqual(u'Hello', page.data['name'].rawvalue)
 
     def test_no_duplications(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::123456789}}\n\n[[author::TK]]', 0, dont_defer=True)
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::1234567890}}\n\n[[author::TK]]', 0, dont_defer=True)
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEquals([u'AK', u'TK'], page.data['author'])
+        self.assertEquals([u'AK', u'TK'], [v.rawvalue for v in page.data['author']])
 
     def test_yaml_block_should_not_be_rendered(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "123456789"\n\nHello', 0)
+        page.update_content(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello', 0)
         self.assertEqual(-1, page.rendered_body.find(u'#!yaml/schema'))
 
 
@@ -152,18 +157,18 @@ class SchemaIndexTest(AppEngineTestCase):
 
     def test_schema_index_create(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0, dont_defer=True)
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}\n[[datePublished::2013]]', 0, dont_defer=True)
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'author', SchemaDataIndex.value == u'AK').count())
-        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456789').count())
+        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'1234567890').count())
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'datePublished', SchemaDataIndex.value == u'2013').count())
 
     def test_schema_index_update(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456789}}\n[[datePublished::2013]]', 0, dont_defer=True)
-        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::123456780}}\n[[dateModified::2013]]', 1, dont_defer=True)
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}\n[[datePublished::2013]]', 0, dont_defer=True)
+        page.update_content(u'.schema Book\n[[author::AK]]\n{{isbn::1234567899}}\n[[dateModified::2013]]', 1, dont_defer=True)
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'author', SchemaDataIndex.value == u'AK').count())
-        self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456789').count())
-        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'123456780').count())
+        self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'1234567890').count())
+        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'1234567899').count())
         self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'datePublished', SchemaDataIndex.value == u'2013').count())
         self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'dateModified', SchemaDataIndex.value == u'2013').count())
 
@@ -188,6 +193,7 @@ class TypeConversionTest(AppEngineTestCase):
 
     def test_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300-05-15 BCE'})
+        self.assertEqual(u'300-05-15 BCE', data['birthDate'].rawvalue)
         self.assertEqual(300, data['birthDate'].year)
         self.assertTrue(data['birthDate'].bce)
         self.assertEqual(5, data['birthDate'].month)

@@ -122,8 +122,8 @@ class PageOperationMixin(object):
         return rendered
 
     def _render_data_item(self, name, value):
-        if self._is_schema_item_link(name):
-            return u'<span itemprop="%s">%s</span>' % (name, md_wikilink.render_wikilink(value))
+        if type(value) == schema.Property and value.is_wikilink():
+            return u'<span itemprop="%s">%s</span>' % (name, md_wikilink.render_wikilink(value.rawvalue))
         else:
             return u'<span itemprop="%s">%s</span>' % (name, value)
 
@@ -175,6 +175,11 @@ class PageOperationMixin(object):
             data['outlinks'] += links
 
         return data
+
+    @property
+    def rawdata(self):
+        data = self.data
+        return dict((k, v.rawvalue) for k, v in data.items())
 
     @property
     def metadata(self):
@@ -344,14 +349,6 @@ class PageOperationMixin(object):
         ss[u'dates'] = range(1, max_date + 1)
         return ss
 
-    def _is_schema_item_link(self, name):
-        if name in ['name', 'schema', 'inlinks', 'outlinks']:
-            return False
-        elif self.itemtype == 'Book' and name in ['isbn']:
-            return False
-        else:
-            return True
-
     @staticmethod
     def title_to_path(path):
         return urllib2.quote(path.replace(u' ', u'_').encode('utf-8'))
@@ -404,9 +401,8 @@ class PageOperationMixin(object):
             else:
                 dedup[key] = value
 
-        # typed_data = schema.SchemaConverter.convert(itemtype, dedup)
-
-        return dedup
+        typed_data = schema.SchemaConverter.convert(itemtype, dedup)
+        return typed_data
 
     @staticmethod
     def parse_metadata(body):

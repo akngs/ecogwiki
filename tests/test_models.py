@@ -773,7 +773,7 @@ class WikiPageLinksTest(AppEngineTestCase):
 
     def test_should_not_treat_isbn_in_schema_block_as_a_link(self):
         page = WikiPage.get_by_title(u'A')
-        page.update_content(u'.schema Book\n    #!yaml/schema\n    isbn: "123456789"\n', 0)
+        page.update_content(u'.schema Book\n    #!yaml/schema\n    isbn: "1234567890"\n', 0)
 
         page = WikiPage.get_by_title(u'A')
         self.assertEqual({}, page.outlinks)

@@ -103,7 +103,7 @@ class PageLikeResource(Resource):
             'revision': page.revision,
             'acl_read': page.acl_read,
             'acl_write': page.acl_write,
-            'data': page.data,
+            'data': page.rawdata,
         }
         return JsonRepresentation(content)
 

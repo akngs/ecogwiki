@@ -214,8 +214,8 @@ class SchemaConverter(object):
         except KeyError:
             raise ValueError('Unknown itemtype: %s' % self._itemtype)
 
-        props = set(self._data.keys()).difference({'schema'})
-        unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'])
+        props = set(self._data.keys())
+        unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'] + ['schema'])
         if len(unknown_props) > 0:
             raise ValueError('Unknown properties: %s' % ','.join(unknown_props))
 
@@ -228,6 +228,9 @@ class SchemaConverter(object):
             return self._convert_prop(itemtype, key, value)
 
     def _convert_prop(self, itemtype, key, value):
+        if key == 'schema':
+            return TextProperty(itemtype, 'Text', value)
+
         type_names = get_property(key)['ranges']
         for t in type_names:
             try:
@@ -261,9 +264,12 @@ class SchemaConverter(object):
 class Property(object):
     def __init__(self, itemtype, t, value):
         self.itemtype = itemtype
+        self.rawvalue = value
 
     def __eq__(self, o):
         if type(o) != type(self):
+            return False
+        if o.rawvalue != self.rawvalue:
             return False
         return True
 
@@ -303,6 +309,7 @@ class TypeProperty(Property):
             return False
         if o.datatype != self.datatype:
             return False
+        return True
 
 
 class BooleanProperty(TypeProperty):
@@ -320,6 +327,7 @@ class BooleanProperty(TypeProperty):
             return False
         if o.value != self.value:
             return False
+        return True
 
 
 class TextProperty(TypeProperty):
@@ -332,6 +340,7 @@ class TextProperty(TypeProperty):
             return False
         if o.value != self.value:
             return False
+        return True
 
 
 class NumberProperty(TypeProperty):
@@ -350,6 +359,7 @@ class NumberProperty(TypeProperty):
             return False
         if o.value != self.value:
             return False
+        return True
 
 
 class IntegerProperty(NumberProperty):
@@ -399,6 +409,7 @@ class URLProperty(TypeProperty):
             return False
         if o.value != self.value:
             return False
+        return True
 
 
 class DateProperty(TypeProperty):
@@ -464,3 +475,4 @@ class IsbnProperty(TypeProperty):
             return False
         if o.value != self.value:
             return False
+        return True

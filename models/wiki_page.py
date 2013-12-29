@@ -292,7 +292,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # insert
         data = self.data
-        entities = [SchemaDataIndex(title=self.title, name=name, value=value) for name, value in WikiPage._data_as_pairs(data)]
+        entities = [SchemaDataIndex(title=self.title, name=name, value=value.rawvalue) for name, value in WikiPage._data_as_pairs(data)]
         ndb.put_multi(entities)
 
     def update_data_index(self, old_data, new_data):
@@ -303,14 +303,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
         inserts = new_pairs.difference(old_pairs)
 
         # delete
-        queries = [SchemaDataIndex.query(SchemaDataIndex.title == self.title, SchemaDataIndex.name == name, SchemaDataIndex.value == value)
+        queries = [SchemaDataIndex.query(SchemaDataIndex.title == self.title, SchemaDataIndex.name == name, SchemaDataIndex.value == value.rawvalue)
                    for name, value in deletes]
         entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
         keys = [e.key for e in entities]
         ndb.delete_multi(keys)
 
         # insert
-        entities = [SchemaDataIndex(title=self.title, name=name, value=value) for name, value in inserts]
+        entities = [SchemaDataIndex(title=self.title, name=name, value=value.rawvalue) for name, value in inserts]
         ndb.put_multi(entities)
 
     def update_links(self, old_redir, new_redir):
@@ -531,20 +531,13 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def get_posts(self, limit):
         return WikiPage.get_posts_of(self.title, limit)
 
-    def _schema_item_to_links(self, name, values):
-        itemtype = self.itemtype
-
-        if type(values) == list:
-            links = {}
-            for value in values:
-                for key, parsed_values in md_wikilink.parse_wikilinks(itemtype, u'[[%s::%s]]' % (name, value)).items():
-                    if key not in links:
-                        links[key] = []
-                    links[key] += parsed_values
+    def _schema_item_to_links(self, name, value):
+        if isinstance(value, schema.ThingProperty) and value.is_wikilink():
+            return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value.rawvalue))
+        elif type(value) == str:
+            return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value))
         else:
-            links = md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, values))
-
-        return links
+            return {}
 
     def _parse_outlinks(self):
         unique_links = {}
@@ -564,10 +557,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # Add links in structured data
         for name, value in self.data.items():
-            if not self._is_schema_item_link(name):
-                continue
-
-            links = self._schema_item_to_links(name, value)
+            links = {}
+            if type(value) is list:
+                for v in value:
+                    self._merge_schema_data(links, self._schema_item_to_links(name, v))
+            else:
+                links.update(self._schema_item_to_links(name, value))
 
             for rel, titles in links.items():
                 if rel not in unique_links:
@@ -579,6 +574,18 @@ class WikiPage(ndb.Model, PageOperationMixin):
             unique_links[key] = list(unique_links[key])
 
         return unique_links
+
+    def _merge_schema_data(self, base, new):
+        for key, value in new.items():
+            if key not in base:
+                base[key] = value
+                continue
+            if type(base[key]) != list:
+                base[key] = [base[key]]
+            if type(value) == list:
+                base[key] += value
+            else:
+                base[key].append(value)
 
     def add_inlinks(self, titles, rel):
         WikiPage._add_inout_links(self.inlinks, titles, rel)
