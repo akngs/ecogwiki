@@ -176,18 +176,18 @@ def render_list(o):
     return '\n'.join(html)
 
 
-def convert_type(itemtype, data):
-    converter = SchemaConverter(itemtype, data)
-    converter.convert()
-    return data
-
-
 class SchemaConverter(object):
+    @staticmethod
+    def convert(itemtype, data):
+        converter = SchemaConverter(itemtype, data)
+        converter.convert_schema()
+        return data
+
     def __init__(self, itemtype, data):
         self._itemtype = itemtype
         self._data = data
 
-    def convert(self):
+    def convert_schema(self):
         try:
             schema_item = get_schema(self._itemtype)
         except KeyError:

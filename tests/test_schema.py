@@ -169,19 +169,19 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertRaises(ValueError, self.update_page, u'.schema UnknownSchema')
 
     def test_unknown_itemtype(self):
-        self.assertRaises(ValueError, schema.convert_type, u'UnknownSchema', {})
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'UnknownSchema', {})
 
     def test_invalid_property(self):
-        self.assertRaises(ValueError, schema.convert_type, u'UnknownSchema', {u'unknownProp': u'Hello'})
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'UnknownSchema', {u'unknownProp': u'Hello'})
 
     def test_convert_date_value(self):
         try:
-            schema.convert_type(u'Person', {u'birthDate': u'1979'})
-            schema.convert_type(u'Person', {u'birthDate': u'1979-03-27'})
-            schema.convert_type(u'Person', {u'birthDate': u'300 BCE'})
-            schema.convert_type(u'Person', {u'birthDate': u'300-01-01 BCE'})
+            schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979'})
+            schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-03-27'})
+            schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300 BCE'})
+            schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300-01-01 BCE'})
         except ValueError:
             self.fail()
 
     def test_invalid_date_value(self):
-        self.assertRaises(ValueError, schema.convert_type, u'Person', {u'birthDate': u'Ten years ago'})
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'Ten years ago'})
