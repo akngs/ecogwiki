@@ -180,8 +180,7 @@ class SchemaConverter(object):
     @staticmethod
     def convert(itemtype, data):
         converter = SchemaConverter(itemtype, data)
-        converter.convert_schema()
-        return data
+        return converter.convert_schema()
 
     def __init__(self, itemtype, data):
         self._itemtype = itemtype
@@ -198,8 +197,7 @@ class SchemaConverter(object):
         if len(unknown_props) > 0:
             raise ValueError('Unknown properties: %s' % ','.join(unknown_props))
 
-        for prop in props:
-            self.convert_prop(prop, self._data[prop])
+        return dict((prop, self.convert_prop(prop, self._data[prop])) for prop in props)
 
     def convert_prop(self, key, value):
         type_names = get_property(key)['ranges']
@@ -208,7 +206,7 @@ class SchemaConverter(object):
                 if t == 'Boolean':
                     pass
                 elif t == 'Date':
-                    self.convert_prop_as_date(value)
+                    return DateProperty(t, value)
                 elif t == 'DateTime':
                     pass
                 elif t == 'Number':
@@ -224,19 +222,90 @@ class SchemaConverter(object):
                 elif t == 'Time':
                     pass
                 else:
-                    self.convert_prop_as_thing(value, t)
+                    return ThingProperty(t, value)
                 return
             except ValueError:
                 pass
         raise ValueError()
 
-    def convert_prop_as_date(self, value):
-        p_date = ur'(?P<y>\d+)(-(?P<m>(0[1-9]|1[0-2]|\?\?))-(?P<d>(0[1-9]|[12][0-9]|3[01]|\?\?)))?( (?P<bce>BCE))?'
-        if re.match(p_date, value) is None:
-            raise ValueError('Invalid date: %s' % value)
 
-    def convert_prop_as_thing(self, value, itemtype):
+class Property(object):
+    def __init__(self, t, value):
+        pass
+
+    def __eq__(self, o):
+        if type(o) != type(self):
+            return False
+        return True
+
+
+class ThingProperty(Property):
+    def __init__(self, t, value):
+        super(ThingProperty, self).__init__(t, value)
         try:
-            get_schema(itemtype)
+            self.itemtype = t
+            self.schema = get_schema(t)
         except KeyError:
-            raise ValueError('Unknown itemtype: %s' % itemtype)
+            raise ValueError('Unknown itemtype: %s' % t)
+        self.value = value
+
+    def __eq__(self, o):
+        if not super(ThingProperty, self).__eq__(o):
+            return False
+        if o.itemtype != self.itemtype:
+            return False
+        if o.value != self.value:
+            return False
+        return True
+
+
+class TypeProperty(Property):
+    def __init__(self, t, value):
+        super(TypeProperty, self).__init__(t, value)
+        if t not in get_schema_set()['datatypes']:
+            raise ValueError('Unknown datatype: %s' % t)
+        self.datatype = t
+
+    def __eq__(self, o):
+        if not super(TypeProperty, self).__eq__(o):
+            return False
+        if o.datatype != self.datatype:
+            return False
+
+
+class DateProperty(TypeProperty):
+    P_DATE = ur'(?P<y>\d+)(-(?P<m>(\d\d|\?\?))-(?P<d>(\d\d|\?\?)))?( (?P<bce>BCE))?'
+
+    def __init__(self, t, value):
+        super(DateProperty, self).__init__(t, value)
+        m = re.match(DateProperty.P_DATE, value)
+
+        if m is None:
+            raise ValueError('Invalid value: %s' % value)
+        self.year = int(m.group('y'))
+
+        self.month = int(m.group('m')) if m.group('m') else None
+        if self.month is not None and self.month > 12:
+            raise ValueError('Invalid month: %d' % self.month)
+
+        self.day = int(m.group('d')) if m.group('d') else None
+        if self.day is not None and self.day > 31:
+            raise ValueError('Invalid day: %d' % self.day)
+
+        self.bce = m.group('bce') == 'BCE'
+
+    def __eq__(self, o):
+        if not super(DateProperty, self).__eq__(o):
+            return False
+        if o.year != self.year:
+            return False
+        if o.month != self.month:
+            return False
+        if o.day != self.day:
+            return False
+        if o.bce != self.bce:
+            return False
+        return True
+
+    def is_year_only(self):
+        return self.month is None and self.day is None

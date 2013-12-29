@@ -3,7 +3,7 @@
     "Boolean": {
       "ancestors": [
         "DataType"
-      ], 
+      ],
       "comment": "", 
       "comment_plain": "", 
       "id": "Boolean", 

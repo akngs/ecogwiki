@@ -162,9 +162,6 @@ class SchemaIndexTest(AppEngineTestCase):
 
 
 class TypeConversionTest(AppEngineTestCase):
-    def setUp(self):
-        super(TypeConversionTest, self).setUp()
-
     def test_update_page_should_perform_validation(self):
         self.assertRaises(ValueError, self.update_page, u'.schema UnknownSchema')
 
@@ -174,14 +171,24 @@ class TypeConversionTest(AppEngineTestCase):
     def test_invalid_property(self):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'UnknownSchema', {u'unknownProp': u'Hello'})
 
+    def test_convert_year_only_date_value(self):
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979'})
+        self.assertEqual(1979, data['birthDate'].year)
+        self.assertFalse(data['birthDate'].bce)
+        self.assertIsNone(data['birthDate'].month)
+        self.assertIsNone(data['birthDate'].day)
+        self.assertTrue(data['birthDate'].is_year_only())
+
     def test_convert_date_value(self):
-        try:
-            schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979'})
-            schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-03-27'})
-            schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300 BCE'})
-            schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300-01-01 BCE'})
-        except ValueError:
-            self.fail()
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300-05-15 BCE'})
+        self.assertEqual(300, data['birthDate'].year)
+        self.assertTrue(data['birthDate'].bce)
+        self.assertEqual(5, data['birthDate'].month)
+        self.assertEqual(15, data['birthDate'].day)
+        self.assertFalse(data['birthDate'].is_year_only())
 
     def test_invalid_date_value(self):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'Ten years ago'})
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-13-05'})
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-05-40'})
+
