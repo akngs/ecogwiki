@@ -252,12 +252,14 @@ class PageOperationMixin(object):
 
         acl = self.acl_read.split(',') if self.acl_read else []
         acl = acl or default_acl['read']
+        acl_write = self.acl_write.split(',') if self.acl_write else []
+        acl_write = acl_write or default_acl['write']
 
         if u'all' in acl or len(acl) == 0:
             return True
         elif user is not None and u'login' in acl:
             return True
-        elif user is not None and (user.email() in acl or user.email() in self.acl_write.split(',')):
+        elif user is not None and (user.email() in acl or user.email() in acl_write):
             return True
         elif is_admin_user(user):
             return True
@@ -268,9 +270,8 @@ class PageOperationMixin(object):
         if default_acl is None:
             default_acl = main.DEFAULT_CONFIG['service']['default_permissions']
 
-        acl = self.acl_write.split(',') if self.acl_write is not None and len(self.acl_write) != 0 else []
-        if len(acl) == 0:
-            acl = default_acl['write']
+        acl = self.acl_write.split(',') if self.acl_write else []
+        acl = acl or default_acl['write']
 
         if (not self.can_read(user, default_acl)) and (user is None or user.email() not in acl):
             return False
