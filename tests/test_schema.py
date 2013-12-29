@@ -171,7 +171,7 @@ class TypeConversionTest(AppEngineTestCase):
     def test_invalid_property(self):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'UnknownSchema', {u'unknownProp': u'Hello'})
 
-    def test_convert_year_only_date_value(self):
+    def test_year_only_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979'})
         self.assertEqual(1979, data['birthDate'].year)
         self.assertFalse(data['birthDate'].bce)
@@ -179,7 +179,7 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertIsNone(data['birthDate'].day)
         self.assertTrue(data['birthDate'].is_year_only())
 
-    def test_convert_date_value(self):
+    def test_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300-05-15 BCE'})
         self.assertEqual(300, data['birthDate'].year)
         self.assertTrue(data['birthDate'].bce)
@@ -187,12 +187,12 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertEqual(15, data['birthDate'].day)
         self.assertFalse(data['birthDate'].is_year_only())
 
-    def test_invalid_date_value(self):
+    def test_invalid_date(self):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'Ten years ago'})
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-13-05'})
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-05-40'})
 
-    def test_boolean_value(self):
+    def test_boolean(self):
         for l in [u'1', u'true', u'TRUE', u'yes', u'YES']:
             data = schema.SchemaConverter.convert(u'Article', {u'isFamilyFriendly': l})
             self.assertTrue(data['isFamilyFriendly'].value)
@@ -200,6 +200,22 @@ class TypeConversionTest(AppEngineTestCase):
             data = schema.SchemaConverter.convert(u'Article', {u'isFamilyFriendly': l})
             self.assertFalse(data['isFamilyFriendly'].value)
 
-    def test_text_value(self):
+    def test_text(self):
         data = schema.SchemaConverter.convert(u'Person', {u'jobTitle': u'Visualization engineer'})
         self.assertEqual(u'Visualization engineer', data['jobTitle'].value)
+
+    def test_integer(self):
+        data = schema.SchemaConverter.convert(u'SoftwareApplication', {u'fileSize': u'12345'})
+        self.assertEqual(12345, data['fileSize'].value)
+
+    def test_invalid_integer(self):
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'SoftwareApplication', {u'fileSize': u'1234.5'})
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'SoftwareApplication', {u'fileSize': u'Very small'})
+
+    def test_number(self):
+        data = schema.SchemaConverter.convert(u'Offer', {u'price': u'1234.5'})
+        self.assertEqual(1234.5, data['price'].value)
+        self.assertEqual(float, type(data['price'].value))
+
+        data = schema.SchemaConverter.convert(u'Offer', {u'price': u'12345'})
+        self.assertEqual(int, type(data['price'].value))

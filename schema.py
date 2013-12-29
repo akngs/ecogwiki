@@ -210,11 +210,11 @@ class SchemaConverter(object):
                 elif t == 'DateTime':
                     return DateTimeProperty(t, value)
                 elif t == 'Number':
-                    pass
+                    return NumberProperty(t, value)
                 elif t == 'Float':
-                    pass
+                    return FloatProperty(t, value)
                 elif t == 'Integer':
-                    pass
+                    return IntegerProperty(t, value)
                 elif t == 'Text':
                     return TextProperty(t, value)
                 elif t == 'URL':
@@ -300,6 +300,49 @@ class TextProperty(TypeProperty):
             return False
         if o.value != self.value:
             return False
+
+
+class NumberProperty(TypeProperty):
+    def __init__(self, t, value):
+        super(NumberProperty, self).__init__(t, value)
+
+        try:
+            int_value = int(value)
+            float_value = float(value)
+            if int_value == float_value:
+                self.value = int_value
+            else:
+                self.value = float_value
+        except ValueError:
+            raise ValueError('Invalid number: %s' % value)
+
+    def __eq__(self, o):
+        if not super(NumberProperty, self).__eq__(o):
+            return False
+        if o.value != self.value:
+            return False
+
+
+class IntegerProperty(NumberProperty):
+    def __init__(self, t, value):
+        super(IntegerProperty, self).__init__(t, value)
+
+        try:
+            self.value = int(value)
+        except ValueError:
+            raise ValueError('Invalid integer: %s' % value)
+        if self.value != float(value):
+            raise ValueError('Invalid integer: %s' % value)
+
+
+class FloatProperty(NumberProperty):
+    def __init__(self, t, value):
+        super(FloatProperty, self).__init__(t, value)
+
+        try:
+            self.value = float(value)
+        except ValueError:
+            raise ValueError('Invalid float: %s' % value)
 
 
 class DateTimeProperty(TextProperty):
