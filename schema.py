@@ -305,14 +305,11 @@ class TextProperty(TypeProperty):
 class NumberProperty(TypeProperty):
     def __init__(self, t, value):
         super(NumberProperty, self).__init__(t, value)
-
         try:
-            int_value = int(value)
-            float_value = float(value)
-            if int_value == float_value:
-                self.value = int_value
+            if value.find('.') == -1:
+                self.value = int(value)
             else:
-                self.value = float_value
+                self.value = float(value)
         except ValueError:
             raise ValueError('Invalid number: %s' % value)
 

@@ -213,9 +213,9 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'SoftwareApplication', {u'fileSize': u'Very small'})
 
     def test_number(self):
-        data = schema.SchemaConverter.convert(u'Offer', {u'price': u'1234.5'})
-        self.assertEqual(1234.5, data['price'].value)
-        self.assertEqual(float, type(data['price'].value))
+        data = schema.SchemaConverter.convert(u'JobPosting', {u'baseSalary': u'1234.5'})
+        self.assertEqual(1234.5, data['baseSalary'].value)
+        self.assertEqual(float, type(data['baseSalary'].value))
 
-        data = schema.SchemaConverter.convert(u'Offer', {u'price': u'12345'})
-        self.assertEqual(int, type(data['price'].value))
+        data = schema.SchemaConverter.convert(u'JobPosting', {u'baseSalary': u'12345'})
+        self.assertEqual(int, type(data['baseSalary'].value))
