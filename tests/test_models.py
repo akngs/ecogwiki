@@ -215,12 +215,6 @@ class WikiPageRenderingTest(AppEngineTestCase):
         self.assertEqual(expected, actual)
 
 
-class RenderedDataTest(AppEngineTestCase):
-    def test_book(self):
-        page = self.update_page(u'.schema Book\n[[author::DD]], [[author::DH]], {{isbn::1234567890}}', u'GEB')
-        self.fail()
-
-
 class WikiPageWikilinkRenderingTest(unittest.TestCase):
     def test_plain(self):
         actual = md.convert(u'[[heyyou]]')
