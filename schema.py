@@ -219,48 +219,48 @@ class SchemaConverter(object):
         if len(unknown_props) > 0:
             raise ValueError('Unknown properties: %s' % ','.join(unknown_props))
 
-        return dict((prop, self.convert_prop(prop, self._data[prop])) for prop in props)
+        return dict((prop, self.convert_prop(self._itemtype, prop, self._data[prop])) for prop in props)
 
-    def convert_prop(self, key, value):
+    def convert_prop(self, itemtype, key, value):
         if type(value) is list:
-            return [self._convert_prop(key, v) for v in value]
+            return [self._convert_prop(itemtype, key, v) for v in value]
         else:
-            return self._convert_prop(key, value)
+            return self._convert_prop(itemtype, key, value)
 
-    def _convert_prop(self, key, value):
+    def _convert_prop(self, itemtype, key, value):
         type_names = get_property(key)['ranges']
         for t in type_names:
             try:
                 if t == 'Boolean':
-                    return BooleanProperty(t, value)
+                    return BooleanProperty(itemtype, t, value)
                 elif t == 'Date':
-                    return DateProperty(t, value)
+                    return DateProperty(itemtype, t, value)
                 elif t == 'DateTime':
-                    return DateTimeProperty(t, value)
+                    return DateTimeProperty(itemtype, t, value)
                 elif t == 'Number':
-                    return NumberProperty(t, value)
+                    return NumberProperty(itemtype, t, value)
                 elif t == 'Float':
-                    return FloatProperty(t, value)
+                    return FloatProperty(itemtype, t, value)
                 elif t == 'Integer':
-                    return IntegerProperty(t, value)
+                    return IntegerProperty(itemtype, t, value)
                 elif t == 'Text':
-                    return TextProperty(t, value)
+                    return TextProperty(itemtype, t, value)
                 elif t == 'URL':
-                    return URLProperty(t, value)
+                    return URLProperty(itemtype, t, value)
                 elif t == 'Time':
-                    return TimeProperty(t, value)
+                    return TimeProperty(itemtype, t, value)
                 elif t == 'ISBN':
-                    return IsbnProperty(t, value)
+                    return IsbnProperty(itemtype, t, value)
                 else:
-                    return ThingProperty(t, value)
+                    return ThingProperty(itemtype, t, value)
             except ValueError:
                 pass
         raise ValueError()
 
 
 class Property(object):
-    def __init__(self, t, value):
-        pass
+    def __init__(self, itemtype, t, value):
+        self.itemtype = itemtype
 
     def __eq__(self, o):
         if type(o) != type(self):
@@ -272,19 +272,16 @@ class Property(object):
 
 
 class ThingProperty(Property):
-    def __init__(self, t, value):
-        super(ThingProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(ThingProperty, self).__init__(itemtype, t, value)
         try:
-            self.itemtype = t
-            self.schema = get_schema(t)
+            get_schema(t)
         except KeyError:
             raise ValueError('Unknown itemtype: %s' % t)
         self.value = value
 
     def __eq__(self, o):
         if not super(ThingProperty, self).__eq__(o):
-            return False
-        if o.itemtype != self.itemtype:
             return False
         if o.value != self.value:
             return False
@@ -295,8 +292,8 @@ class ThingProperty(Property):
 
 
 class TypeProperty(Property):
-    def __init__(self, t, value):
-        super(TypeProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(TypeProperty, self).__init__(itemtype, t, value)
         if t not in get_schema_set()['datatypes']:
             raise ValueError('Unknown datatype: %s' % t)
         self.datatype = t
@@ -309,8 +306,8 @@ class TypeProperty(Property):
 
 
 class BooleanProperty(TypeProperty):
-    def __init__(self, t, value):
-        super(BooleanProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(BooleanProperty, self).__init__(itemtype, t, value)
         if value.lower() in ('1', 'yes', 'true'):
             self.value = True
         elif value.lower() in ('0', 'no', 'false'):
@@ -326,8 +323,8 @@ class BooleanProperty(TypeProperty):
 
 
 class TextProperty(TypeProperty):
-    def __init__(self, t, value):
-        super(TextProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(TextProperty, self).__init__(itemtype, t, value)
         self.value = value
 
     def __eq__(self, o):
@@ -338,8 +335,8 @@ class TextProperty(TypeProperty):
 
 
 class NumberProperty(TypeProperty):
-    def __init__(self, t, value):
-        super(NumberProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(NumberProperty, self).__init__(itemtype, t, value)
         try:
             if value.find('.') == -1:
                 self.value = int(value)
@@ -356,8 +353,8 @@ class NumberProperty(TypeProperty):
 
 
 class IntegerProperty(NumberProperty):
-    def __init__(self, t, value):
-        super(IntegerProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(IntegerProperty, self).__init__(itemtype, t, value)
 
         try:
             self.value = int(value)
@@ -368,8 +365,8 @@ class IntegerProperty(NumberProperty):
 
 
 class FloatProperty(NumberProperty):
-    def __init__(self, t, value):
-        super(FloatProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(FloatProperty, self).__init__(itemtype, t, value)
 
         try:
             self.value = float(value)
@@ -390,8 +387,8 @@ class TimeProperty(TextProperty):
 class URLProperty(TypeProperty):
     P_URL = ur'\w+://[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\-\_\=\+\[\]\\\:\;\"\'\,\.\'\?/]+'
 
-    def __init__(self, t, value):
-        super(URLProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(URLProperty, self).__init__(itemtype, t, value)
         m = re.match(URLProperty.P_URL, value)
         if m is None:
             raise ValueError('Invalid URL: %s' % value)
@@ -407,8 +404,8 @@ class URLProperty(TypeProperty):
 class DateProperty(TypeProperty):
     P_DATE = ur'(?P<y>\d+)(-(?P<m>(\d\d|\?\?))-(?P<d>(\d\d|\?\?)))?( (?P<bce>BCE))?'
 
-    def __init__(self, t, value):
-        super(DateProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(DateProperty, self).__init__(itemtype, t, value)
         m = re.match(DateProperty.P_DATE, value)
 
         if m is None:
@@ -448,8 +445,8 @@ class DateProperty(TypeProperty):
 class IsbnProperty(TypeProperty):
     P_ISBN = ur'[\dxX]{10,13}'
 
-    def __init__(self, t, value):
-        super(IsbnProperty, self).__init__(t, value)
+    def __init__(self, itemtype, t, value):
+        super(IsbnProperty, self).__init__(itemtype, t, value)
         m = re.match(IsbnProperty.P_ISBN, value)
         if m is None:
             raise ValueError('Invalid ISBN: %s' % value)
