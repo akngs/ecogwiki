@@ -218,9 +218,9 @@ class SchemaConverter(object):
                 elif t == 'Text':
                     return TextProperty(t, value)
                 elif t == 'URL':
-                    pass
+                    return URLProperty(t, value)
                 elif t == 'Time':
-                    pass
+                    return TimeProperty(t, value)
                 else:
                     return ThingProperty(t, value)
                 return
@@ -343,8 +343,30 @@ class FloatProperty(NumberProperty):
 
 
 class DateTimeProperty(TextProperty):
-    # TODO implement this
+    # TODO implement this (shouldn't inherit from TextProperty)
     pass
+
+
+class TimeProperty(TextProperty):
+    # TODO implement this (shouldn't inherit from TextProperty)
+    pass
+
+
+class URLProperty(TypeProperty):
+    P_URL = ur'\w+://[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\-\_\=\+\[\]\\\:\;\"\'\,\.\'\?/]+'
+
+    def __init__(self, t, value):
+        super(URLProperty, self).__init__(t, value)
+        m = re.match(URLProperty.P_URL, value)
+        if m is None:
+            raise ValueError('Invalid URL: %s' % value)
+        self.value = value
+
+    def __eq__(self, o):
+        if not super(URLProperty, self).__eq__(o):
+            return False
+        if o.value != self.value:
+            return False
 
 
 class DateProperty(TypeProperty):

@@ -219,3 +219,10 @@ class TypeConversionTest(AppEngineTestCase):
 
         data = schema.SchemaConverter.convert(u'JobPosting', {u'baseSalary': u'12345'})
         self.assertEqual(int, type(data['baseSalary'].value))
+
+    def test_url(self):
+        data = schema.SchemaConverter.convert(u'Code', {u'codeRepository': u'http://x.com/path/y.jsp?q=2&q2=2'})
+        self.assertEqual('http://x.com/path/y.jsp?q=2&q2=2', data['codeRepository'].value)
+
+    def test_invalid_url(self):
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Code', {u'codeRepository': u'See http://github.org'})
