@@ -149,7 +149,7 @@ def to_html(o, key=None):
 
 def render_dict(o):
     if len(o) == 1:
-        return schema_to_html(o.values()[0])
+        return to_html(o.values()[0])
     else:
         html = ['<dl class="wq wq-dict">']
         for key, value in o.items():
@@ -157,7 +157,7 @@ def render_dict(o):
             html.append(key)
             html.append('</dt>')
             html.append('<dd class="wq-value-%s">' % key)
-            html.append(schema_to_html(value, key))
+            html.append(to_html(value, key))
             html.append('</dd>')
         html.append('</dl>')
 
@@ -168,7 +168,7 @@ def render_list(o):
     html = ['<ul class="wq wq-list">']
     for value in o:
         html.append('<li>')
-        html.append(schema_to_html(value))
+        html.append(to_html(value))
         html.append('</li>')
     html.append('</ul>')
 
