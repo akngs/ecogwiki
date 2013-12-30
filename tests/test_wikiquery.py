@@ -119,8 +119,11 @@ class WikiqueryAclEvaluationTest(AppEngineTestCase):
         self.update_page(u'.schema Book\n.read all\nHello', u'A')
         self.update_page(u'.schema Book\n.read a@x.com\nThere', u'B')
 
-    def test_anonymous(self):
+    def test_normal(self):
         self.assertEqual({u'name': u'A'}, WikiPage.wikiquery(u'schema:"Book"'))
+
+    def test_anonymous(self):
+        self.assertEqual({u'name': u'A'}, WikiPage.wikiquery(u'schema:"Book" > name'))
 
     def test_user_with_no_permission(self):
         user = users.User('a@y.com')

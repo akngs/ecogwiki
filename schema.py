@@ -2,6 +2,7 @@
 import os
 import re
 import json
+import schema
 import caching
 import urllib2
 from markdownext import md_wikilink
@@ -167,6 +168,8 @@ def to_html(o, key=None):
             return o
         else:
             return '<a href="/%s">%s</a>' % (urllib2.quote(o.replace(u' ', u'_').encode('utf-8')), o)
+    elif isinstance(o, schema.Property):
+        return o.render()
     else:
         return str(o)
 
