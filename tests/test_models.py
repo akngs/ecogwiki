@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import main
-import caching
 import unittest2 as unittest
 from itertools import groupby
 from tests import AppEngineTestCase
@@ -9,10 +8,7 @@ from markdownext.md_wikilink import parse_wikilinks
 from models import md, WikiPage, UserPreferences, title_grouper, ConflictError
 
 
-class WikiPagePartialUpdateTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPagePartialUpdateTest, self).setUp()
-
+class PartialUpdateTest(AppEngineTestCase):
     def test_check_checkbox(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'[ ] Item A\n[x] Item B', 0)
@@ -26,15 +22,12 @@ class WikiPagePartialUpdateTest(AppEngineTestCase):
         self.assertEqual(3, page.revision)
 
 
-class WikiPageUpdateTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPageUpdateTest, self).setUp()
-
+class PageUpdateTest(AppEngineTestCase):
     def test_should_update_acls(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.read test1\n.write test2\nHello', 0)
+        page.update_content(u'.read test1\n.write test2, test3\nHello', 0)
         self.assertEqual(u'test1', page.acl_read)
-        self.assertEqual(u'test2', page.acl_write)
+        self.assertEqual(u'test2, test3', page.acl_write)
 
         page.update_content(u'Hello', 1)
         self.assertEqual(u'', page.acl_read)
@@ -53,7 +46,7 @@ class WikiPageUpdateTest(AppEngineTestCase):
     def test_should_not_create_revision_if_content_is_not_changed(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'Hello', 0)
-        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello', 1)
 
         revs = list(page.revisions)
         self.assertEqual(1, len(revs))
@@ -107,9 +100,9 @@ class WikiPageUpdateTest(AppEngineTestCase):
         self.assertRaises(ValueError, page.update_content, u'.schema Book\n\n    #!yaml/schema\n    y\n', 0)
 
 
-class WikiPageMetadataParserTest(AppEngineTestCase):
+class MetadataParserTest(AppEngineTestCase):
     def setUp(self):
-        super(WikiPageMetadataParserTest, self).setUp()
+        super(MetadataParserTest, self).setUp()
         self.default_md = {
             'content-type': 'text/x-markdown',
             'schema': 'Article',
@@ -151,7 +144,7 @@ class WikiPageMetadataParserTest(AppEngineTestCase):
         self.assertEqual(expected, actual)
 
 
-class WikiPageWikiLinkParserTest(unittest.TestCase):
+class WikiLinkParserTest(unittest.TestCase):
     def test_plain(self):
         self.assertEqual({u'Article/relatedTo': [u'A']},
                          parse_wikilinks('Article', u'[[A]]'))
@@ -182,10 +175,8 @@ class WikiPageWikiLinkParserTest(unittest.TestCase):
 
     def test_rel(self):
         self.assertEqual({u'Article/birthDate': [u'1979 BCE', u'March 27']},
-                         parse_wikilinks('Article',
-                                         u'[[birthDate::1979-03-27 BCE]]'))
-        self.assertEqual({u'Article/relatedTo': [u'A'],
-                          u'Article/author': [u'B']},
+                         parse_wikilinks('Article', u'[[birthDate::1979-03-27 BCE]]'))
+        self.assertEqual({u'Article/relatedTo': [u'A'], u'Article/author': [u'B']},
                          parse_wikilinks('Article', u'[[A]] [[author::B]]'))
 
     def test_wikiquery(self):
@@ -193,92 +184,55 @@ class WikiPageWikiLinkParserTest(unittest.TestCase):
         self.assertEqual({}, parse_wikilinks('Article', u'[[=schema:"Article"]]'))
 
 
-class WikiPageRenderingTest(AppEngineTestCase):
+class RenderingTest(AppEngineTestCase):
     def test_embedded_image_in_p(self):
-        page = WikiPage.get_by_title('Test')
-        page.update_content(u'![Test](http://x.com/x.jpg)', 0)
-        self.assertEqual(u'<p class="img-container"><img alt="Test" src="http://x.com/x.jpg"></p>', page.rendered_body)
+        self.assertRenderedText(u'![Test](http://x.com/x.jpg)',
+                                u'<p class="img-container"><img alt="Test" src="http://x.com/x.jpg"></p>')
 
     def test_embedded_image_in_li(self):
-        page = WikiPage.get_by_title('Test')
-        page.update_content(u'*   ![Test](http://x.com/x.jpg)', 0)
-        self.assertEqual(u'<ul>\n<li class="img-container"><img alt="Test" src="http://x.com/x.jpg"></li>\n</ul>', page.rendered_body)
+        self.assertRenderedText(u'*   ![Test](http://x.com/x.jpg)',
+                                u'<ul>\n<li class="img-container"><img alt="Test" src="http://x.com/x.jpg"></li>\n</ul>')
 
     def test_strikethrough(self):
-        actual = md.convert(u'Hello ~~AK~~?')
-        expected = u'<p>Hello <strike>AK</strike>?</p>'
-        self.assertEqual(expected, actual)
+        self.assertRenderedText(u'Hello ~~AK~~?', u'<p>Hello <strike>AK</strike>?</p>')
 
     def test_checkbox(self):
-        actual = md.convert(u'[ ] Hello [x] There')
-        expected = u'<p><input type="checkbox" /> Hello <input checked="checked" type="checkbox" /> There</p>'
-        self.assertEqual(expected, actual)
+        self.assertRenderedText(u'[ ] Hello [x] There',
+                                u'<p><input type="checkbox"> Hello <input checked type="checkbox"> There</p>')
+
+    def test_html(self):
+        self.assertRenderedText(u'<div class="test">He*l*lo</div>\nWo*r*ld',
+                                u'<div class="test">He*l*lo</div>\n\n<p>Wo<em>r</em>ld</p>')
+
+    def test_html_sanitization(self):
+        self.assertRenderedText(u'Hey<script>alert(1)</script>you', u'<p>Heyyou</p>')
 
 
-class WikiPageWikilinkRenderingTest(unittest.TestCase):
+class WikilinkRenderingTest(AppEngineTestCase):
     def test_plain(self):
-        actual = md.convert(u'[[heyyou]]')
-        expected = u'<p><a class="wikipage" href="/heyyou">heyyou</a></p>'
-        self.assertEqual(expected, actual)
+        self.assertRenderedText(u'[[heyyou]]', u'<p><a class="wikipage" href="/heyyou">heyyou</a></p>')
 
     def test_space(self):
-        actual = md.convert(u'[[Hey you]]')
-        expected = u'<p><a class="wikipage" href="/Hey_you">Hey you</a></p>'
-        self.assertEqual(expected, actual)
+        self.assertRenderedText(u'[[Hey you]]', u'<p><a class="wikipage" href="/Hey_you">Hey you</a></p>')
 
     def test_special_character(self):
-        actual = md.convert(u'[[You&I]]')
-        expected = u'<p><a class="wikipage" href="/You%26I">You&amp;I</a></p>'
-        self.assertEqual(expected, actual)
-
-    def test_unicode_character(self):
-        actual = md.convert(u'[[가]]')
-        expected = u'<p><a class="wikipage" href="/%EA%B0%80">가</a></p>'
-        self.assertEqual(expected, actual)
+        self.assertRenderedText(u'[[너 & 나]]', u'<p><a class="wikipage" href="/%EB%84%88_%26_%EB%82%98">너 &amp; 나</a></p>')
 
     def test_possible_conflict_with_plain_link(self):
-        actual = md.convert(u'[[Hello]](there)')
-        expected = u'<p><a class="wikipage" href="/Hello">Hello</a>(there)</p>'
-        self.assertEqual(expected, actual)
+        self.assertRenderedText(u'[[Hello]](there)', u'<p><a class="wikipage" href="/Hello">Hello</a>(there)</p>')
 
-    def test_yyyymmdd(self):
-        actual = md.convert(u'[[1979-03-05]]')
-        expected = u'<p><time datetime="1979-03-05">' \
-                   u'<a class="wikipage" href="/1979">1979</a>' \
-                   u'<span>-</span>' \
-                   u'<a class="wikipage" href="/March_5">03-05</a>' \
-                   u'</time></p>'
-        self.assertEqual(expected, actual)
-
-    def test_yyyymmxx(self):
-        actual = md.convert(u'[[1979-03-??]]')
-        expected = u'<p><time datetime="1979-03-??">' \
-                   u'<a class="wikipage" href="/1979">1979</a>' \
-                   u'<span>-</span>' \
-                   u'<a class="wikipage" href="/March">03-??</a>' \
-                   u'</time></p>'
-        self.assertEqual(expected, actual)
-
-    def test_yyyyxxxx(self):
-        actual = md.convert(u'[[1979-??-??]]')
-        expected = u'<p><time datetime="1979-??-??">' \
-                   u'<a class="wikipage" href="/1979">1979</a>' \
-                   u'<span>-</span>' \
-                   u'<span>??-??</span>' \
-                   u'</time></p>'
-        self.assertEqual(expected, actual)
-
-    def test_yyyymmdd_bce(self):
-        actual = md.convert(u'[[1979-03-05 BCE]]')
-        expected = u'<p><time datetime="1979-03-05 BCE">' \
-                   u'<a class="wikipage" href="/1979_BCE">1979</a>' \
-                   u'<span>-</span>' \
-                   u'<a class="wikipage" href="/March_5">03-05</a>' \
-                   u'<span> BCE</span></time></p>'
-        self.assertEqual(expected, actual)
+    def test_dates(self):
+        self.assertRenderedText(u'[[1979-03-05]]',
+                                u'<p><time datetime="1979-03-05"><a class="wikipage" href="/1979">1979</a><span>-</span><a class="wikipage" href="/March_5">03-05</a></time></p>')
+        self.assertRenderedText(u'[[1979-03-??]]',
+                                u'<p><time datetime="1979-03-??"><a class="wikipage" href="/1979">1979</a><span>-</span><a class="wikipage" href="/March">03-??</a></time></p>')
+        self.assertRenderedText(u'[[1979-??-??]]',
+                                u'<p><time datetime="1979-??-??"><a class="wikipage" href="/1979">1979</a><span>-</span><span>??-??</span></time></p>')
+        self.assertRenderedText(u'[[1979-03-05 BCE]]',
+                                u'<p><time datetime="1979-03-05 BCE"><a class="wikipage" href="/1979_BCE">1979</a><span>-</span><a class="wikipage" href="/March_5">03-05</a><span> BCE</span></time></p>')
 
     def test_url(self):
-        actuals = [
+        markdowns = [
             u'http://x.co',
             u'(http://x.co)',
             u'http://x.co에',
@@ -289,7 +243,7 @@ class WikiPageWikilinkRenderingTest(unittest.TestCase):
             u'http://www.youtube.com/watch?v=w5gmK-ZXIMQ',
             u'http://vimeo.com/1747316',
         ]
-        expecteds = [
+        htmls = [
             u'<p><a class="plainurl" href="http://x.co">http://x.co</a></p>',
             u'<p>(<a class="plainurl" href="http://x.co">http://x.co</a>)</p>',
             u'<p><a class="plainurl" href="http://x.co">http://x.co</a>에</p>',
@@ -298,33 +252,12 @@ class WikiPageWikilinkRenderingTest(unittest.TestCase):
             u'itemprop="codeRepository">http://x.co</a></p>',
             u'<p><a class="email" href="mailto:a@x.com">a@x.com</a></p>',
             u'<p><a class="email" href="mailto:a@x.kr">a@x.kr</a>에</p>',
-            u'<p>\n<div class="video youtube">\n<iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe>\n</div>\n</p>',
-            u'<p>\n<div class="video vimeo">\n<iframe allowfullscreen="true" frameborder="0" height="281" src="http://player.vimeo.com/video/1747316" width="500"></iframe>\n</div>\n</p>',
+            u'<p>\n</p><div class="video youtube">\n<iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe>\n</div>\n',
+            u'<p>\n</p><div class="video vimeo">\n<iframe allowfullscreen="true" frameborder="0" height="281" src="http://player.vimeo.com/video/1747316" width="500"></iframe>\n</div>\n',
         ]
 
-        for e, a in zip(expecteds, actuals):
-            self.assertEqual(e, md.convert(a))
-
-    def test_rel(self):
-        actual = md.convert(u'[[sameAs::heyyou]]')
-        expected = u'<p><a class="wikipage" href="/heyyou" itemprop="sameAs">' \
-                   u'heyyou</a></p>'
-        self.assertEqual(expected, actual)
-
-        actual = md.convert(u'[[birthDate::1979-03-05 BCE]]')
-        expected = u'<p><time datetime="1979-03-05 BCE" itemprop="birthDate">' \
-                   u'<a class="wikipage" href="/1979_BCE">1979</a>' \
-                   u'<span>-</span>' \
-                   u'<a class="wikipage" href="/March_5">03-05</a>' \
-                   u'<span> BCE</span></time></p>'
-        self.assertEqual(expected, actual)
-
-
-class HTMLRenderingTest(unittest.TestCase):
-    def test_div(self):
-        actual = md.convert(u'<div class="test">He*l*lo</div>\nWo*r*ld')
-        expected = u'<div class="test">He*l*lo</div>\n\n<p>Wo<em>r</em>ld</p>'
-        self.assertEqual(expected, actual)
+        for markdown, html in zip(markdowns, htmls):
+            self.assertRenderedText(markdown, html)
 
 
 class SchemaItemPropertyRenderingTest(unittest.TestCase):
@@ -359,10 +292,7 @@ class SchemaItemPropertyRenderingTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
-class WikiTitleToPathConvertTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiTitleToPathConvertTest, self).setUp()
-
+class TitleToPathConvertTest(AppEngineTestCase):
     def test_title_to_path(self):
         self.assertEqual('Hello_World', WikiPage.title_to_path(u'Hello World'))
         self.assertEqual('A%26B', WikiPage.title_to_path(u'A&B'))
@@ -374,17 +304,14 @@ class WikiTitleToPathConvertTest(AppEngineTestCase):
         self.assertEqual(u'가', WikiPage.path_to_title('%EA%B0%80'))
 
 
-class WikiYamlParserTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiYamlParserTest, self).setUp()
-
+class YamlParserTest(AppEngineTestCase):
     def test_empty_page(self):
         self.assertEqual(main.DEFAULT_CONFIG, WikiPage.get_config())
 
 
-class WikiPageGetConfigTest(AppEngineTestCase):
+class GetConfigTest(AppEngineTestCase):
     def setUp(self):
-        super(WikiPageGetConfigTest, self).setUp()
+        super(GetConfigTest, self).setUp()
         self.config_page = WikiPage.get_by_title('.config')
         self.config_page.update_content(u'''
           admin:
@@ -413,43 +340,26 @@ class WikiPageGetConfigTest(AppEngineTestCase):
         self.assertEqual('', config['service']['title'])
 
 
-class WikiPageRelatedPageUpdatingTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPageRelatedPageUpdatingTest, self).setUp()
-
+class RelatedPageUpdatingTest(AppEngineTestCase):
     def test_update_related_links(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[B]]', 0, dont_defer=True)
+        page = self.update_page(u'[[B]]', u'A')
+        self.update_page(u'[[C]]', u'B')
+        self.update_page(u'[[D]]', u'C')
+        page.update_related_links()
+        page.put()
 
-        b = WikiPage.get_by_title(u'B')
-        b.update_content(u'[[C]]', 0, dont_defer=True)
-
-        c = WikiPage.get_by_title(u'C')
-        c.update_content(u'[[D]]', 0, dont_defer=True)
-
-        a.update_related_links()
-        a.put()
-
-        self.assertEqual({u'C': 0.025, u'D': 0.0125}, a.related_links)
+        self.assertEqual({u'C': 0.025, u'D': 0.0125}, page.related_links)
 
     def test_redirect(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[B]]', 0, dont_defer=True)
-        b = WikiPage.get_by_title(u'B')
-        b.update_content(u'.redirect C', 0, dont_defer=True)
-        c = WikiPage.get_by_title(u'C')
-        c.update_content(u'[[D]]', 0, dont_defer=True)
-        d = WikiPage.get_by_title(u'D')
-        d.update_content(u'Destination', 0, dont_defer=True)
+        page = self.update_page(u'[[B]]', u'A')
+        self.update_page(u'.redirect C', u'B')
+        self.update_page(u'[[D]]', u'C')
+        page.update_related_links()
 
-        a.update_related_links()
-        self.assertTrue(u'D' in a.related_links)
+        self.assertTrue(u'D' in page.related_links)
 
 
-class WikiPageSimilarTitlesTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPageSimilarTitlesTest, self).setUp()
-
+class SimilarTitlesTest(AppEngineTestCase):
     def test_similar_pages(self):
         titles = [
             u'hello',
@@ -488,40 +398,28 @@ class WikiPageSimilarTitlesTest(AppEngineTestCase):
             self.assertEqual(u'hellothere', WikiPage.normalize_title(t))
 
 
-class WikiPageDescriptionTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPageDescriptionTest, self).setUp()
-
+class DescriptionTest(AppEngineTestCase):
     def test_try_newline(self):
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello\nWorld', 0)
-        self.assertEqual(u'Hello', page.make_description(20))
+        self.assertEqual(u'Hello', self.update_page(u'Hello\nWorld').make_description(20))
 
     def test_try_period(self):
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hi. Hello. World. Sentences.', 0)
-        self.assertEqual(u'Hi. Hello. World.', page.make_description(20))
+        self.assertEqual(u'Hi. Hello. World.',
+                         self.update_page(u'Hi. Hello. World. Sentences.').make_description(20))
 
     def test_cut_off(self):
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hi Hello World Sentences.', 0)
-        self.assertEqual(u'Hi Hello World Se...', page.make_description(20))
+        self.assertEqual(u'Hi Hello World Se...',
+                         self.update_page(u'Hi Hello World Sentences.').make_description(20))
 
     def test_should_ignore_metadata(self):
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub\n\nHello', 0)
-        self.assertEqual(u'Hello', page.make_description(20))
+        self.assertEqual(u'Hello',
+                         self.update_page(u'.pub\n\nHello').make_description(20))
 
     def test_should_ignore_yaml_schema_block(self):
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.schema Book\n    #!yaml/schema\n    author: A\n\nHello', 0)
-        self.assertEqual(u'Hello', page.make_description(20))
+        self.assertEqual(u'Hello',
+                         self.update_page(u'.schema Book\n    #!yaml/schema\n    author: A\n\nHello').make_description(20))
 
 
-class WikiPageSpecialTitlesTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPageSpecialTitlesTest, self).setUp()
-
+class SpecialTitlesTest(AppEngineTestCase):
     def test_years(self):
         titles = [
             u'10000 BCE',
@@ -561,12 +459,9 @@ class WikiPageSpecialTitlesTest(AppEngineTestCase):
 
 
 class RedirectionTest(AppEngineTestCase):
-    def setUp(self):
-        super(RedirectionTest, self).setUp()
-
     def test_adding_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
+        self.update_page(u'[[B]]', u'A')
+        self.update_page(u'.redirect C', u'B')
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')
@@ -577,9 +472,9 @@ class RedirectionTest(AppEngineTestCase):
         self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
 
     def test_removing_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'Hello [[D]]', 1, dont_defer=True)
+        self.update_page(u'[[B]]', u'A')
+        self.update_page(u'.redirect C', u'B')
+        self.update_page(u'Hello [[D]]', u'B')
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')
@@ -592,9 +487,9 @@ class RedirectionTest(AppEngineTestCase):
         self.assertEqual({u'Article/relatedTo': [u'B']}, d.inlinks)
 
     def test_changing_redirect_should_change_inout_links(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
-        WikiPage.get_by_title(u'B').update_content(u'.redirect D', 1, dont_defer=True)
+        self.update_page(u'[[B]]', u'A')
+        self.update_page(u'.redirect C', u'B')
+        self.update_page(u'.redirect D', u'B')
 
         a = WikiPage.get_by_title(u'A')
         b = WikiPage.get_by_title(u'B')
@@ -607,9 +502,10 @@ class RedirectionTest(AppEngineTestCase):
         self.assertEqual({u'Article/relatedTo': [u'A']}, d.inlinks)
 
     def test_two_aliases(self):
-        WikiPage.get_by_title(u'B').update_content(u'.redirect C', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'B, [[C]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'[[B]]', 1, dont_defer=True)
+        self.update_page(u'.redirect C', u'B')
+        self.update_page(u'[[C]]', u'A')
+        self.update_page(u'[[B]]', u'A')
+
         a = WikiPage.get_by_title(u'A')
         c = WikiPage.get_by_title(u'C')
         self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
@@ -620,191 +516,139 @@ class RedirectionTest(AppEngineTestCase):
         self.assertRaises(ValueError, page.update_content, u'.redirect A', 0, dont_defer=True)
 
 
-class WikiPageLinksTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPageLinksTest, self).setUp()
-
+class LinkTest(AppEngineTestCase):
     def test_nonexisting_page(self):
         a = WikiPage.get_by_title(u'A')
         self.assertEqual({}, a.inlinks)
         self.assertEqual({}, a.outlinks)
 
     def test_no_links(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'Hello', 0)
-
-        a = WikiPage.get_by_title(u'A')
-        self.assertEqual({}, a.inlinks)
-        self.assertEqual({}, a.outlinks)
+        page = self.update_page(u'Hello')
+        self.assertEqual({}, page.inlinks)
+        self.assertEqual({}, page.outlinks)
 
     def test_links(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[B]]', 0, dont_defer=True)
-
-        a = WikiPage.get_by_title(u'A')
-        b = WikiPage.get_by_title(u'B')
-
+        a = self.update_page(u'[[B]]', u'A')
         self.assertEqual({}, a.inlinks)
         self.assertEqual({u'Article/relatedTo': [u'B']}, a.outlinks)
 
+        b = WikiPage.get_by_title(u'B')
         self.assertEqual(None, b.updated_at)
         self.assertEqual({u'Article/relatedTo': [u'A']}, b.inlinks)
         self.assertEqual({}, b.outlinks)
 
     def test_wikiquery(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'[[="Article"]]\n[[=schema:"Article"]]', 0, dont_defer=True)
-        self.assertEqual({}, a.outlinks)
+        page = self.update_page(u'[[="Article"]]\n[[=schema:"Article"]]')
+        self.assertEqual({}, page.outlinks)
 
     def test_do_not_display_restricted_links(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'.read a@x.com\n[[B]]', 0, dont_defer=True)
-
-        a = WikiPage.get_by_title(u'A')
-        b = WikiPage.get_by_title(u'B')
-
+        a = self.update_page(u'.read a@x.com\n[[B]]', u'A')
         self.assertEqual({}, a.inlinks)
         self.assertEqual({u'Article/relatedTo': [u'B']}, a.outlinks)
 
+        b = WikiPage.get_by_title(u'B')
         self.assertEqual(None, b.updated_at)
         self.assertEqual({}, b.inlinks)
         self.assertEqual({}, b.outlinks)
 
     def test_get_outlinks(self):
-        page = WikiPage.get_by_title(u'Test')
-        page.update_content(u'[[A]], [[A]], [[Hello World]]', 0, dont_defer=True)
-        links = page.outlinks
-        self.assertEquals({u'Article/relatedTo': [u'A', u'Hello World']}, links)
+        page = self.update_page(u'[[A]], [[A]], [[Hello World]]')
+        self.assertEquals({u'Article/relatedTo': [u'A', u'Hello World']}, page.outlinks)
 
     def test_rel(self):
-        WikiPage.get_by_title(u'A').update_content(u'.schema Person\n[[birthDate::1979]]', 0, dont_defer=True)
-        a = WikiPage.get_by_title(u'A')
+        page = self.update_page(u'.schema Person\n[[birthDate::1979]]', u'A')
         year = WikiPage.get_by_title(u'1979')
-        self.assertEqual({u'Person/birthDate': [u'1979']}, a.outlinks)
+        self.assertEqual({u'Person/birthDate': [u'1979']}, page.outlinks)
         self.assertEqual({u'Person/birthDate': [u'A']}, year.inlinks)
 
     def test_update_rel(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'.schema Person\n[[birthDate::1979]]', 1, dont_defer=True)
-        a = WikiPage.get_by_title(u'A')
+        self.update_page(u'[[1979]]', u'A')
+        self.update_page(u'.schema Person\n[[birthDate::1979]]', u'A')
+
+        page = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
-        self.assertEqual({u'Person/birthDate': [u'1979']}, a.outlinks)
+        self.assertEqual({u'Person/birthDate': [u'1979']}, page.outlinks)
         self.assertEqual({u'Person/birthDate': [u'A']}, year.inlinks)
 
     def test_add_schema(self):
-        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'.schema Book\n[[1979]]', 1, dont_defer=True)
+        self.update_page(u'[[1979]]', u'A')
+        self.update_page(u'.schema Book\n[[1979]]', u'A')
 
-        a = WikiPage.get_by_title(u'A')
+        page = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
-        self.assertEqual({u'Book/relatedTo': [u'1979']}, a.outlinks)
+        self.assertEqual({u'Book/relatedTo': [u'1979']}, page.outlinks)
         self.assertEqual({u'Book/relatedTo': [u'A']}, year.inlinks)
 
     def test_change_schema(self):
-        WikiPage.get_by_title(u'A').update_content(u'.schema Code\n[[1979]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'.schema Book\n[[1979]]', 1, dont_defer=True)
+        self.update_page(u'.schema Code\n[[1979]]', u'A')
+        self.update_page(u'.schema Book\n[[1979]]', u'A')
 
-        a = WikiPage.get_by_title(u'A')
+        page = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
-        self.assertEqual({u'Book/relatedTo': [u'1979']}, a.outlinks)
+        self.assertEqual({u'Book/relatedTo': [u'1979']}, page.outlinks)
         self.assertEqual({u'Book/relatedTo': [u'A']}, year.inlinks)
 
     def test_remove_schema(self):
-        WikiPage.get_by_title(u'A').update_content(u'.schema Code\n[[1979]]', 0, dont_defer=True)
-        WikiPage.get_by_title(u'A').update_content(u'[[1979]]', 1, dont_defer=True)
+        self.update_page(u'.schema Code\n[[1979]]', u'A')
+        self.update_page(u'[[1979]]', u'A')
 
-        a = WikiPage.get_by_title(u'A')
+        page = WikiPage.get_by_title(u'A')
         year = WikiPage.get_by_title(u'1979')
-        self.assertEqual({u'Article/relatedTo': [u'1979']}, a.outlinks)
+        self.assertEqual({u'Article/relatedTo': [u'1979']}, page.outlinks)
         self.assertEqual({u'Article/relatedTo': [u'A']}, year.inlinks)
 
-    def test_unknown_schema(self):
-        page = WikiPage.get_by_title(u'A')
-        self.assertRaises(ValueError, page.update_content, u'.schema WhatTheHell\n[[1979]]', 0)
-
     def test_link_scoretable(self):
-        page = WikiPage.get_by_title(u'A')
-
         # create outlink
-        page.update_content(u'[[B]]', 0, dont_defer=True)
+        a = self.update_page(u'[[B]]', u'A')
 
         # create related link
-        page.related_links = {u'D': 0.0}
-        page.put()
+        a.related_links = {u'D': 0.0}
+        a.put()
 
         # create inlink
-        WikiPage.get_by_title(u'C').update_content(u'[[A]]', 0, dont_defer=True)
+        self.update_page(u'[[A]]', u'C')
 
         scoretable = WikiPage.get_by_title(u'A').link_scoretable
         self.assertEqual([u'C', u'B', u'D'], scoretable.keys())
 
     def test_link_in_yaml_schema_block(self):
-        page = WikiPage.get_by_title(u'A')
-        page.update_content(u'.schema Book\n    #!yaml/schema\n    author: Richard Dawkins\n', 0, dont_defer=True)
-
-        page = WikiPage.get_by_title(u'A')
+        page = self.update_page(u'.schema Book\n    #!yaml/schema\n    author: Richard Dawkins\n', u'A')
         self.assertEqual({u'Book/author': [u'Richard Dawkins']}, page.outlinks)
-
         rd = WikiPage.get_by_title(u'Richard Dawkins')
         self.assertEqual({u'Book/author': [u'A']}, rd.inlinks)
 
     def test_compare_yaml_and_embedded_data(self):
-        page1 = WikiPage.get_by_title(u'A')
-        page1.update_content(u'.schema Book\n    #!yaml/schema\n    datePublished: "1979-03-01"\n', 0)
-        page2 = WikiPage.get_by_title(u'B')
-        page2.update_content(u'.schema Book\n\n[[datePublished::1979-03-01]]', 0)
-
+        page1 = self.update_page(u'.schema Book\n    #!yaml/schema\n    datePublished: "1979-03-01"\n', u'A')
+        page2 = self.update_page(u'.schema Book\n\n[[datePublished::1979-03-01]]', u'B')
         self.assertEqual(page1.data['datePublished'], page2.data['datePublished'])
         self.assertEqual(page1.outlinks, page2.outlinks)
 
-    def test_update_link_in_yaml_schema_block(self):
-        page = WikiPage.get_by_title(u'A')
-        page.update_content(u'.schema Book\n    #!yaml/schema\n    author: Richard Dawkins\n', 0, dont_defer=True)
-        page.update_content(u'.schema Book\n    #!yaml/schema\n    author: Edward Wilson\n', 1, dont_defer=True)
-
-        page = WikiPage.get_by_title(u'A')
-        self.assertEqual({u'Book/author': [u'Edward Wilson']}, page.outlinks)
-
-        rd = WikiPage.get_by_title(u'Richard Dawkins')
-        self.assertEqual({}, rd.inlinks)
-
-        ew = WikiPage.get_by_title(u'Edward Wilson')
-        self.assertEqual({u'Book/author': [u'A']}, ew.inlinks)
-
-    def test_should_not_treat_isbn_in_schema_block_as_a_link(self):
-        page = WikiPage.get_by_title(u'A')
-        page.update_content(u'.schema Book\n    #!yaml/schema\n    isbn: "1234567890"\n', 0)
-
-        page = WikiPage.get_by_title(u'A')
-        self.assertEqual({}, page.outlinks)
+        year = WikiPage.get_by_title(u'1979')
+        self.assertEqual({u'Book/datePublished': [u'A', u'B']}, year.inlinks)
 
 
-class WikiPageHashbang(AppEngineTestCase):
+class HashbangTest(AppEngineTestCase):
     def setUp(self):
-        super(WikiPageHashbang, self).setUp()
+        super(HashbangTest, self).setUp()
 
     def test_no_hashbang(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'    print 1', 0)
-        self.assertEqual([], a.hashbangs)
+        page = self.update_page(u'    print 1')
+        self.assertEqual([], page.hashbangs)
 
     def test_single_hashbang(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'    #!python\n    print 1', 0)
-        self.assertEqual(['python'], a.hashbangs)
+        page = self.update_page(u'    #!python\n    print 1')
+        self.assertEqual(['python'], page.hashbangs)
 
     def test_multiple_hashbang(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'    #!python\n    print 1\n\n2\n\n    #!java\n    ;', 0)
-        self.assertEqual(['python', 'java'], a.hashbangs)
+        page = self.update_page(u'    #!python\n    print 1\n\n2\n\n    #!java\n    ;')
+        self.assertEqual(['python', 'java'], page.hashbangs)
 
     def test_inline_hashbang(self):
-        a = WikiPage.get_by_title(u'A')
-        a.update_content(u'*   Hello ``#!dot/s;There``!', 0)
-        self.assertEqual(['dot/s'], a.hashbangs)
+        page = self.update_page(u'*   Hello ``#!dot/s;There``!')
+        self.assertEqual(['dot/s'], page.hashbangs)
 
 
-class WikiPageTitleGroupingTest(unittest.TestCase):
+class TitleGroupingTest(unittest.TestCase):
     def test_alphabet(self):
         actual = groupby([u'A1', u'a2', u'B'], title_grouper)
 
@@ -832,10 +676,9 @@ class PageOperationMixinTest(AppEngineTestCase):
     def setUp(self):
         super(PageOperationMixinTest, self).setUp()
 
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub X\nHello [[There]]', 0, u'', dont_defer=True)
-        page2 = WikiPage.get_by_title(u'Other')
-        page2.update_content(u'[[Hello]]', 0, u'', dont_defer=True)
+        self.update_page(u'.pub X\nHello [[There]]', u'Hello')
+        self.update_page(u'[[Hello]]', u'Other')
+
         self.page = WikiPage.get_by_title(u'Hello')
         self.revision = self.page.revisions.fetch()[0]
 

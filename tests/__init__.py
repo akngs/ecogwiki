@@ -42,3 +42,6 @@ class AppEngineTestCase(unittest.TestCase):
         page.update_content(content, page.revision, dont_defer=True)
         return page
 
+    def assertRenderedText(self, markdown, html):
+        page = self.update_page(markdown)
+        self.assertEqual(html, page.rendered_body)

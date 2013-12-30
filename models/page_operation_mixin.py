@@ -121,10 +121,7 @@ class PageOperationMixin(object):
         return rendered
 
     def _render_data_item(self, name, value):
-        if isinstance(value, schema.Property) and value.is_link():
-            return u'<span itemprop="%s">%s</span>' % (name, value.render_link())
-        else:
-            return u'<span itemprop="%s">%s</span>' % (name, value.rawvalue)
+        return u'<span itemprop="%s">%s</span>' % (name, value.render())
 
     @property
     def paths(self):

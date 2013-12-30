@@ -248,18 +248,18 @@ class TypeConversionTest(AppEngineTestCase):
         data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'1234512345'})
         self.assertEqual('1234512345', data['isbn'].value)
         self.assertEqual(u'<a href="http://www.amazon.com/gp/product/1234512345" class="isbn" itemprop="isbn">1234512345</a>',
-                         data['isbn'].render_link())
+                         data['isbn'].render())
 
     def test_isbn_kr(self):
         data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'8912345123'})
         self.assertEqual('8912345123', data['isbn'].value)
         self.assertEqual(u'<a href="http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123" class="isbn" itemprop="isbn">8912345123</a>',
-                         data['isbn'].render_link())
+                         data['isbn'].render())
 
         data = schema.SchemaConverter.convert(u'Book', {u'isbn': u'9788912345123'})
         self.assertEqual('9788912345123', data['isbn'].value)
         self.assertEqual(u'<a href="http://www.aladin.co.kr/shop/wproduct.aspx?ISBN=9788912345123" class="isbn" itemprop="isbn">9788912345123</a>',
-                         data['isbn'].render_link())
+                         data['isbn'].render())
 
     def test_list_value(self):
         data = schema.SchemaConverter.convert(u'Book', {u'author': [u'AK', u'CK']})
