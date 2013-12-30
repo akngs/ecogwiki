@@ -166,7 +166,8 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'UnknownSchema', {})
 
     def test_invalid_property(self):
-        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'UnknownSchema', {u'unknownProp': u'Hello'})
+        data = schema.SchemaConverter.convert(u'Book', {u'unknownProp': u'Hello'})['unknownProp']
+        self.assertEqual(schema.InvalidProperty, type(data))
 
     def test_year_only_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979'})
@@ -201,9 +202,17 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertTrue(data.is_year_only())
 
     def test_invalid_date(self):
-        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'Ten years ago'})
-        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-13-05'})
-        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-05-40'})
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'Ten years ago'})['birthDate']
+        self.assertEqual(schema.InvalidProperty, type(data))
+        self.assertEqual(u'Ten years ago', data.rawvalue)
+
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-13-05'})['birthDate']
+        self.assertEqual(schema.InvalidProperty, type(data))
+        self.assertEqual(u'1979-13-05', data.rawvalue)
+
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-05-40'})['birthDate']
+        self.assertEqual(schema.InvalidProperty, type(data))
+        self.assertEqual(u'1979-05-40', data.rawvalue)
 
     def test_boolean(self):
         for l in [u'1', u'true', u'TRUE', u'yes', u'YES']:
@@ -222,8 +231,10 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertEqual(12345, data['fileSize'].value)
 
     def test_invalid_integer(self):
-        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'SoftwareApplication', {u'fileSize': u'1234.5'})
-        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'SoftwareApplication', {u'fileSize': u'Very small'})
+        data = schema.SchemaConverter.convert(u'SoftwareApplication', {u'fileSize': u'1234.5'})['fileSize']
+        self.assertEqual(schema.InvalidProperty, type(data))
+        data = schema.SchemaConverter.convert(u'SoftwareApplication', {u'fileSize': u'Very small'})['fileSize']
+        self.assertEqual(schema.InvalidProperty, type(data))
 
     def test_number(self):
         data = schema.SchemaConverter.convert(u'JobPosting', {u'baseSalary': u'1234.5'})
@@ -238,7 +249,8 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertEqual('http://x.com/path/y.jsp?q=2&q2=2', data['codeRepository'].value)
 
     def test_invalid_url(self):
-        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Code', {u'codeRepository': u'See http://github.org'})
+        data = schema.SchemaConverter.convert(u'Code', {u'codeRepository': u'See http://github.org'})['codeRepository']
+        self.assertEqual(schema.InvalidProperty, type(data))
 
     def test_thing(self):
         data = schema.SchemaConverter.convert(u'Code', {u'programmingLanguage': u'JavaScript'})

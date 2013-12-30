@@ -173,7 +173,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
         ## validate schema data
         new_md = PageOperationMixin.parse_metadata(new_body)
         try:
-            PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
+            data = PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
+            if any(type(value) == schema.InvalidProperty for value in data.values()):
+                raise ValueError('Invalid schema data')
         except ValueError as e:
             raise e
         except Exception:

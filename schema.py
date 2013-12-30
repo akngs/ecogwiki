@@ -2,7 +2,6 @@
 import os
 import re
 import json
-import schema
 import caching
 import urllib2
 from markdownext import md_wikilink
@@ -168,7 +167,7 @@ def to_html(o, key=None):
             return o
         else:
             return '<a href="/%s">%s</a>' % (urllib2.quote(o.replace(u' ', u'_').encode('utf-8')), o)
-    elif isinstance(o, schema.Property):
+    elif isinstance(o, Property):
         return o.render()
     else:
         return str(o)
@@ -220,10 +219,11 @@ class SchemaConverter(object):
 
         props = set(self._data.keys())
         unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'] + ['schema'])
-        if len(unknown_props) > 0:
-            raise ValueError('Unknown properties: %s' % ','.join(unknown_props))
+        known_props = props.difference(unknown_props)
 
-        return dict((prop, self.convert_prop(self._itemtype, prop, self._data[prop])) for prop in props)
+        knowns = [(prop, self.convert_prop(self._itemtype, prop, self._data[prop])) for prop in known_props]
+        unknowns = [(prop, InvalidProperty(self._itemtype, prop, self._data[prop])) for prop in unknown_props]
+        return dict(knowns + unknowns)
 
     def convert_prop(self, itemtype, key, value):
         if type(value) is list:
@@ -235,8 +235,7 @@ class SchemaConverter(object):
         if key == 'schema':
             return TextProperty(itemtype, 'Text', value)
 
-        type_names = get_property(key)['ranges']
-        for t in type_names:
+        for t in get_property(key)['ranges']:
             try:
                 if t == 'Boolean':
                     return BooleanProperty(itemtype, t, value)
@@ -262,7 +261,7 @@ class SchemaConverter(object):
                     return ThingProperty(itemtype, t, value)
             except ValueError:
                 pass
-        raise ValueError()
+        return InvalidProperty(itemtype, 'Invalid', value)
 
 
 class Property(object):
@@ -282,6 +281,17 @@ class Property(object):
 
     def render(self):
         return self.rawvalue
+
+
+class InvalidProperty(Property):
+    def __init__(self, itemtype, t, value):
+        super(InvalidProperty, self).__init__(itemtype, t, value)
+
+    def __eq__(self, other):
+        return False
+
+    def render(self):
+        return u'<span class="error">%s</span>' % self.rawvalue
 
 
 class ThingProperty(Property):
