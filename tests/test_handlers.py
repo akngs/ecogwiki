@@ -505,6 +505,14 @@ class PageResourceTest(AppEngineTestCase):
         self.browser.get('/New page?rev=list&_type=json')
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
 
+    def test_403(self):
+        # Create page
+        self.update_page(u'.read admin@x.com\nHello', u'Page')
+
+        self.browser.get('/Page')
+        self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
+        print self.browser.query(".//h1")
+
     def test_checkbox(self):
         self.login('ak@gmail.com', 'ak')
 

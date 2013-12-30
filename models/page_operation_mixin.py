@@ -247,13 +247,16 @@ class PageOperationMixin(object):
         # just cut-off
         return body[:max_length - 3].strip() + u'...'
 
-    def can_read(self, user, default_acl=None):
+    def can_read(self, user, default_acl=None, new_read_acl=None, new_write_acl=None):
         if default_acl is None:
             default_acl = main.DEFAULT_CONFIG['service']['default_permissions']
 
-        acl = self.acl_read.split(',') if self.acl_read else []
+        acl_read = new_read_acl or self.acl_read
+        acl_write = new_write_acl or self.acl_write
+
+        acl = acl_read.split(',') if acl_read else []
         acl = acl or default_acl['read']
-        acl_write = self.acl_write.split(',') if self.acl_write else []
+        acl_write = acl_write.split(',') if acl_write else []
         acl_write = acl_write or default_acl['write']
 
         if u'all' in acl or len(acl) == 0:
@@ -267,14 +270,16 @@ class PageOperationMixin(object):
         else:
             return False
 
-    def can_write(self, user, default_acl=None):
+    def can_write(self, user, default_acl=None, new_read_acl=None, new_write_acl=None):
         if default_acl is None:
             default_acl = main.DEFAULT_CONFIG['service']['default_permissions']
 
-        acl = self.acl_write.split(',') if self.acl_write else []
+        acl_write = new_write_acl or self.acl_write
+
+        acl = acl_write.split(',') if acl_write else []
         acl = acl or default_acl['write']
 
-        if (not self.can_read(user, default_acl)) and (user is None or user.email() not in acl):
+        if (not self.can_read(user, default_acl, new_read_acl, new_write_acl)) and (user is None or user.email() not in acl):
             return False
         elif 'all' in acl:
             return True

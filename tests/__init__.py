@@ -39,7 +39,7 @@ class AppEngineTestCase(unittest.TestCase):
         if title is None:
             title = u'Temp_%d' % int(random.random() * 10000000)
         page = WikiPage.get_by_title(title)
-        page.update_content(content, page.revision, dont_defer=True)
+        page.update_content(content, page.revision, user=self.get_cur_user(), dont_defer=True)
         return page
 
     def assertRenderedText(self, markdown, html):
