@@ -270,20 +270,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
                                    acl_read=self.acl_read, acl_write=self.acl_write)
             rev.put()
 
-        # deferred update schema data index
-        new_data = self.data
-        if dont_defer:
-            self.update_data_index(old_data, new_data)
-        else:
-            deferred.defer(self.update_data_index, old_data, new_data)
-
-        # update inlinks and outlinks
+        # update inlinks, outlinks and schema data index
         old_redir = old_md.get('redirect')
-        new_redir = new_md.get('redirect')
         if dont_defer:
-            self.update_links(old_redir, new_redir)
+            self.update_links_and_data(old_redir, old_data)
         else:
-            deferred.defer(self.update_links, old_redir, new_redir)
+            deferred.defer(self.update_links_and_data, old_redir, old_data)
 
         # delete config and title cache
         if self.title == '.config':
@@ -303,27 +295,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
         entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in WikiPage._data_as_pairs(data)]
         ndb.put_multi(entities)
 
-    def update_data_index(self, old_data, new_data):
-        old_pairs = WikiPage._data_as_pairs(old_data)
-        new_pairs = WikiPage._data_as_pairs(new_data)
+    def update_links_and_data(self, old_redir, old_data):
+        self.update_links(old_redir)
+        self.update_data_index(old_data)
 
-        deletes = old_pairs.difference(new_pairs)
-        inserts = new_pairs.difference(old_pairs)
-
-        # delete
-        queries = [SchemaDataIndex.query(SchemaDataIndex.title == self.title, SchemaDataIndex.name == name, SchemaDataIndex.value == (v.rawvalue if isinstance(v, schema.Property) else v))
-                   for name, v in deletes]
-        entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
-        keys = [e.key for e in entities]
-        ndb.delete_multi(keys)
-
-        # insert
-        entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in inserts]
-        ndb.put_multi(entities)
-
-    def update_links(self, old_redir, new_redir):
+    def update_links(self, old_redir):
         """Updates outlinks of this page and inlinks of target pages"""
         # 1. process "redirect" metadata
+        new_redir = self.metadata.get('redirect')
         if old_redir != new_redir:
             if old_redir is not None:
                 source = WikiPage.get_by_title(old_redir, follow_redirect=True)
@@ -430,6 +409,27 @@ class WikiPage(ndb.Model, PageOperationMixin):
         for rel in self.outlinks.keys():
             self.outlinks[rel].sort()
         self.put()
+
+    def update_data_index(self, old_data):
+        caching.del_data(self.title)
+        new_data = self.data
+
+        old_pairs = WikiPage._data_as_pairs(old_data)
+        new_pairs = WikiPage._data_as_pairs(new_data)
+
+        deletes = old_pairs.difference(new_pairs)
+        inserts = new_pairs.difference(old_pairs)
+
+        # delete
+        queries = [SchemaDataIndex.query(SchemaDataIndex.title == self.title, SchemaDataIndex.name == name, SchemaDataIndex.value == (v.rawvalue if isinstance(v, schema.Property) else v))
+                   for name, v in deletes]
+        entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
+        keys = [e.key for e in entities]
+        ndb.delete_multi(keys)
+
+        # insert
+        entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in inserts]
+        ndb.put_multi(entities)
 
     def _publish(self, title, save):
         if self.published_at is not None and self.published_to == title:

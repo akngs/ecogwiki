@@ -154,23 +154,7 @@ class PageOperationMixin(object):
 
     @property
     def data(self):
-        data = PageOperationMixin.parse_data(self.title, self.itemtype, self.body)
-
-        for rel, links in self.inlinks.items():
-            if not rel.endswith('/relatedTo'):
-                continue
-            if 'inlinks' not in data:
-                data['inlinks'] = []
-            data['inlinks'] += links
-
-        for rel, links in self.outlinks.items():
-            if not rel.endswith('/relatedTo'):
-                continue
-            if 'outlinks' not in data:
-                data['outlinks'] = []
-            data['outlinks'] += links
-
-        return data
+        return PageOperationMixin.parse_data(self.title, self.itemtype, self.body)
 
     @property
     def rawdata(self):

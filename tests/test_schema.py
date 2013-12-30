@@ -103,13 +103,6 @@ class EmbeddedSchemaDataTest(AppEngineTestCase):
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
         self.assertEqual([u'AK', u'TK'], [v.rawvalue for v in page.data['author']])
 
-    def test_normal_links(self):
-        page_a = self.update_page(u'[[B]]', u'A')
-        page_b = WikiPage.get_by_title(u'B')
-
-        self.assertEqual([u'A'], page_b.data['inlinks'])
-        self.assertEqual([u'B'], page_a.data['outlinks'])
-
 
 class YamlSchemaDataTest(AppEngineTestCase):
     def setUp(self):
