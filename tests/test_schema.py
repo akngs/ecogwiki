@@ -185,6 +185,21 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertEqual(15, data['birthDate'].day)
         self.assertFalse(data['birthDate'].is_year_only())
 
+    def test_partial_date(self):
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979'})['birthDate']
+        self.assertEqual(1979, data.year)
+        self.assertTrue(data.is_year_only())
+
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-03-??'})['birthDate']
+        self.assertEqual(1979, data.year)
+        self.assertEqual(3, data.month)
+        self.assertEqual(1, data.day)
+        self.assertFalse(data.is_year_only())
+
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-??-??'})['birthDate']
+        self.assertEqual(1979, data.year)
+        self.assertTrue(data.is_year_only())
+
     def test_invalid_date(self):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'Ten years ago'})
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Person', {u'birthDate': u'1979-13-05'})

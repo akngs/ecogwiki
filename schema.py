@@ -430,11 +430,17 @@ class DateProperty(TypeProperty):
             raise ValueError('Invalid value: %s' % value)
         self.year = int(m.group('y'))
 
-        self.month = int(m.group('m')) if m.group('m') else None
+        if m.group('m') == u'??':
+            self.month = None
+        else:
+            self.month = int(m.group('m')) if m.group('m') else None
         if self.month is not None and self.month > 12:
             raise ValueError('Invalid month: %d' % self.month)
 
-        self.day = int(m.group('d')) if m.group('d') else None
+        if m.group('d') == u'??':
+            self.day = 1 if self.month is not None else None
+        else:
+            self.day = int(m.group('d')) if m.group('d') else None
         if self.day is not None and self.day > 31:
             raise ValueError('Invalid day: %d' % self.day)
 
