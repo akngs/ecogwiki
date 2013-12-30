@@ -382,7 +382,7 @@ class SearchResultResource(Resource):
         else:
             return {
                 'query': query,
-                'page': WikiPage.get_by_path(query),
+                'page': WikiPage.get_by_title(query),
             }
 
     def get(self, head):
