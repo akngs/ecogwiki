@@ -126,7 +126,7 @@ class PageResource(PageLikeResource):
         page = self.load()
 
         if not page.can_read(self.user):
-            self._403(head, page)
+            self._403(page, head)
             return
 
         if get_restype(self.req, 'html') == 'html':
