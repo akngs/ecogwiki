@@ -66,6 +66,7 @@ class WikiqueryParserTest(unittest.TestCase):
 class WikiqueryEvaluationTest(AppEngineTestCase):
     def setUp(self):
         super(WikiqueryEvaluationTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
 
         self.update_page(u'.schema Book\n[[author::Daniel Dennett]] and [[author::Douglas Hofstadter]]\n[[datePublished::1982]]', u'The Mind\'s I')
         self.update_page(u'.schema Book\n{{author::Douglas Hofstadter}}\n[[datePublished::1979]]', u'GEB')
@@ -114,6 +115,7 @@ class WikiqueryEvaluationTest(AppEngineTestCase):
 class WikiqueryAclEvaluationTest(AppEngineTestCase):
     def setUp(self):
         super(WikiqueryAclEvaluationTest, self).setUp()
+        self.login('a@x.com', 'ak')
         self.update_page(u'.schema Book\n.read all\nHello', u'A')
         self.update_page(u'.schema Book\n.read a@x.com\nThere', u'B')
 

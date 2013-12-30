@@ -300,7 +300,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # insert
         data = self.data
-        entities = [SchemaDataIndex(title=self.title, name=name, value=value.rawvalue) for name, value in WikiPage._data_as_pairs(data)]
+        entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in WikiPage._data_as_pairs(data)]
         ndb.put_multi(entities)
 
     def update_data_index(self, old_data, new_data):
@@ -311,14 +311,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
         inserts = new_pairs.difference(old_pairs)
 
         # delete
-        queries = [SchemaDataIndex.query(SchemaDataIndex.title == self.title, SchemaDataIndex.name == name, SchemaDataIndex.value == value.rawvalue)
-                   for name, value in deletes]
+        queries = [SchemaDataIndex.query(SchemaDataIndex.title == self.title, SchemaDataIndex.name == name, SchemaDataIndex.value == (v.rawvalue if isinstance(v, schema.Property) else v))
+                   for name, v in deletes]
         entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
         keys = [e.key for e in entities]
         ndb.delete_multi(keys)
 
         # insert
-        entities = [SchemaDataIndex(title=self.title, name=name, value=value.rawvalue) for name, value in inserts]
+        entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in inserts]
         ndb.put_multi(entities)
 
     def update_links(self, old_redir, new_redir):
@@ -542,7 +542,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def _schema_item_to_links(self, name, value):
         if isinstance(value, schema.Property) and value.is_wikilink():
             return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value.rawvalue))
-        elif type(value) == str:
+        elif type(value) == str or type(value) == unicode:
             return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value))
         else:
             return {}

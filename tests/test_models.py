@@ -9,24 +9,28 @@ from models import md, WikiPage, UserPreferences, title_grouper, ConflictError
 
 
 class PartialUpdateTest(AppEngineTestCase):
+    def setUp(self):
+        super(PartialUpdateTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_check_checkbox(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'[ ] Item A\n[x] Item B', 0)
-        page.update_content(u'1', 1, partial='checkbox[0]')
+        page.update_content(u'[ ] Item A\n[x] Item B', 0, user=self.get_cur_user())
+        page.update_content(u'1', 1, partial='checkbox[0]', user=self.get_cur_user())
 
         self.assertEqual(u'[x] Item A\n[x] Item B', page.body)
         self.assertEqual(2, page.revision)
         
-        page.update_content(u'0', 1, partial='checkbox[1]')
+        page.update_content(u'0', 1, partial='checkbox[1]', user=self.get_cur_user())
         self.assertEqual(u'[x] Item A\n[ ] Item B', page.body)
         self.assertEqual(3, page.revision)
 
-    def test_check_acl(self):
+    def test_should_preserve_metadata_after_update(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.read test@example.com\n.write test@example.com\n[ ] Item A', 0)
-        page.update_content(u'1', 1, partial='checkbox[0]')
+        page.update_content(u'.pub\n[ ] Item A', 0, user=self.get_cur_user())
+        page.update_content(u'1', 1, partial='checkbox[0]', user=self.get_cur_user())
         self.assertEqual(2, page.revision)
-        self.assertEqual(u'.read test@example.com\n.write test@example.com\n[x] Item A', page.body)        
+        self.assertEqual(u'.pub\n[x] Item A', page.body)
 
 
 class PageUpdateTest(AppEngineTestCase):
@@ -204,6 +208,10 @@ class WikiLinkParserTest(unittest.TestCase):
 
 
 class RenderingTest(AppEngineTestCase):
+    def setUp(self):
+        super(RenderingTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_embedded_image_in_p(self):
         self.assertRenderedText(u'![Test](http://x.com/x.jpg)',
                                 u'<p class="img-container"><img alt="Test" src="http://x.com/x.jpg"></p>')
@@ -228,6 +236,10 @@ class RenderingTest(AppEngineTestCase):
 
 
 class WikilinkRenderingTest(AppEngineTestCase):
+    def setUp(self):
+        super(WikilinkRenderingTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_plain(self):
         self.assertRenderedText(u'[[heyyou]]', u'<p><a class="wikipage" href="/heyyou">heyyou</a></p>')
 
@@ -331,6 +343,7 @@ class YamlParserTest(AppEngineTestCase):
 class GetConfigTest(AppEngineTestCase):
     def setUp(self):
         super(GetConfigTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
         self.config_page = WikiPage.get_by_title('.config')
         self.config_page.update_content(u'''
           admin:
@@ -339,11 +352,11 @@ class GetConfigTest(AppEngineTestCase):
             default_permissions:
               read: [all]
               write: [login]
-        ''', 0)
+        ''', 0, user=self.get_cur_user())
 
     def test_empty_config_page(self):
         config_page = WikiPage.get_by_title('.config')
-        config_page.update_content('', 1)
+        config_page.update_content('', 1, user=self.get_cur_user())
 
         config = WikiPage.get_config()
         perm = config['service']['default_permissions']
@@ -360,6 +373,10 @@ class GetConfigTest(AppEngineTestCase):
 
 
 class RelatedPageUpdatingTest(AppEngineTestCase):
+    def setUp(self):
+        super(RelatedPageUpdatingTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_update_related_links(self):
         page = self.update_page(u'[[B]]', u'A')
         self.update_page(u'[[C]]', u'B')
@@ -418,6 +435,10 @@ class SimilarTitlesTest(AppEngineTestCase):
 
 
 class DescriptionTest(AppEngineTestCase):
+    def setUp(self):
+        super(DescriptionTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_try_newline(self):
         self.assertEqual(u'Hello', self.update_page(u'Hello\nWorld').make_description(20))
 
@@ -478,6 +499,10 @@ class SpecialTitlesTest(AppEngineTestCase):
 
 
 class RedirectionTest(AppEngineTestCase):
+    def setUp(self):
+        super(RedirectionTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_adding_redirect_should_change_inout_links(self):
         self.update_page(u'[[B]]', u'A')
         self.update_page(u'.redirect C', u'B')
@@ -536,6 +561,10 @@ class RedirectionTest(AppEngineTestCase):
 
 
 class LinkTest(AppEngineTestCase):
+    def setUp(self):
+        super(LinkTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_nonexisting_page(self):
         a = WikiPage.get_by_title(u'A')
         self.assertEqual({}, a.inlinks)
@@ -561,7 +590,7 @@ class LinkTest(AppEngineTestCase):
         self.assertEqual({}, page.outlinks)
 
     def test_do_not_display_restricted_links(self):
-        a = self.update_page(u'.read a@x.com\n[[B]]', u'A')
+        a = self.update_page(u'.read ak@gmail.com\n[[B]]', u'A')
         self.assertEqual({}, a.inlinks)
         self.assertEqual({u'Article/relatedTo': [u'B']}, a.outlinks)
 
@@ -649,6 +678,7 @@ class LinkTest(AppEngineTestCase):
 class HashbangTest(AppEngineTestCase):
     def setUp(self):
         super(HashbangTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
 
     def test_no_hashbang(self):
         page = self.update_page(u'    print 1')
@@ -694,6 +724,7 @@ class TitleGroupingTest(unittest.TestCase):
 class PageOperationMixinTest(AppEngineTestCase):
     def setUp(self):
         super(PageOperationMixinTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
 
         self.update_page(u'.pub X\nHello [[There]]', u'Hello')
         self.update_page(u'[[Hello]]', u'Other')
@@ -771,11 +802,10 @@ class UserPreferencesTest(AppEngineTestCase):
 class WikiPageDeleteTest(AppEngineTestCase):
     def setUp(self):
         super(WikiPageDeleteTest, self).setUp()
+        self.login('a@x.com', 'a')
 
-        self.pagea = WikiPage.get_by_title(u'A')
-        self.pagea.update_content(u'Hello [[B]]', 0, dont_defer=True)
-        self.pageb = WikiPage.get_by_title(u'B')
-        self.pageb.update_content(u'Hello [[A]]', 0, dont_defer=True)
+        self.update_page(u'Hello [[B]]', u'A')
+        self.update_page(u'Hello [[A]]', u'B')
 
         # reload
         self.pagea = WikiPage.get_by_title(u'A')
@@ -821,11 +851,15 @@ class WikiPageDeleteTest(AppEngineTestCase):
 
         self.pagea.delete(users.get_current_user())
         self.pagea = WikiPage.get_by_title(u'A')
-        self.pagea.update_content(u'Hello', 0)
+        self.pagea.update_content(u'Hello', 0, user=self.get_cur_user())
         self.assertEquals(1, self.pagea.revision)
 
 
 class WikiPageHierarchyTest(AppEngineTestCase):
+    def setUp(self):
+        super(WikiPageHierarchyTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_no_hierarchy(self):
         page = WikiPage.get_by_title(u'GEB')
         self.assertEqual(
@@ -854,8 +888,9 @@ class WikiPageHierarchyTest(AppEngineTestCase):
 
 class WikiPageBugsTest(AppEngineTestCase):
     def test_remove_acl_and_link_at_once_caused_an_error(self):
+        self.login('ak@gmail.com', 'ak')
         try:
-            self.update_page(u'.read jania902@gmail.com\n[[B]]', u'A')
+            self.update_page(u'.read ak@gmail.com\n[[B]]', u'A')
             self.update_page(u'Hello', u'A')
         except AssertionError:
             self.fail()

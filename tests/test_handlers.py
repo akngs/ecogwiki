@@ -16,42 +16,41 @@ from tests.test_auth import OAuthStub
 class ContentTypeTest(AppEngineTestCase):
     def setUp(self):
         super(ContentTypeTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
         self.browser = Browser()
 
     def test_get_default_content_type(self):
-        p = WikiPage.get_by_title(u'Test')
-        p.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'Test')
         self.browser.get('/Test')
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_get_json_content_type(self):
-        p = WikiPage.get_by_title(u'Test')
-        p.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'Test')
         self.browser.get('/Test?_type=json')
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_get_custom_content_type(self):
-        p = WikiPage.get_by_title(u'Test')
-        p.update_content(u'.content-type text/plain\nHello', 0)
+        self.update_page(u'.content-type text/plain\nHello', u'Test')
         self.browser.get('/Test')
         self.assertEqual('text/plain; charset=utf-8', self.browser.res.headers['Content-type'])
         self.assertEqual('Hello', self.browser.res.body)
 
     def test_view_should_override_custom_content_type(self):
-        p = WikiPage.get_by_title(u'Test')
-        p.update_content(u'.content-type text/plain\nHello', 0)
+        self.update_page(u'.content-type text/plain\nHello', u'Test')
         self.browser.get('/Test?view=edit')
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_should_not_restrict_read_access_to_custom_content_type(self):
         p = WikiPage.get_by_title(u'Test')
-        self.assertRaises(ValueError, p.update_content, u'.read blah\n.content-type text/plain\nHello', 0)
+        self.assertRaises(ValueError, p.update_content, u'.read ak@gmail.com\n.content-type text/plain\nHello', 0)
 
 
 class PageHandlerTest(AppEngineTestCase):
     def setUp(self):
         super(PageHandlerTest, self).setUp()
         self.oauth_stub = OAuthStub(self.testbed)
+        self.login('ak@gmail.com', 'ak')
+
         self.fixtures = [
             [u'Home', u'Home'],
             [u'A', u'Goto [[Home]]'],
@@ -62,8 +61,7 @@ class PageHandlerTest(AppEngineTestCase):
         ]
 
         for title, body in self.fixtures:
-            page = WikiPage.get_by_title(title)
-            page.update_content(body, 0, None)
+            self.update_page(body, title)
 
         self.browser = Browser()
 
@@ -112,6 +110,7 @@ class PageHandlerTest(AppEngineTestCase):
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['Content-type'])
 
     def test_put_without_permission(self):
+        self.logout()
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.assertEqual(403, self.browser.res.status_code)
 
@@ -147,16 +146,13 @@ class PageHandlerTest(AppEngineTestCase):
                              link_texts)
 
     def test_redirect_metadata(self):
-        page = WikiPage.get_by_title(u'Hi')
-        page.update_content(u'.redirect Hello World', 0)
-
+        self.update_page(u'.redirect Hello World', u'Hi')
         self.browser.get('/Hi', follow_redir=False)
         self.assertEqual(303, self.browser.res.status_code)
         self.assertEqual('http://localhost/Hello_World',
                          self.browser.res.location)
 
     def test_delete_page_without_permission(self):
-        self.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
         self.browser.post('/New_page?_method=DELETE')
 
@@ -172,12 +168,13 @@ class RevisionTest(AppEngineTestCase):
     def setUp(self):
         super(RevisionTest, self).setUp()
         self.parser = html5parser.HTMLParser(strict=True)
+        self.login('ak@gmail.com', 'ak')
         self.browser = Browser()
 
     def test_rev(self):
         page = WikiPage.get_by_title(u'A')
-        page.update_content(u'Hello', 0)
-        page.update_content(u'Hello there', 1)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
+        page.update_content(u'Hello there', 1, user=self.get_cur_user())
 
         self.browser.get('/A?rev=1')
         self.assertEqual(200, self.browser.res.status_code)
@@ -190,8 +187,8 @@ class RevisionTest(AppEngineTestCase):
 
     def test_rev_param(self):
         page = WikiPage.get_by_title(u'A')
-        page.update_content(u'Hello', 0)
-        page.update_content(u'Hello there', 1)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
+        page.update_content(u'Hello there', 1, user=self.get_cur_user())
 
         self.browser.get('/A?_type=txt&rev=1')
         self.assertEqual(u'Hello', self.browser.res.body)
@@ -205,8 +202,8 @@ class RevisionTest(AppEngineTestCase):
     def test_rev_acl(self):
         self.login('a@x.com', 'a')
         page = WikiPage.get_by_title(u'A')
-        page.update_content(u'Hello', 0)
-        page.update_content(u'.read a@x.com\nHello there', 1)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
+        page.update_content(u'.read a@x.com\nHello there', 1, user=self.get_cur_user())
 
         self.browser.get('/A?_type=txt&rev=1')
         self.assertEqual(200, self.browser.res.status_code)
@@ -228,6 +225,7 @@ class HTML5ValidationTest(AppEngineTestCase):
         user_stub.SetOAuthUser(email=None)
 
         self.parser = html5parser.HTMLParser(strict=True)
+        self.login('ak@gmail.com', 'ak')
         self.browser = Browser()
 
         self.fixtures = [
@@ -240,9 +238,9 @@ class HTML5ValidationTest(AppEngineTestCase):
 
         for title, body in self.fixtures:
             page = WikiPage.get_by_title(title)
-            page.update_content(body, 0, None)
+            page.update_content(body, 0, None, user=self.get_cur_user())
             # update again to create revisions
-            page.update_content(body + u'!', 1, None)
+            page.update_content(body + u'!', 1, None, user=self.get_cur_user())
 
     def test_normal_pages(self):
         for title, _ in self.fixtures:
@@ -341,8 +339,7 @@ class PageResourceTest(AppEngineTestCase):
         self.login('ak@gmailcom', 'ak')
 
         # Create page
-        page = WikiPage.get_by_title(u'New page')
-        page.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'New page')
 
         # GET edit form of "New page"
         self.browser.get('/New_page?view=edit&body=some%20pre%20value')
@@ -353,8 +350,7 @@ class PageResourceTest(AppEngineTestCase):
         self.login('ak@gmail.com', 'ak')
 
         # Create page
-        page = WikiPage.get_by_title(u'New page')
-        page.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'New page')
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -374,8 +370,7 @@ class PageResourceTest(AppEngineTestCase):
         self.login('ak@gmail.com', 'ak')
 
         # Create page
-        page = WikiPage.get_by_title(u'New page')
-        page.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'New page')
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -411,8 +406,7 @@ class PageResourceTest(AppEngineTestCase):
         self.login('ak@gmail.com', 'ak')
 
         # Create page
-        page = WikiPage.get_by_title(u'New page')
-        page.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'New page')
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -448,8 +442,7 @@ class PageResourceTest(AppEngineTestCase):
         self.login('ak@gmail.com', 'ak', is_admin=True)
 
         # Create page
-        page = WikiPage.get_by_title(u'New page')
-        page.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'New page')
 
         # GET edit form of "New page"
         self.browser.get('/New_page')
@@ -488,9 +481,10 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual('http://localhost/Home?_type=txt', self.browser.res.headers['location'])
 
     def test_response_representations(self):
+        self.login('ak@gmail.com', 'ak')
+
         # Create page
-        page = WikiPage.get_by_title(u'New page')
-        page.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'New page')
 
         self.browser.get('/New page')
         self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
@@ -505,19 +499,9 @@ class PageResourceTest(AppEngineTestCase):
         self.browser.get('/New page?rev=list&_type=json')
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
 
-    def test_403(self):
-        # Create page
-        self.update_page(u'.read admin@x.com\nHello', u'Page')
-
-        self.browser.get('/Page')
-        self.assertEqual('text/html; charset=utf-8', self.browser.res.headers['content-type'])
-        print self.browser.query(".//h1")
-
     def test_checkbox(self):
         self.login('ak@gmail.com', 'ak')
-
-        page = WikiPage.get_by_title(u'New page')
-        page.update_content(u'[ ] Hello', 0)
+        self.update_page(u'[ ] Hello', u'New page')
 
         self.browser.post('/New page?_method=PUT&partial=checkbox[0]', 'body=1&revision=1')
         self.assertEqual(200, self.browser.res.status_code)

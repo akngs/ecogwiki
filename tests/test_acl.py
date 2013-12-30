@@ -13,6 +13,7 @@ class DefaultAclTest(AclTestCase):
     def setUp(self):
         super(DefaultAclTest, self).setUp()
 
+        self.login('user1@example.com', 'user1')
         self.page = self.update_page(u'Hello')
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
@@ -43,6 +44,7 @@ class PageLevelAclTest(AclTestCase):
     def setUp(self):
         super(PageLevelAclTest, self).setUp()
 
+        self.login('user1@example.com', 'user1')
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
         self.default = {'read': ['all'], 'write': ['login']}
@@ -74,7 +76,7 @@ class PageLevelAclTest(AclTestCase):
         self.assertAcl(True, True, page, self.user1, self.default)
 
     def test_read_specified_user_write_login(self):
-        page = self.update_page(u'.read user2@example.com\n.write login\nHello')
+        page = self.update_page(u'.read user1@example.com\n.write login\nHello')
         self.assertAcl(False, False, page, None, self.default)
-        self.assertAcl(False, False, page, self.user1, self.default)
-        self.assertAcl(True, True, page, self.user2, self.default)
+        self.assertAcl(True, True, page, self.user1, self.default)
+        self.assertAcl(False, False, page, self.user2, self.default)

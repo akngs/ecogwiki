@@ -7,10 +7,11 @@ from google.appengine.api import memcache
 class WikiPageUpdateTest(AppEngineTestCase):
     def setUp(self):
         super(WikiPageUpdateTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
 
     def test_rendered_body_should_be_cached(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
         self.assertIsNone(memcache.get(u'model\trendered_body\tHello'))
 
         _ = page.rendered_body
@@ -20,16 +21,16 @@ class WikiPageUpdateTest(AppEngineTestCase):
         memcache.set(u'model\trendered_body\tHello', u'value')
 
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello 2', 0)
+        page.update_content(u'Hello 2', 0, user=self.get_cur_user())
 
         self.assertIsNone(memcache.get(u'model\trendered_body\tHello'))
 
     def test_should_not_invalidate_cache_if_content_is_same(self):
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
 
         memcache.set(u'model\trendered_body\tHello', u'value')
-        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
 
         self.assertIsNotNone(memcache.get(u'model\trendered_body\tHello'))
 
@@ -43,7 +44,7 @@ class WikiPageUpdateTest(AppEngineTestCase):
 
         # invalidate cache by adding new page
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
         self.assertEqual(set(), memcache.get(cache_key))
 
         # populate cache again
@@ -52,5 +53,5 @@ class WikiPageUpdateTest(AppEngineTestCase):
 
         # Should not be invalidated because it's just an update
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello 2', 1)
+        page.update_content(u'Hello 2', 1, user=self.get_cur_user())
         self.assertIsNotNone(memcache.get(cache_key))

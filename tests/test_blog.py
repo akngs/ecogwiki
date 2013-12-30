@@ -4,6 +4,10 @@ from models import WikiPage
 
 
 class DefaultBlogPublishTest(AppEngineTestCase):
+    def setUp(self):
+        super(DefaultBlogPublishTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_first_publish(self):
         self.update_page(u'Hello', u'Hello')
         self.assertEqual(0, len(WikiPage.get_posts_of(None, 20)))
@@ -25,6 +29,7 @@ class DefaultBlogPublishTest(AppEngineTestCase):
 class DefaultBlogUnpublishTest(AppEngineTestCase):
     def setUp(self):
         super(DefaultBlogUnpublishTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
 
         self.update_page(u'.pub\nHello 1', u'Hello 1')
         self.update_page(u'.pub\nHello 2', u'Hello 2')
@@ -61,6 +66,10 @@ class DefaultBlogUnpublishTest(AppEngineTestCase):
 
 
 class CustomBlogTest(AppEngineTestCase):
+    def setUp(self):
+        super(CustomBlogTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
     def test_publish(self):
         page = self.update_page(u'.pub Posts\nHello')
         self.assertIsNotNone(page.published_at)
@@ -69,33 +78,30 @@ class CustomBlogTest(AppEngineTestCase):
 
     def test_specify_page_to_published_page(self):
         # .pub -> .pub BBS
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub\nHello', 0)
-        page.update_content(u'.pub BBS\nHello', 1)
+        self.update_page(u'.pub\nHello', u'Hello')
+        page = self.update_page(u'.pub BBS\nHello', u'Hello')
+
         self.assertIsNotNone(page.published_at)
         self.assertEqual('BBS', page.published_to)
 
     def test_change_page_of_published_page(self):
         # .pub BBS1 -> .pub BBS2
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub BBS1\nHello', 0)
-        page.update_content(u'.pub BBS2\nHello', 1)
+        self.update_page(u'.pub BBS1\nHello', u'Hello')
+        page = self.update_page(u'.pub BBS2\nHello', u'Hello')
         self.assertIsNotNone(page.published_at)
         self.assertEqual('BBS2', page.published_to)
 
     def test_remove_page_of_published_page(self):
         # .pub BBS -> .pub
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub BBS\nHello', 0)
-        page.update_content(u'.pub\nHello', 1)
+        self.update_page(u'.pub BBS\nHello', u'Hello')
+        page = self.update_page(u'.pub\nHello', u'Hello')
         self.assertIsNotNone(page.published_at)
         self.assertEqual(None, page.published_to)
 
     def test_unpublish_published_page(self):
         # .pub BBS -> (null)
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub BBS\nHello', 0)
-        page.update_content(u'Hello', 1)
+        self.update_page(u'.pub BBS\nHello', u'Hello')
+        page = self.update_page(u'Hello', u'Hello')
         self.assertIsNone(page.published_at)
         self.assertEqual(None, page.published_to)
 
