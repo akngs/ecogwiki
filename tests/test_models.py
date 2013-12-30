@@ -21,6 +21,13 @@ class PartialUpdateTest(AppEngineTestCase):
         self.assertEqual(u'[x] Item A\n[ ] Item B', page.body)
         self.assertEqual(3, page.revision)
 
+    def test_check_acl(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'.read test@example.com\n.write test@example.com\n[ ] Item A', 0)
+        page.update_content(u'1', 1, partial='checkbox[0]')
+        self.assertEqual(2, page.revision)
+        self.assertEqual(u'.read test@example.com\n.write test@example.com\n[x] Item A', page.body)        
+
 
 class PageUpdateTest(AppEngineTestCase):
     def test_should_update_acls(self):

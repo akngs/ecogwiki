@@ -147,7 +147,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
             raise ValueError('Invalid partial expression: %s' % partial)
 
     def _update_content_checkbox(self, content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, exp):
-        cur_body = PageOperationMixin.remove_metadata(self.body).strip()
         cur_index = {'value': -1}
         index = int(re.match(ur'checkbox\[(\d+)]', exp).group(1))
 
@@ -158,7 +157,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             else:
                 return u'[x]' if content == u'1' else u'[ ]'
 
-        new_body = re.sub(md_checkbox.RE_CHECKBOX, replacer, cur_body)
+        new_body = re.sub(md_checkbox.RE_CHECKBOX, replacer, self.body)
 
         return self._update_content_all(new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
 
