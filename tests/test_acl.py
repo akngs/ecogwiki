@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-from models import WikiPage
 from tests import AppEngineTestCase
 from google.appengine.api import users
 
 
 class AclTestCase(AppEngineTestCase):
-    def setUp(self):
-        super(AclTestCase, self).setUp()
-
     def assertAcl(self, readable, writable, page, user, default_permission):
         self.assertEqual(readable, page.can_read(user, default_permission))
         self.assertEqual(writable, page.can_write(user, default_permission))
@@ -17,8 +13,7 @@ class DefaultAclTest(AclTestCase):
     def setUp(self):
         super(DefaultAclTest, self).setUp()
 
-        self.page = WikiPage.get_by_title(u'Hello')
-        self.page.update_content(u'Hello', 0)
+        self.page = self.update_page(u'Hello')
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
 
@@ -51,36 +46,35 @@ class PageLevelAclTest(AclTestCase):
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
         self.default = {'read': ['all'], 'write': ['login']}
-        self.page = WikiPage.get_by_title(u'Hello')
 
     def test_default(self):
-        self.page.update_content(u'Hello', 0)
-        self.assertAcl(True, False, self.page, None, self.default)
-        self.assertAcl(True, True, self.page, self.user1, self.default)
+        page = self.update_page(u'Hello')
+        self.assertAcl(True, False, page, None, self.default)
+        self.assertAcl(True, True, page, self.user1, self.default)
 
     def test_stricter_read(self):
-        self.page.update_content(u'.read login\nHello', 0)
-        self.assertAcl(False, False, self.page, None, self.default)
-        self.assertAcl(True, True, self.page, self.user1, self.default)
+        page = self.update_page(u'.read login\nHello')
+        self.assertAcl(False, False, page, None, self.default)
+        self.assertAcl(True, True, page, self.user1, self.default)
 
     def test_looser_write(self):
-        self.page.update_content(u'.write all\nHello', 0)
-        self.assertAcl(True, True, self.page, None, self.default)
-        self.assertAcl(True, True, self.page, self.user1, self.default)
+        page = self.update_page(u'.write all\nHello')
+        self.assertAcl(True, True, page, None, self.default)
+        self.assertAcl(True, True, page, self.user1, self.default)
 
     def test_different_read_and_write(self):
-        self.page.update_content(u'.write user1@example.com\n.read user2@example.com\nHello', 0)
-        self.assertAcl(False, False, self.page, None, self.default)
-        self.assertAcl(True, True, self.page, self.user1, self.default)
-        self.assertAcl(True, False, self.page, self.user2, self.default)
+        page = self.update_page(u'.write user1@example.com\n.read user2@example.com\nHello')
+        self.assertAcl(False, False, page, None, self.default)
+        self.assertAcl(True, True, page, self.user1, self.default)
+        self.assertAcl(True, False, page, self.user2, self.default)
 
     def test_read_login_write_all(self):
-        self.page.update_content(u'.read login\n.write all\nHello', 0)
-        self.assertAcl(False, False, self.page, None, self.default)
-        self.assertAcl(True, True, self.page, self.user1, self.default)
+        page = self.update_page(u'.read login\n.write all\nHello')
+        self.assertAcl(False, False, page, None, self.default)
+        self.assertAcl(True, True, page, self.user1, self.default)
 
     def test_read_specified_user_write_login(self):
-        self.page.update_content(u'.read user2@example.com\n.write login\nHello', 0)
-        self.assertAcl(False, False, self.page, None, self.default)
-        self.assertAcl(False, False, self.page, self.user1, self.default)
-        self.assertAcl(True, True, self.page, self.user2, self.default)
+        page = self.update_page(u'.read user2@example.com\n.write login\nHello')
+        self.assertAcl(False, False, page, None, self.default)
+        self.assertAcl(False, False, page, self.user1, self.default)
+        self.assertAcl(True, True, page, self.user2, self.default)

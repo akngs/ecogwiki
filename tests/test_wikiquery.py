@@ -8,12 +8,9 @@ from search import parse_wikiquery as p
 
 class WikiqueryParserTest(unittest.TestCase):
     def test_simplist_expression(self):
-        self.assertEqual([['name', 'A'], ['name']],
-                         p('name:"A" > name'))
-        self.assertEqual([['name', 'A'], ['name']],
-                         p('name:"A"'))
-        self.assertEqual([['name', 'A'], ['name']],
-                         p('"A"'))
+        self.assertEqual([['name', 'A'], ['name']], p('name:"A" > name'))
+        self.assertEqual([['name', 'A'], ['name']], p('name:"A"'))
+        self.assertEqual([['name', 'A'], ['name']], p('"A"'))
 
     def test_logical_expression(self):
         self.assertEqual([[['name', 'A'], '*', ['name', 'B']], ['name']],
@@ -26,8 +23,7 @@ class WikiqueryParserTest(unittest.TestCase):
                          p('("A" + "B") * "C"'))
 
     def test_attr_expression(self):
-        self.assertEqual([['name', 'A'], ['name', 'author']],
-                         p('name:"A" > name, author'))
+        self.assertEqual([['name', 'A'], ['name', 'author']], p('name:"A" > name, author'))
 
 
 #class WikiqueryNormalizerTest(unittest.TestCase):
@@ -71,15 +67,12 @@ class WikiqueryEvaluationTest(AppEngineTestCase):
     def setUp(self):
         super(WikiqueryEvaluationTest, self).setUp()
 
-        WikiPage.get_by_title(u'The Mind\'s I').update_content(u'.schema Book\n[[author::Daniel Dennett]] and [[author::Douglas Hofstadter]]\n[[datePublished::1982]]', 0, u'')
-        WikiPage.get_by_title(u'GEB').update_content(u'.schema Book\n{{author::Douglas Hofstadter}}\n[[datePublished::1979]]', 0, u'')
-        WikiPage.get_by_title(u'Douglas Hofstadter').update_content(u'.schema Person', 0, u'')
-        for page in WikiPage.query().fetch():
-            page.rebuild_data_index()
+        self.update_page(u'.schema Book\n[[author::Daniel Dennett]] and [[author::Douglas Hofstadter]]\n[[datePublished::1982]]', u'The Mind\'s I')
+        self.update_page(u'.schema Book\n{{author::Douglas Hofstadter}}\n[[datePublished::1979]]', u'GEB')
+        self.update_page(u'.schema Person', u'Douglas Hofstadter')
 
     def test_by_name(self):
-        self.assertEqual({u'name': u'GEB'},
-                         WikiPage.wikiquery(u'"GEB"'))
+        self.assertEqual({u'name': u'GEB'}, WikiPage.wikiquery(u'"GEB"'))
 
     def test_by_schema(self):
         self.assertEqual([{u'name': u'The Mind\'s I'}, {u'name': u'GEB'}],
@@ -121,22 +114,16 @@ class WikiqueryEvaluationTest(AppEngineTestCase):
 class WikiqueryAclEvaluationTest(AppEngineTestCase):
     def setUp(self):
         super(WikiqueryAclEvaluationTest, self).setUp()
-
-        WikiPage.get_by_title(u'A').update_content(u'.schema Book\n.read all\nHello', 0, u'')
-        WikiPage.get_by_title(u'B').update_content(u'.schema Book\n.read a@x.com\nThere', 0, u'')
-        for page in WikiPage.query().fetch():
-            page.rebuild_data_index()
+        self.update_page(u'.schema Book\n.read all\nHello', u'A')
+        self.update_page(u'.schema Book\n.read a@x.com\nThere', u'B')
 
     def test_anonymous(self):
-        self.assertEqual({u'name': u'A'},
-                         WikiPage.wikiquery(u'schema:"Book"'))
+        self.assertEqual({u'name': u'A'}, WikiPage.wikiquery(u'schema:"Book"'))
 
     def test_user_with_no_permission(self):
         user = users.User('a@y.com')
-        self.assertEqual({u'name': u'A'},
-                         WikiPage.wikiquery(u'schema:"Book"', user))
+        self.assertEqual({u'name': u'A'}, WikiPage.wikiquery(u'schema:"Book"', user))
 
     def test_user_with_permission(self):
         user = users.User('a@x.com')
-        self.assertEqual([{u'name': u'A'}, {u'name': u'B'}],
-                         WikiPage.wikiquery(u'schema:"Book"', user))
+        self.assertEqual([{u'name': u'A'}, {u'name': u'B'}], WikiPage.wikiquery(u'schema:"Book"', user))

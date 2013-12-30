@@ -264,6 +264,7 @@ class HTML5ValidationTest(AppEngineTestCase):
             self._validate('/sp.search?_type=json&q=%EA%B0%95', 'json')
 
             self._validate('/="Home"', 'html')
+            self._validate('/="%EA%B0%95"', 'html')
             self._validate('/="Home"?view=bodyonly', 'html')
             self._validate('/="Home"?_type=json', 'json')
 

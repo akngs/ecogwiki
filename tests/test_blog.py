@@ -4,29 +4,19 @@ from models import WikiPage
 
 
 class DefaultBlogPublishTest(AppEngineTestCase):
-    def setUp(self):
-        super(DefaultBlogPublishTest, self).setUp()
-
     def test_first_publish(self):
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0)
+        self.update_page(u'Hello', u'Hello')
         self.assertEqual(0, len(WikiPage.get_posts_of(None, 20)))
 
-        page.update_content(u'.pub\nHello', 1)
-
+        page = self.update_page(u'.pub\nHello', u'Hello')
         self.assertIsNotNone(page.published_at)
         self.assertIsNone(page.published_to)
         self.assertEqual(1, len(WikiPage.get_posts_of(None, 20)))
 
     def test_second_publish(self):
-        page1 = WikiPage.get_by_title(u'Hello 1')
-        page1.update_content(u'.pub\nHello 1', 0)
-
-        page2 = WikiPage.get_by_title(u'Hello 2')
-        page2.update_content(u'.pub\nHello 2', 0)
-
+        page1 = self.update_page(u'.pub\nHello 1')
+        page2 = self.update_page(u'.pub\nHello 2')
         posts = WikiPage.get_posts_of(None, 20)
-
         self.assertEqual(2, len(posts))
         self.assertEqual(page2.title, posts[1].newer_title)
         self.assertEqual(page1.title, posts[0].older_title)
@@ -36,61 +26,43 @@ class DefaultBlogUnpublishTest(AppEngineTestCase):
     def setUp(self):
         super(DefaultBlogUnpublishTest, self).setUp()
 
-        page1 = WikiPage.get_by_title(u'Hello 1')
-        page1.update_content(u'.pub\nHello 1', 0)
-
-        page2 = WikiPage.get_by_title(u'Hello 2')
-        page2.update_content(u'.pub\nHello 2', 0)
-
-        page3 = WikiPage.get_by_title(u'Hello 3')
-        page3.update_content(u'.pub\nHello 3', 0)
+        self.update_page(u'.pub\nHello 1', u'Hello 1')
+        self.update_page(u'.pub\nHello 2', u'Hello 2')
+        self.update_page(u'.pub\nHello 3', u'Hello 3')
 
     def test_unpublish_middle(self):
-        middle = WikiPage.get_by_title(u'Hello 2')
-        middle.update_content(u'Hello 2', 1)
+        self.update_page(u'Hello 2', u'Hello 2')
 
         newer, older = WikiPage.get_posts_of(None, 20)
-
         self.assertEqual(u'Hello 3', older.newer_title)
         self.assertEqual(u'Hello 1', newer.older_title)
 
     def test_unpublish_oldest(self):
-        oldest = WikiPage.get_by_title(u'Hello 1')
-        oldest.update_content(u'Hello 1', 1)
+        self.update_page(u'Hello 1', u'Hello 1')
 
         newer, older = WikiPage.get_posts_of(None, 20)
-
         self.assertEqual(u'Hello 3', older.newer_title)
         self.assertEqual(u'Hello 2', newer.older_title)
 
     def test_unpublish_newest(self):
-        newest = WikiPage.get_by_title(u'Hello 3')
-        newest.update_content(u'Hello 3', 1)
+        self.update_page(u'Hello 3', u'Hello 3')
 
         newer, older = WikiPage.get_posts_of(None, 20)
-
         self.assertEqual(u'Hello 2', older.newer_title)
         self.assertEqual(u'Hello 1', newer.older_title)
 
     def test_delete_published_page(self):
         self.login('a@x.com', 'a', is_admin=True)
-
-        middle = WikiPage.get_by_title(u'Hello 2')
-        middle.delete(self.get_cur_user())
+        WikiPage.get_by_title(u'Hello 2').delete(self.get_cur_user())
 
         newer, older = WikiPage.get_posts_of(None, 20)
-
         self.assertEqual(u'Hello 3', older.newer_title)
         self.assertEqual(u'Hello 1', newer.older_title)
 
 
 class CustomBlogTest(AppEngineTestCase):
-    def setUp(self):
-        super(CustomBlogTest, self).setUp()
-
     def test_publish(self):
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.pub Posts\nHello', 0)
+        page = self.update_page(u'.pub Posts\nHello')
         self.assertIsNotNone(page.published_at)
         self.assertEqual('Posts', page.published_to)
         self.assertEqual(1, len(WikiPage.get_posts_of('Posts', 20)))
@@ -127,26 +99,16 @@ class CustomBlogTest(AppEngineTestCase):
         self.assertIsNone(page.published_at)
         self.assertEqual(None, page.published_to)
 
+    def test_multiple_custom_blogs(self):
+        self.update_page(u'.pub B1', u'b1p1')
+        self.update_page(u'.pub B1', u'b1p2')
+        self.update_page(u'.pub B2', u'b2p1')
+        self.update_page(u'.pub B2', u'b2p2')
 
-class MultipleCustomBlogsTest(AppEngineTestCase):
-    def setUp(self):
-        super(MultipleCustomBlogsTest, self).setUp()
-
-        self.b1p1 = WikiPage.get_by_title(u'b1p1')
-        self.b1p1.update_content(u'.pub B1', 0)
-        self.b2p1 = WikiPage.get_by_title(u'b2p1')
-        self.b2p1.update_content(u'.pub B2', 0)
-        self.b1p2 = WikiPage.get_by_title(u'b1p2')
-        self.b1p2.update_content(u'.pub B1', 0)
-        self.b2p2 = WikiPage.get_by_title(u'b2p2')
-        self.b2p2.update_content(u'.pub B2', 0)
-
-    def test_older_newer_isolation(self):
         b1p1 = WikiPage.get_by_title(u'b1p1')
         b1p2 = WikiPage.get_by_title(u'b1p2')
         b2p1 = WikiPage.get_by_title(u'b2p1')
         b2p2 = WikiPage.get_by_title(u'b2p2')
-
         self.assertEqual('b1p2', b1p1.newer_title)
         self.assertEqual('b1p1', b1p2.older_title)
         self.assertEqual('b2p2', b2p1.newer_title)

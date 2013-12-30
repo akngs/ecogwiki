@@ -735,19 +735,6 @@ class PageOperationMixinTest(AppEngineTestCase):
         self.assertEqual(u'http://schema.org/Article', self.revision.itemtype_url)
 
 
-class WikiPageBugsTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPageBugsTest, self).setUp()
-
-    def test_remove_acl_and_link_at_once_caused_an_error(self):
-        try:
-            WikiPage.get_by_title(u'A').update_content(u'.read jania902@gmail.com\n'
-                                                       u'[[B]]', 0)
-            WikiPage.get_by_title(u'A').update_content(u'Hello', 1)
-        except AssertionError:
-            self.fail()
-
-
 class UserPreferencesTest(AppEngineTestCase):
     def setUp(self):
         super(UserPreferencesTest, self).setUp()
@@ -820,9 +807,6 @@ class WikiPageDeleteTest(AppEngineTestCase):
 
 
 class WikiPageHierarchyTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikiPageHierarchyTest, self).setUp()
-
     def test_no_hierarchy(self):
         page = WikiPage.get_by_title(u'GEB')
         self.assertEqual(
@@ -844,6 +828,15 @@ class WikiPageHierarchyTest(AppEngineTestCase):
         )
 
     def test_ancestors_should_be_regarded_as_outlinks(self):
-        page = WikiPage.get_by_title(u'GEB/Chapter 1/Memo')
-        page.update_content(u'Hello [[There]]', 0, dont_defer=True)
+        page = self.update_page(u'Hello [[There]]', u'GEB/Chapter 1/Memo')
         self.assertEqual([u'GEB', u'GEB/Chapter 1', u'There'], page.outlinks['Article/relatedTo'])
+        self.assertEqual({u'Article/relatedTo': [u'GEB/Chapter 1/Memo']}, WikiPage.get_by_title(u'GEB').inlinks)
+
+
+class WikiPageBugsTest(AppEngineTestCase):
+    def test_remove_acl_and_link_at_once_caused_an_error(self):
+        try:
+            self.update_page(u'.read jania902@gmail.com\n[[B]]', u'A')
+            self.update_page(u'Hello', u'A')
+        except AssertionError:
+            self.fail()
