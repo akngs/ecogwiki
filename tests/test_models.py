@@ -31,19 +31,20 @@ class PartialUpdateTest(AppEngineTestCase):
 
 class PageUpdateTest(AppEngineTestCase):
     def test_should_update_acls(self):
-        page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'.read test1\n.write test2, test3\nHello', 0)
+        self.login('ak', 'ak', True)
+        page = self.update_page(u'.read test1\n.write test2, test3\nHello')
         self.assertEqual(u'test1', page.acl_read)
         self.assertEqual(u'test2, test3', page.acl_write)
 
-        page.update_content(u'Hello', 1)
+        page = self.update_page(u'Hello')
         self.assertEqual(u'', page.acl_read)
         self.assertEqual(u'', page.acl_write)
 
     def test_should_create_revision(self):
+        self.login('ak', 'ak', False)
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0)
-        page.update_content(u'Hello 2', 1)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
+        page.update_content(u'Hello 2', 1, user=self.get_cur_user())
 
         revs = list(page.revisions)
         self.assertEqual(2, len(revs))
@@ -51,22 +52,24 @@ class PageUpdateTest(AppEngineTestCase):
         self.assertEqual(u'Hello 2', revs[1].body)
 
     def test_should_not_create_revision_if_content_is_not_changed(self):
+        self.login('ak', 'ak', False)
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'Hello', 0)
-        page.update_content(u'Hello', 1)
+        page.update_content(u'Hello', 0, user=self.get_cur_user())
+        page.update_content(u'Hello', 1, user=self.get_cur_user())
 
         revs = list(page.revisions)
         self.assertEqual(1, len(revs))
         self.assertEqual(u'Hello', revs[0].body)
 
     def test_automerge(self):
+        self.login('ak', 'ak', False)
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'A\nB\nC', 0)
+        page.update_content(u'A\nB\nC', 0, user=self.get_cur_user())
 
         # remove B
-        page.update_content(u'A\nC', 1)
+        page.update_content(u'A\nC', 1, user=self.get_cur_user())
         # append D
-        page.update_content(u'A\nB\nC\nD', 1)
+        page.update_content(u'A\nB\nC\nD', 1, user=self.get_cur_user())
 
         # should be merged
         page = WikiPage.get_by_title(u'Hello')
@@ -77,14 +80,15 @@ class PageUpdateTest(AppEngineTestCase):
         self.assertEqual(3, len(revs))
 
     def test_conflict(self):
+        self.login('ak', 'ak', False)
         page = WikiPage.get_by_title(u'Hello')
-        page.update_content(u'A\nB\nC', 0)
+        page.update_content(u'A\nB\nC', 0, user=self.get_cur_user())
 
         # update second line
-        page.update_content(u'A\nD\nC', 1)
+        page.update_content(u'A\nD\nC', 1, user=self.get_cur_user())
 
         # update second line concurrently
-        self.assertRaises(ConflictError, page.update_content, u'A\nE\nC', 1)
+        self.assertRaises(ConflictError, page.update_content, u'A\nE\nC', 1, user=self.get_cur_user())
 
         # page should not be updated
         page = WikiPage.get_by_title(u'Hello')
@@ -95,16 +99,24 @@ class PageUpdateTest(AppEngineTestCase):
         self.assertEqual(2, len(revs))
 
     def test_duplicated_headings(self):
+        self.login('ak', 'ak', False)
         page = WikiPage.get_by_title(u'Hello')
         self.assertRaises(ValueError, page.update_content, u'# A\n# A', 0)
 
     def test_malformed_yaml_schema(self):
+        self.login('ak', 'ak', False)
         page = WikiPage.get_by_title(u'Hello')
         self.assertRaises(ValueError, page.update_content, u'.schema Book\n\n    #!yaml/schema\n    y: [1, 2\n', 0)
 
     def test_invalid_yaml_schema(self):
+        self.login('ak', 'ak', False)
         page = WikiPage.get_by_title(u'Hello')
         self.assertRaises(ValueError, page.update_content, u'.schema Book\n\n    #!yaml/schema\n    y\n', 0)
+
+    def test_should_not_allow_self_revoking(self):
+        self.login('ak', 'ak', False)
+        self.update_page(u'Hello')
+        self.assertRaises(ValueError, self.update_page, u'.read admin@x.com\nHello')
 
 
 class MetadataParserTest(AppEngineTestCase):

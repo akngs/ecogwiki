@@ -112,15 +112,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
         self.body = body
         return super(WikiPage, self).rendered_body
 
-    def can_write(self, user, default_acl=None):
+    def can_write(self, user, default_acl=None, new_acl_read=None, new_acl_write=None):
         if default_acl is None:
             default_acl = WikiPage.get_default_permission()
-        return super(WikiPage, self).can_write(user, default_acl)
+        return super(WikiPage, self).can_write(user, default_acl, new_acl_read, new_acl_write)
 
-    def can_read(self, user, default_acl=None):
+    def can_read(self, user, default_acl=None, new_acl_read=None, new_acl_write=None):
         if default_acl is None:
             default_acl = WikiPage.get_default_permission()
-        return super(WikiPage, self).can_read(user, default_acl)
+        return super(WikiPage, self).can_read(user, default_acl, new_acl_read, new_acl_write)
 
     def delete(self, user=None):
         if not is_admin_user(user):
@@ -188,6 +188,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
                              'content.')
         if u'read' in new_md and new_md['content-type'] != 'text/x-markdown':
             raise ValueError('You cannot restrict read access of custom content-typed page.')
+
+        ## validate acl (prevent self-revoke)
+        new_acl_read = new_md.get('read', '')
+        new_acl_write = new_md.get('write', '')
+
+        if not self.can_read(user, None, new_acl_read, new_acl_write):
+            raise ValueError('Cannot restrict your permission')
+        if not self.can_write(user, None, new_acl_read, new_acl_write):
+            raise ValueError('Cannot restrict your permission')
 
         ## validate revision
         if self.revision < base_revision:
