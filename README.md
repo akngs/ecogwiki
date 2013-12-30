@@ -9,7 +9,7 @@
 7.   Done
 
 
-# How to learn tests
+# How to run tests
 
 Execute following command on project home:
 
