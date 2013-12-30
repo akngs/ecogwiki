@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import webapp2
+import caching
 from models import WikiPage
 from google.appengine.ext import deferred
 from representations import TemplateRepresentation
@@ -114,6 +115,10 @@ class SpecialPageHandler(webapp2.RequestHandler):
         elif path == u'opensearch':
             representation = TemplateRepresentation({}, self.request, 'opensearch.xml')
             representation.respond(self.response, head)
+        elif path == u'flush_cache':
+            caching.flush_all()
+            self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+            self.response.write('Done!')
         elif path == u'randomly_update_related_pages':
             recent = self.request.GET.get('recent', '0')
             titles = WikiPage.randomly_update_related_links(50, recent == '1')
