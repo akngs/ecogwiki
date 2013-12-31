@@ -166,8 +166,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             return False
 
         # get old data amd metadata
-        old_md = self.metadata
-        old_data = self.data
+        old_md = self.metadata.copy()
+        old_data = self.data.copy()
 
         # validate contents
         ## validate schema data

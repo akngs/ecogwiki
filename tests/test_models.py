@@ -5,7 +5,7 @@ from itertools import groupby
 from tests import AppEngineTestCase
 from google.appengine.api import users
 from markdownext.md_wikilink import parse_wikilinks
-from models import md, WikiPage, UserPreferences, title_grouper, ConflictError
+from models import md, WikiPage, PageOperationMixin, UserPreferences, title_grouper, ConflictError
 
 
 class PartialUpdateTest(AppEngineTestCase):
@@ -45,7 +45,7 @@ class PageUpdateTest(AppEngineTestCase):
         self.assertEqual(u'', page.acl_write)
 
     def test_should_create_revision(self):
-        self.login('ak', 'ak', False)
+        self.login('ak', 'ak')
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'Hello', 0, user=self.get_cur_user())
         page.update_content(u'Hello 2', 1, user=self.get_cur_user())
@@ -56,7 +56,7 @@ class PageUpdateTest(AppEngineTestCase):
         self.assertEqual(u'Hello 2', revs[1].body)
 
     def test_should_not_create_revision_if_content_is_not_changed(self):
-        self.login('ak', 'ak', False)
+        self.login('ak', 'ak')
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'Hello', 0, user=self.get_cur_user())
         page.update_content(u'Hello', 1, user=self.get_cur_user())
@@ -66,7 +66,7 @@ class PageUpdateTest(AppEngineTestCase):
         self.assertEqual(u'Hello', revs[0].body)
 
     def test_automerge(self):
-        self.login('ak', 'ak', False)
+        self.login('ak', 'ak')
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'A\nB\nC', 0, user=self.get_cur_user())
 
@@ -84,7 +84,7 @@ class PageUpdateTest(AppEngineTestCase):
         self.assertEqual(3, len(revs))
 
     def test_conflict(self):
-        self.login('ak', 'ak', False)
+        self.login('ak', 'ak')
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'A\nB\nC', 0, user=self.get_cur_user())
 
@@ -102,25 +102,30 @@ class PageUpdateTest(AppEngineTestCase):
         revs = list(page.revisions)
         self.assertEqual(2, len(revs))
 
+
+class PageValidationTest(AppEngineTestCase):
+    def setUp(self):
+        super(PageValidationTest, self).setUp()
+        self.login('ak', 'ak')
+
     def test_duplicated_headings(self):
-        self.login('ak', 'ak', False)
-        page = WikiPage.get_by_title(u'Hello')
-        self.assertRaises(ValueError, page.update_content, u'# A\n# A', 0)
+        self.assertRaises(ValueError, self.update_page, u'# A\n# A')
 
     def test_malformed_yaml_schema(self):
-        self.login('ak', 'ak', False)
-        page = WikiPage.get_by_title(u'Hello')
-        self.assertRaises(ValueError, page.update_content, u'.schema Book\n\n    #!yaml/schema\n    y: [1, 2\n', 0)
-
-    def test_invalid_yaml_schema(self):
-        self.login('ak', 'ak', False)
-        page = WikiPage.get_by_title(u'Hello')
-        self.assertRaises(ValueError, page.update_content, u'.schema Book\n\n    #!yaml/schema\n    y\n', 0)
+        self.assertRaises(ValueError, self.update_page, u'.schema Book\n\n    #!yaml/schema\n    y: [1, 2\n')
 
     def test_should_not_allow_self_revoking(self):
-        self.login('ak', 'ak', False)
         self.update_page(u'Hello')
         self.assertRaises(ValueError, self.update_page, u'.read admin@x.com\nHello')
+
+
+class YamlSchemaParserTest(AppEngineTestCase):
+    def test_no_schema(self):
+        self.assertEqual({}, PageOperationMixin.parse_schema_yaml(u'Hello'))
+
+    def test_invalid(self):
+        self.assertRaises(ValueError, PageOperationMixin.parse_schema_yaml, u'    #!yaml/schema\n    y\n')
+        self.assertRaises(ValueError, PageOperationMixin.parse_schema_yaml, u'.schema Book\n\n    #!yaml/schema\n    y: [1, 2\n')
 
 
 class MetadataParserTest(AppEngineTestCase):

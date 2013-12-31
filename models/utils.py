@@ -49,6 +49,47 @@ def title_grouper(title):
     return 'Misc'
 
 
+def merge_dicts(dicts):
+    merged = {}
+    for d in dicts:
+        for name, value in d.items():
+            if name not in merged:
+                merged[name] = value
+            else:
+                if type(merged[name]) != list:
+                    merged[name] = [merged[name]]
+                if type(value) == list:
+                    merged[name] += value
+                else:
+                    merged[name].append(value)
+
+    # dedup
+    dedup = {}
+    for k, v in merged.items():
+        if type(v) == list:
+            v = list(set(v))
+            if len(v) == 1:
+                v = v[0]
+        dedup[k] = v
+    return dedup
+
+
+def pairs_to_dict(pairs):
+    result = {}
+
+    for k, v in pairs:
+        if k not in result:
+            result[k] = v
+        else:
+            if type(result[k]) is list:
+                if v not in result[k]:
+                    result[k].append(v)
+            elif result[k] != v:
+                result[k] = [result[k], v]
+
+    return result
+
+
 def get_cur_user():
     user = users.get_current_user()
     # try oauth

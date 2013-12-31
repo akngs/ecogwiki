@@ -7,10 +7,12 @@ import schema
 import operator
 import urllib2
 from collections import OrderedDict
+from yaml.parser import ParserError
 from lxml.html.clean import Cleaner
 
 from models import md, is_admin_user
 from models import TocGenerator
+from models.utils import merge_dicts, pairs_to_dict
 
 
 class PageOperationMixin(object):
@@ -342,52 +344,36 @@ class PageOperationMixin(object):
     def path_to_title(cls, path):
         return urllib2.unquote(path).decode('utf-8').replace('_', ' ')
 
-    @staticmethod
-    def parse_data(title, itemtype, body):
-        matches = {
-            'name': title,
-            'schema': schema.get_itemtype_path(itemtype)
-        }
+    @classmethod
+    def parse_schema_yaml(cls, body):
+        data = {}
 
-        # parse data in yaml/schema section
-        m = re.search(PageOperationMixin.re_yaml_schema, body)
-        if m:
-            parsed_yaml = yaml.load(m.group(1))
-            if type(parsed_yaml) != dict:
-                raise ValueError('YAML must be a dictionary')
+        # extract yaml
+        m = re.search(cls.re_yaml_schema, body)
+        if not m:
+            return data
 
-            for name, value in parsed_yaml.items():
-                if name in matches:
-                    if type(matches[name]) != list:
-                        matches[name] = [matches[name]]
-                    if type(value) == list:
-                        matches[name] += value
-                    else:
-                        matches[name].append(value)
-                else:
-                    matches[name] = value
+        # parse
+        try:
+            parsed = yaml.load(m.group(1))
+        except ParserError as e:
+            raise ValueError(e.message)
 
-        # parse data embedded in body text
-        for m in re.finditer(PageOperationMixin.re_data, body):
-            name = m.group('name')
-            value = m.group('value')
-            if name in matches:
-                if type(matches[name]) != list:
-                    matches[name] = [matches[name]]
-                matches[name].append(value)
-            else:
-                matches[name] = value
+        # check if it's dict
+        if type(parsed) != dict:
+            raise ValueError('YAML must be a dictionary')
 
-        # remove duplicated values
-        dedup = {}
-        for key, value in matches.items():
-            if type(value) is list:
-                dedup[key] = list(set(value))
-            else:
-                dedup[key] = value
+        return parsed
 
-        typed_data = schema.SchemaConverter.convert(itemtype, dedup)
-        return typed_data
+    @classmethod
+    def parse_data(cls, title, itemtype, body):
+        default_data = {'name': title, 'schema': schema.get_itemtype_path(itemtype)}
+        yaml_data = cls.parse_schema_yaml(body)
+        body_data = pairs_to_dict((m.group('name'), m.group('value')) for m in re.finditer(cls.re_data, body))
+
+        data = merge_dicts([default_data, yaml_data, body_data])
+        typed = schema.SchemaConverter.convert(itemtype, data)
+        return typed
 
     @staticmethod
     def parse_metadata(body):

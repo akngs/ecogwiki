@@ -2,7 +2,7 @@
 import schema
 import unittest2 as unittest
 from tests import AppEngineTestCase
-from models import WikiPage, SchemaDataIndex
+from models import SchemaDataIndex
 
 
 class SchemaTest(AppEngineTestCase):
