@@ -172,6 +172,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # validate contents
         ## validate schema data
         new_md = PageOperationMixin.parse_metadata(new_body)
+
         try:
             data = PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
             if any(type(value) == schema.InvalidProperty for value in data.values()):
@@ -432,11 +433,13 @@ class WikiPage(ndb.Model, PageOperationMixin):
                    for name, v in deletes]
         entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
         keys = [e.key for e in entities]
-        ndb.delete_multi(keys)
+        if len(keys) > 0:
+            ndb.delete_multi(keys)
 
         # insert
         entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in inserts]
-        ndb.put_multi(entities)
+        if len(entities) > 0:
+            ndb.put_multi(entities)
 
     def _publish(self, title, save):
         if self.published_at is not None and self.published_to == title:
@@ -846,11 +849,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def _follow_redirect(cls, page, new_redir=None):
         trail = {page.title}
 
-        if new_redir:
-            page.metadata['redirect'] = new_redir
+        while new_redir or ('redirect' in page.metadata):
+            next_title = new_redir or page.metadata['redirect']
 
-        while 'redirect' in page.metadata:
-            next_title = page.metadata['redirect']
+            # set it None to make it work just one time
+            new_redir = None
+
             if next_title in trail:
                 raise ValueError('Circular redirection detected')
             page = cls.get_by_title(next_title)
