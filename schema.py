@@ -117,41 +117,37 @@ def _merge_schema_set(addon, schema_set):
 
     # perform merge for properties...
     if 'properties' in addon:
-        for prop_key, prop_value in addon['properties'].items():
-            props = schema_set['properties']
-            if prop_key not in props:
-                props[prop_key] = {}
-            for key_to_add, value_to_add in prop_value.items():
-                props[prop_key][key_to_add] = value_to_add
+        props = schema_set['properties']
+        for k, v in addon['properties'].items():
+            if k not in props:
+                props[k] = {}
+            props[k].update(v)
 
     # ...and datatypes...
     if 'datatypes' in addon:
-        for dtype_key, dtype_value in addon['datatypes'].items():
-            dtypes = schema_set['datatypes']
-            if dtype_key not in dtypes:
-                dtypes[dtype_key] = {}
-
-            for key_to_add, value_to_add in dtype_value.items():
-                dtypes[dtype_key][key_to_add] = value_to_add
+        dtypes = schema_set['datatypes']
+        for k, v in addon['datatypes'].items():
+            if k not in dtypes:
+                dtypes[k] = {}
+            dtypes[k].update(v)
 
     # ...and types
     if 'types' in addon:
-        for type_key, type_value in addon['types'].items():
-            types = schema_set['types']
-            if type_key not in types:
-                types[type_key] = {}
+        types = schema_set['types']
+        for k, v in addon['types'].items():
+            if k not in types:
+                types[k] = {}
 
                 # modify supertype-subtype relationships
-                for supertype in type_value['supertypes']:
-                    types[supertype]['subtypes'].append(type_key)
+                for supertype in v['supertypes']:
+                    types[supertype]['subtypes'].append(k)
 
                     # inherit properties of supertypes
-                    if 'properties' not in type_value:
-                        type_value['properties'] = []
-                    type_value['properties'] += types[supertype]['properties']
+                    if 'properties' not in v:
+                        v['properties'] = []
+                    v['properties'] += types[supertype]['properties']
 
-            for key_to_add, value_to_add in type_value.items():
-                types[type_key][key_to_add] = value_to_add
+            types[k].update(v)
 
     return schema_set
 
@@ -179,26 +175,19 @@ def render_dict(o):
     else:
         html = ['<dl class="wq wq-dict">']
         for key, value in o.items():
-            html.append('<dt class="wq-key-%s">' % key)
-            html.append(key)
-            html.append('</dt>')
-            html.append('<dd class="wq-value-%s">' % key)
-            html.append(to_html(value, key))
-            html.append('</dd>')
+            html.append('<dt class="wq-key-%s">%s</dt>' % (key, key))
+            html.append('<dd class="wq-value-%s">%s</dd>' % (key, to_html(value, key)))
         html.append('</dl>')
 
         return '\n'.join(html)
 
 
 def render_list(o):
-    html = ['<ul class="wq wq-list">']
-    for value in o:
-        html.append('<li>')
-        html.append(to_html(value))
-        html.append('</li>')
-    html.append('</ul>')
-
-    return '\n'.join(html)
+    return '\n'.join(
+        ['<ul class="wq wq-list">'] +
+        ['<li>%s</li>' % to_html(value) for value in o] +
+        ['</ul>']
+    )
 
 
 class SchemaConverter(object):
@@ -216,8 +205,8 @@ class SchemaConverter(object):
         unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'] + ['schema'])
         known_props = props.difference(unknown_props)
 
-        knowns = [(prop, SchemaConverter.convert_prop(self._itemtype, prop, self._data[prop])) for prop in known_props]
-        unknowns = [(prop, InvalidProperty(self._itemtype, prop, self._data[prop])) for prop in unknown_props]
+        knowns = [(p, SchemaConverter.convert_prop(self._itemtype, p, self._data[p])) for p in known_props]
+        unknowns = [(p, InvalidProperty(self._itemtype, p, self._data[p])) for p in unknown_props]
         return dict(knowns + unknowns)
 
     @classmethod

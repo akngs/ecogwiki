@@ -313,10 +313,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         cur_outlinks = self.outlinks or {}
         new_outlinks = {}
         for rel, titles in self._parse_outlinks().items():
-            new_outlinks[rel] =\
-                [WikiPage.get_by_title(t, follow_redirect=True).title
-                 for t in titles]
-            new_outlinks[rel] = list(set(new_outlinks[rel]))
+            new_outlinks[rel] = list({WikiPage.get_by_title(t, follow_redirect=True).title for t in titles})
 
         if self.acl_read:
             # delete all inlinks of target pages if there's read restriction
@@ -379,9 +376,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             ndb.delete_multi(deletes)
 
         # update outlinks of this page
+        [new_outlinks[rel].sort() for rel in new_outlinks.keys()]
         self.outlinks = new_outlinks
-        for rel in self.outlinks.keys():
-            self.outlinks[rel].sort()
         self.put()
 
     def _update_pub_state(self, new_md, old_md):
@@ -707,8 +703,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
             results = []
             if attrs == [u'name']:
-                for title in accessible_titles:
-                    results.append({u'name': title})
+                results += [{u'name': title} for title in accessible_titles]
             else:
                 for title in accessible_titles:
                     pagedata = WikiPage.get_by_title(title, follow_redirect=True).data
@@ -836,9 +831,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             logging.debug('Rebuilding data index: Finished!')
             return
 
-        for p in all_pages:
-            SchemaDataIndex.rebuild_index(p.title, p.data)
-
+        [SchemaDataIndex.rebuild_index(p.title, p.data) for p in all_pages]
         deferred.defer(cls.rebuild_all_data_index, page_index + 1)
 
     @classmethod
@@ -869,7 +862,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     @staticmethod
     def _del_inout_link(links, title, rel=None):
-        if rel is not None and rel in links:
+        if rel in links:
             links[rel].remove(title)
             if len(links[rel]) == 0:
                 del links[rel]

@@ -48,10 +48,9 @@ class PageOperationMixin(object):
         for name, value, humane_name in data:
             html.append(u'<dt class="key key-%s">%s</dt>' % (name, humane_name))
             if type(value) == list:
-                for v in value:
-                    html.append(u'<dd class="value value-%s">%s</dd>' % (name, self._render_data_item(name, v)))
+                html += [self._render_data_item(name, v) for v in value]
             else:
-                html.append(u'<dd class="value value-%s">%s</dd>' % (name, self._render_data_item(name, value)))
+                html.append(self._render_data_item(name, value))
         html.append(u'</dl></div>')
         return '\n'.join(html)
 
@@ -123,7 +122,7 @@ class PageOperationMixin(object):
         return rendered
 
     def _render_data_item(self, name, value):
-        return u'<span itemprop="%s">%s</span>' % (name, value.render())
+        return u'<dd class="value value-%s"><span itemprop="%s">%s</span></dd>' % (name, name, value.render())
 
     @property
     def paths(self):
@@ -387,9 +386,7 @@ class PageOperationMixin(object):
         for m in matches:
             key = m.group(1).strip()
             value = m.group(3)
-            if value is not None:
-                value = value.strip()
-            metadata[key] = value
+            metadata[key] = value.strip() if value else None
 
         # validate
         if u'pub' in metadata and u'redirect' in metadata:
