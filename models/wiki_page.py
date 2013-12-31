@@ -251,10 +251,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             raise e
 
         # check data
-        new_data = PageOperationMixin.parse_data(self.title, new_md['schema'],
-                                                 new_body)
-        if any(type(value) == schema.InvalidProperty for value in
-               new_data.values()):
+        new_data = PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
+        if any(type(value) == schema.InvalidProperty for value in new_data.values()):
             raise ValueError('Invalid schema data')
 
         # check revision
@@ -267,23 +265,13 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         return new_data, new_md
 
-    def rebuild_data_index(self):
-        # delete all index for this page
-        keys = [i.key for i in SchemaDataIndex.query(SchemaDataIndex.title == self.title).fetch()]
-        ndb.delete_multi(keys)
-
-        # insert
-        data = self.data
-        entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in WikiPage._data_as_pairs(data)]
-        ndb.put_multi(entities)
-
     def update_links_and_data(self, old_redir, new_redir, old_data, new_data, dont_defer):
         if dont_defer:
             self.update_links(old_redir, new_redir)
-            self.update_data_index(old_data, new_data)
+            SchemaDataIndex.update_index(self.title, old_data, new_data)
         else:
             deferred.defer(self.update_links, old_redir, new_redir)
-            deferred.defer(self.update_data_index, old_data, new_data)
+            deferred.defer(SchemaDataIndex.update_index, self.title, old_data, new_data)
 
     def update_links(self, old_redir, new_redir):
         """Updates outlinks of this page and inlinks of target pages"""
@@ -394,26 +382,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
         for rel in self.outlinks.keys():
             self.outlinks[rel].sort()
         self.put()
-
-    def update_data_index(self, old_data, new_data):
-        old_pairs = WikiPage._data_as_pairs(old_data)
-        new_pairs = WikiPage._data_as_pairs(new_data)
-
-        deletes = old_pairs.difference(new_pairs)
-        inserts = new_pairs.difference(old_pairs)
-
-        # delete
-        queries = [SchemaDataIndex.query(SchemaDataIndex.title == self.title, SchemaDataIndex.name == name, SchemaDataIndex.value == (v.rawvalue if isinstance(v, schema.Property) else v))
-                   for name, v in deletes]
-        entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
-        keys = [e.key for e in entities]
-        if len(keys) > 0:
-            ndb.delete_multi(keys)
-
-        # insert
-        entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in inserts]
-        if len(entities) > 0:
-            ndb.put_multi(entities)
 
     def _update_pub_state(self, new_md, old_md):
         pub_old = u'pub' in old_md
@@ -799,7 +767,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def _evaluate_page_query_term(cls, name, value):
         if name == 'schema' and value.find('/') == -1:
             value = schema.get_itemtype_path(value)
-        return [index.title for index in SchemaDataIndex.query(SchemaDataIndex.name == name, SchemaDataIndex.value == value)]
+        return SchemaDataIndex.query_titles(name, value)
 
     @classmethod
     def _evaluate_page_query_expr(cls, operand, op, rest):
@@ -902,7 +870,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             return
 
         for p in all_pages:
-            p.rebuild_data_index()
+            SchemaDataIndex.rebuild_index(p.title, p.data)
 
         deferred.defer(cls.rebuild_all_data_index, page_index + 1)
 
@@ -943,14 +911,3 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 titles.remove(title)
                 if len(titles) == 0:
                     del links[rel]
-
-    @staticmethod
-    def _data_as_pairs(data):
-        pairs = set()
-        for key, value in data.items():
-            if type(value) == list:
-                for v in value:
-                    pairs.add((key, v))
-            else:
-                pairs.add((key, value))
-        return pairs

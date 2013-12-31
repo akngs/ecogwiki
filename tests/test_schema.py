@@ -144,18 +144,25 @@ class SchemaIndexTest(AppEngineTestCase):
 
     def test_schema_index_create(self):
         self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}\n[[datePublished::2013]]', u'Hello')
-        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'author', SchemaDataIndex.value == u'AK').count())
-        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'1234567890').count())
-        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'datePublished', SchemaDataIndex.value == u'2013').count())
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'author', u'AK').count())
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'isbn', u'1234567890').count())
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'datePublished', u'2013').count())
 
     def test_schema_index_update(self):
         self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}\n[[datePublished::2013]]', u'Hello')
         self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567899}}\n[[dateModified::2013]]', u'Hello')
-        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'author', SchemaDataIndex.value == u'AK').count())
-        self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'1234567890').count())
-        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'isbn', SchemaDataIndex.value == u'1234567899').count())
-        self.assertEqual(0, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'datePublished', SchemaDataIndex.value == u'2013').count())
-        self.assertEqual(1, SchemaDataIndex.query(SchemaDataIndex.title == u'Hello', SchemaDataIndex.name == u'dateModified', SchemaDataIndex.value == u'2013').count())
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'author', u'AK').count())
+        self.assertEqual(0, SchemaDataIndex.query_exact_match(u'Hello', u'isbn', u'1234567890').count())
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'isbn', u'1234567899').count())
+        self.assertEqual(0, SchemaDataIndex.query_exact_match(u'Hello', u'datePublished', u'2013').count())
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'dateModified', u'2013').count())
+
+    def test_rebuild(self):
+        page = self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}\n[[datePublished::2013]]', u'Hello')
+        SchemaDataIndex.rebuild_index(page.title, page.data)
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'author', u'AK').count())
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'isbn', u'1234567890').count())
+        self.assertEqual(1, SchemaDataIndex.query_exact_match(u'Hello', u'datePublished', u'2013').count())
 
 
 class TypeConversionTest(AppEngineTestCase):
