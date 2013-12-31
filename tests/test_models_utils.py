@@ -21,6 +21,9 @@ class MergeDictTest(TestCase):
     def test_empty(self):
         self.assertEqual({}, merge_dicts([]))
 
+    def test_empty_value(self):
+        self.assertEqual({}, merge_dicts([{'a': []}]))
+
     def test_single_dict(self):
         self.assertEqual({'a': 1}, merge_dicts([{'a': 1}]))
 
@@ -43,3 +46,11 @@ class MergeDictTest(TestCase):
     def test_duplicated_value(self):
         self.assertEqual({'a': [1, 2, 3], 'b': 4, 'c': [5, 6]},
                          merge_dicts([{'a': [1, 2], 'b': 4, 'c': [5, 6]}, {'a': [2, 3], 'b': 4, 'c': 5}]))
+
+    def test_sort_values(self):
+        self.assertEqual({'a': [1, 2, 3, 4]},
+                         merge_dicts([{'a': [1, 3]}, {'a': [2, 4]}], sort_values=True))
+
+    def test_force_list(self):
+        self.assertEqual({'a': [1], 'b': [2], 'c': [3]},
+                         merge_dicts([{'a': 1}, {'b': 2, 'c': 3}], force_list=True))

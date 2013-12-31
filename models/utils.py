@@ -49,7 +49,7 @@ def title_grouper(title):
     return 'Misc'
 
 
-def merge_dicts(dicts):
+def merge_dicts(dicts, sort_values=False, force_list=False):
     merged = {}
     for d in dicts:
         for name, value in d.items():
@@ -63,14 +63,19 @@ def merge_dicts(dicts):
                 else:
                     merged[name].append(value)
 
-    # dedup
+    # dedup and sort
     dedup = {}
     for k, v in merged.items():
         if type(v) == list:
             v = list(set(v))
-            if len(v) == 1:
+            if sort_values:
+                v.sort()
+            if not force_list and len(v) == 1:
                 v = v[0]
-        dedup[k] = v
+        elif force_list:
+            v = [v]
+        if type(v) != list or len(v) > 0:
+            dedup[k] = v
     return dedup
 
 

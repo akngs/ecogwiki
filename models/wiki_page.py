@@ -17,6 +17,7 @@ from markdownext import md_wikilink, md_checkbox
 
 from models import PageOperationMixin, ConflictError, WikiPageRevision, TocGenerator, SchemaDataIndex
 from models import is_admin_user, md
+from models.utils import merge_dicts
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -515,52 +516,19 @@ class WikiPage(ndb.Model, PageOperationMixin):
             return {}
 
     def _parse_outlinks(self):
-        unique_links = {}
-        itemtype = self.itemtype
-
-        # Add links in hierarchical title
-        anscestors = {path[0] for path in self.paths[:-1]}
-        if len(anscestors) > 0:
-            unique_links['%s/relatedTo' % itemtype] = anscestors
-
-        # Add links in body
-        links = md_wikilink.parse_wikilinks(itemtype, WikiPage.remove_metadata(self.body))
-        for rel, titles in links.items():
-            if rel not in unique_links:
-                unique_links[rel] = set()
-            unique_links[rel].update(titles)
-
-        # Add links in structured data
+        # links in hierarchical title and body
+        dicts = [
+            {'%s/relatedTo' % self.itemtype: [path[0] for path in self.paths[:-1]]},
+            md_wikilink.parse_wikilinks(self.itemtype, WikiPage.remove_metadata(self.body)),
+        ]
+        # links in structured data
         for name, value in self.data.items():
-            links = {}
             if type(value) is list:
-                for v in value:
-                    self._merge_schema_data(links, self._schema_item_to_links(name, v))
+                dicts += [self._schema_item_to_links(name, v) for v in value]
             else:
-                links.update(self._schema_item_to_links(name, value))
+                dicts.append(self._schema_item_to_links(name, value))
 
-            for rel, titles in links.items():
-                if rel not in unique_links:
-                    unique_links[rel] = set()
-                unique_links[rel].update(titles)
-
-        # turn sets into lists
-        for key in unique_links.keys():
-            unique_links[key] = list(unique_links[key])
-
-        return unique_links
-
-    def _merge_schema_data(self, base, new):
-        for key, value in new.items():
-            if key not in base:
-                base[key] = value
-                continue
-            if type(base[key]) != list:
-                base[key] = [base[key]]
-            if type(value) == list:
-                base[key] += value
-            else:
-                base[key].append(value)
+        return merge_dicts(dicts, force_list=True)
 
     def add_inlinks(self, titles, rel):
         WikiPage._add_inout_links(self.inlinks, titles, rel)
@@ -641,8 +609,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return titles
 
     @classmethod
-    def _update_related_links(cls, start_page, page, score, score_table,
-                              distance):
+    def _update_related_links(cls, start_page, page, score, score_table, distance):
         if distance == 0:
             return False
 
