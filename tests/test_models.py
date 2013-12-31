@@ -394,6 +394,9 @@ class RelatedPageUpdatingTest(AppEngineTestCase):
 
         self.assertTrue(u'D' in page.related_links)
 
+    def test_prevent_self_redirect(self):
+        self.assertRaises(ValueError, self.update_page, u'.redirect A', u'A')
+
 
 class SimilarTitlesTest(AppEngineTestCase):
     def test_similar_pages(self):
@@ -555,9 +558,13 @@ class RedirectionTest(AppEngineTestCase):
         self.assertEqual({u'Article/relatedTo': [u'A']}, c.inlinks)
         self.assertEqual({u'Article/relatedTo': [u'C']}, a.outlinks)
 
+    def test_do_not_allow_redirect_to_self(self):
+        self.assertRaises(ValueError, self.update_page, u'.redirect A', u'A')
+
     def test_do_not_allow_circular_redirect(self):
-        page = WikiPage.get_by_title(u'A')
-        self.assertRaises(ValueError, page.update_content, u'.redirect A', 0, dont_defer=True)
+        self.update_page(u'.redirect B', u'A')
+        self.update_page(u'.redirect C', u'B')
+        self.assertRaises(ValueError, self.update_page, u'.redirect A', u'C')
 
 
 class LinkTest(AppEngineTestCase):

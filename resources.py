@@ -129,7 +129,7 @@ class PageResource(PageLikeResource):
             self._403(page, head)
             return
 
-        if get_restype(self.req, 'html') == 'html':
+        if get_restype(self.req, 'html') == 'html' and self.req.GET.get('view', self.default_view) == 'default':
             redirect = page.metadata.get('redirect', None)
             if redirect is not None:
                 self.res.location = '/' + WikiPage.title_to_path(redirect)

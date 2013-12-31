@@ -188,6 +188,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if u'redirect' in new_md and len(PageOperationMixin.remove_metadata(new_body).strip()) != 0:
             raise ValueError('Page with "redirect" metadata cannot have a body '
                              'content.')
+        if u'redirect' in new_md:
+            try:
+                self._follow_redirect(self, new_md[u'redirect'])
+            except ValueError as e:
+                raise e
         if u'read' in new_md and new_md['content-type'] != 'text/x-markdown':
             raise ValueError('You cannot restrict read access of custom content-typed page.')
 
@@ -838,8 +843,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return page
 
     @classmethod
-    def _follow_redirect(cls, page):
+    def _follow_redirect(cls, page, new_redir=None):
         trail = {page.title}
+
+        if new_redir:
+            page.metadata['redirect'] = new_redir
+
         while 'redirect' in page.metadata:
             next_title = page.metadata['redirect']
             if next_title in trail:
