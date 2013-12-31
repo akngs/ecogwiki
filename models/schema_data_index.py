@@ -27,7 +27,7 @@ class SchemaDataIndex(ndb.Model):
         inserts = new_pairs.difference(old_pairs)
 
         # delete
-        queries = [cls.query_exact_match(title, name, v.rawvalue if isinstance(v, schema.Property) else v)
+        queries = [cls.query(cls.title == title, cls.name == name, cls.value == (v.rawvalue if isinstance(v, schema.Property) else v))
                    for name, v in deletes]
         entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
         keys = [e.key for e in entities]
@@ -49,8 +49,8 @@ class SchemaDataIndex(ndb.Model):
         return [i.title for i in cls.query(cls.name == name, cls.value == value)]
 
     @classmethod
-    def query_exact_match(cls, title, name, value):
-        return cls.query(cls.title == title, cls.name == name, cls.value == value)
+    def has_match(cls, title, name, value):
+        return cls.query(cls.title == title, cls.name == name, cls.value == value).count() > 0
 
     @staticmethod
     def _data_as_pairs(data):
