@@ -73,30 +73,25 @@ format_iso_datetime = lambda v: _format_datetime(v, '%Y-%m-%dT%H:%M:%SZ')
 
 
 def _format_datetime(value, pattern):
-    if value is None:
-        return ''
-    else:
-        return value.strftime(pattern)
+    return '' if value is None else value.strftime(pattern)
 
 
 def userpage_link(user):
     if user is None:
         return '<span class="user">Anonymous</span>'
-    else:
-        preferences = UserPreferences.get_by_user(user)
 
-        if preferences is None:
-            return '<span class="user email">%s</span>' % user.email()
-        elif preferences.userpage_title is None or len(preferences.userpage_title.strip()) == 0:
-            return '<span class="user email">%s</span>' % user.email()
-        else:
-            path = to_abs_path(preferences.userpage_title)
-            return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
+    preferences = UserPreferences.get_by_user(user)
+    if preferences is None:
+        return '<span class="user email">%s</span>' % user.email()
+    elif preferences.userpage_title is None or len(preferences.userpage_title.strip()) == 0:
+        return '<span class="user email">%s</span>' % user.email()
+    path = to_abs_path(preferences.userpage_title)
+    return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
 
 
 def has_supported_language(hashbangs):
-    config = WikiPage.get_config()
-    return any(x in config['highlight']['supported_languages'] for x in hashbangs)
+    langs = WikiPage.get_config()['highlight']['supported_languages']
+    return any(lang in langs for lang in hashbangs)
 
 
 JINJA.filters['dt'] = format_datetime
@@ -110,25 +105,17 @@ JINJA.filters['has_supported_language'] = has_supported_language
 
 
 def template(req, path, data):
-    t = JINJA.get_template('templates/%s' % path)
     config = WikiPage.get_config()
-
     user = get_cur_user()
-    preferences = None
-    if user is not None:
-        preferences = UserPreferences.get_by_user(user)
-
     data['is_local'] = req.host_url.startswith('http://localhost')
     data['is_mobile'] = is_mobile(req)
     data['user'] = user
-    data['preferences'] = preferences
+    data['preferences'] = UserPreferences.get_by_user(user) if user is not None else None
     data['users'] = users
     data['cur_url'] = req.url
     data['config'] = config
-    data['app'] = {
-        'version': main.VERSION,
-    }
-    return t.render(data)
+    data['app'] = {'version': main.VERSION}
+    return JINJA.get_template('templates/%s' % path).render(data)
 
 
 def is_mobile(req):

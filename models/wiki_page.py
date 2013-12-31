@@ -155,8 +155,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             cur_index['value'] += 1
             if cur_index['value'] != index:
                 return m.group(0)
-            else:
-                return u'[x]' if content == u'1' else u'[ ]'
+            return u'[x]' if content == u'1' else u'[ ]'
 
         new_body = re.sub(md_checkbox.RE_CHECKBOX, replacer, self.body)
 
@@ -227,8 +226,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         conflicted = len(re.findall(PageOperationMixin.re_conflicted, merged)) > 0
         if conflicted:
             raise ConflictError('Conflicted', base, new_body, merged)
-        else:
-            return merged
+        return merged
 
     def validate_new_content(self, base_revision, new_body, user):
         # check metadata
@@ -508,8 +506,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value.pvalue))
         elif type(value) == str or type(value) == unicode:
             return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value))
-        else:
-            return {}
+        return {}
 
     def _parse_outlinks(self):
         # links in hierarchical title and body
@@ -740,8 +737,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             return set(pages1).intersection(pages2)
         elif op == '+':
             return set(pages1).union(pages2)
-        else:
-            raise ValueError('Invalid operator: %s' % op)
+        raise ValueError('Invalid operator: %s' % op)
 
     @classmethod
     def get_by_path(cls, path, follow_redirect=False):

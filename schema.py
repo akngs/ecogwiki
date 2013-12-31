@@ -76,8 +76,7 @@ def humane_item(itemtype, plural=False):
     try:
         if plural:
             return get_schema(itemtype)['plural_label']
-        else:
-            return get_schema(itemtype)['label']
+        return get_schema(itemtype)['label']
     except KeyError:
         return itemtype
 
@@ -90,8 +89,7 @@ def humane_property(itemtype, prop, rev=False):
         propstr = get_property(prop)['reversed_label']
         if propstr.find('%s') == -1:
             return propstr
-        else:
-            return propstr % humane_item(itemtype, True)
+        return propstr % humane_item(itemtype, True)
     except KeyError:
         return prop.capitalize()
 
@@ -161,12 +159,10 @@ def to_html(o, key=None):
     elif obj_type == str or obj_type == unicode:
         if key is not None and key == 'schema':
             return o
-        else:
-            return '<a href="/%s">%s</a>' % (urllib2.quote(o.replace(u' ', u'_').encode('utf-8')), o)
+        return '<a href="/%s">%s</a>' % (urllib2.quote(o.replace(u' ', u'_').encode('utf-8')), o)
     elif isinstance(o, Property):
         return o.render()
-    else:
-        return str(o)
+    return str(o)
 
 
 def render_dict(o):
