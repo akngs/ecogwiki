@@ -112,15 +112,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
         self.body = body
         return super(WikiPage, self).rendered_body
 
-    def can_write(self, user, default_acl=None, new_acl_read=None, new_acl_write=None):
+    def can_write(self, user, default_acl=None, acl_r=None, acl_w=None):
         if default_acl is None:
             default_acl = WikiPage.get_default_permission()
-        return super(WikiPage, self).can_write(user, default_acl, new_acl_read, new_acl_write)
+        return super(WikiPage, self).can_write(user, default_acl, acl_r, acl_w)
 
-    def can_read(self, user, default_acl=None, new_acl_read=None, new_acl_write=None):
+    def can_read(self, user, default_acl=None, acl_r=None, acl_w=None):
         if default_acl is None:
             default_acl = WikiPage.get_default_permission()
-        return super(WikiPage, self).can_read(user, default_acl, new_acl_read, new_acl_write)
+        return super(WikiPage, self).can_read(user, default_acl, acl_r, acl_w)
 
     def delete(self, user=None):
         if not is_admin_user(user):
@@ -161,112 +161,38 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         return self._update_content_all(new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
 
-    def _update_content_all(self, new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer):
-        if not force_update and self.body == new_body:
+    def _update_content_all(self, body, base_revision, comment, user, force_update, dont_create_rev, dont_defer):
+        # do not update if the body is not changed
+        if not force_update and self.body == body:
             return False
 
-        # get old data amd metadata
+        # validate and prepare new contents
+        new_data, new_md = self.validate_new_content(base_revision, body, user)
+        new_body = self._merge_if_needed(base_revision, body)
+
+        # get old data and metadata
         old_md = self.metadata.copy()
         old_data = self.data.copy()
 
-        # validate contents
-        ## validate schema data
-        new_md = PageOperationMixin.parse_metadata(new_body)
-
-        try:
-            data = PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
-            if any(type(value) == schema.InvalidProperty for value in data.values()):
-                raise ValueError('Invalid schema data')
-        except ValueError as e:
-            raise e
-        except Exception:
-            raise ValueError('Invalid schema data')
-
-        ## validate metadata
-        if u'pub' in new_md and u'redirect' in new_md:
-            raise ValueError('You cannot use "pub" and "redirect" metadata at '
-                             'the same time.')
-        if u'redirect' in new_md and len(PageOperationMixin.remove_metadata(new_body).strip()) != 0:
-            raise ValueError('Page with "redirect" metadata cannot have a body '
-                             'content.')
-        if u'redirect' in new_md:
-            try:
-                self._follow_redirect(self, new_md[u'redirect'])
-            except ValueError as e:
-                raise e
-        if u'read' in new_md and new_md['content-type'] != 'text/x-markdown':
-            raise ValueError('You cannot restrict read access of custom content-typed page.')
-
-        ## validate acl (prevent self-revoke)
-        new_acl_read = new_md.get('read', '')
-        new_acl_write = new_md.get('write', '')
-
-        if not self.can_read(user, None, new_acl_read, new_acl_write):
-            raise ValueError('Cannot restrict your permission')
-        if not self.can_write(user, None, new_acl_read, new_acl_write):
-            raise ValueError('Cannot restrict your permission')
-
-        ## validate revision
-        if self.revision < base_revision:
-            raise ValueError('Invalid revision number: %d' % base_revision)
-
-        ## validate ToC
-        if not TocGenerator(md.convert(new_body)).validate():
-            raise ValueError("Duplicate paths not allowed")
-
-        if self.revision != base_revision:
-            # perform 3-way merge if needed
-            base = WikiPageRevision.query(WikiPageRevision.title == self.title, WikiPageRevision.revision == base_revision).get().body
-            merged = ''.join(Merge3(base, self.body, new_body).merge_lines())
-            conflicted = len(re.findall(PageOperationMixin.re_conflicted, merged)) > 0
-            if conflicted:
-                raise ConflictError('Conflicted', base, new_body, merged)
-            else:
-                new_body = merged
-
-        # delete rendered body, metadata, data cache
+        # delete caches
         caching.del_rendered_body(self.title)
         caching.del_hashbangs(self.title)
         caching.del_metadata(self.title)
         caching.del_data(self.title)
 
-        # update model fields
+        # update model and save
         self.body = new_body
         self.modifier = user
         self.description = self.make_description()
         self.acl_read = new_md.get('read', '')
         self.acl_write = new_md.get('write', '')
         self.comment = comment
+        self.itemtype_path = schema.get_itemtype_path(new_md['schema'])
+        self._update_pub_state(new_md, old_md)
         if not dont_create_rev:
             self.revision += 1
-
         if not force_update:
             self.updated_at = datetime.now()
-
-        # publish
-        pub_old = u'pub' in old_md
-        pub_new = u'pub' in new_md
-        pub_old_title = None
-        pub_new_title = None
-        if pub_old:
-            pub_old_title = old_md['pub']
-        if pub_new:
-            pub_new_title = new_md['pub']
-
-        if pub_old and pub_new and (pub_old_title != pub_new_title):
-            # if target page is changed
-            self._unpublish(save=False)
-            self._publish(title=pub_new_title, save=False)
-        else:
-            if pub_new:
-                self._publish(title=pub_new_title, save=False)
-            else:
-                self._unpublish(save=False)
-
-        # update itemtype_path
-        self.itemtype_path = schema.get_itemtype_path(new_md['schema'])
-
-        # save
         self.put()
 
         # create revision
@@ -279,19 +205,67 @@ class WikiPage(ndb.Model, PageOperationMixin):
             rev.put()
 
         # update inlinks, outlinks and schema data index
-        old_redir = old_md.get('redirect')
-        if dont_defer:
-            self.update_links_and_data(old_redir, old_data)
-        else:
-            deferred.defer(self.update_links_and_data, old_redir, old_data)
+        self.update_links_and_data(old_md.get('redirect'), new_md.get('redirect'), old_data, new_data, dont_defer)
 
-        # delete config and title cache
+        # delete config cache
         if self.title == '.config':
             caching.del_config()
+
+        # delete title cache if it's a new page
         if self.revision == 1:
             caching.del_titles()
 
         return True
+
+    def _merge_if_needed(self, base_revision, new_body):
+        if self.revision == base_revision:
+            return new_body
+
+        base = WikiPageRevision.query(WikiPageRevision.title == self.title, WikiPageRevision.revision == base_revision).get().body
+        merged = ''.join(Merge3(base, self.body, new_body).merge_lines())
+        conflicted = len(re.findall(PageOperationMixin.re_conflicted, merged)) > 0
+        if conflicted:
+            raise ConflictError('Conflicted', base, new_body, merged)
+        else:
+            return merged
+
+    def validate_new_content(self, base_revision, new_body, user):
+        # check metadata
+        new_md = PageOperationMixin.parse_metadata(new_body)
+
+        ## prevent self-revoke
+        acl_r = new_md.get('read', '')
+        acl_r = acl_r.split(',') if acl_r else []
+        acl_w = new_md.get('write', '')
+        acl_w = acl_w.split(',') if acl_w else []
+
+        if not self.can_read(user, acl_r=acl_r, acl_w=acl_w):
+            raise ValueError('Cannot restrict your permission')
+        if not self.can_write(user, acl_r=acl_r, acl_w=acl_w):
+            raise ValueError('Cannot restrict your permission')
+
+        ## prevent circular-redirection
+        try:
+            WikiPage._follow_redirect(self, new_md.get(u'redirect'))
+        except ValueError as e:
+            raise e
+
+        # check data
+        new_data = PageOperationMixin.parse_data(self.title, new_md['schema'],
+                                                 new_body)
+        if any(type(value) == schema.InvalidProperty for value in
+               new_data.values()):
+            raise ValueError('Invalid schema data')
+
+        # check revision
+        if self.revision < base_revision:
+            raise ValueError('Invalid revision number: %d' % base_revision)
+
+        # check headings
+        if not TocGenerator(md.convert(new_body)).validate():
+            raise ValueError("Duplicate paths not allowed")
+
+        return new_data, new_md
 
     def rebuild_data_index(self):
         # delete all index for this page
@@ -303,14 +277,17 @@ class WikiPage(ndb.Model, PageOperationMixin):
         entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in WikiPage._data_as_pairs(data)]
         ndb.put_multi(entities)
 
-    def update_links_and_data(self, old_redir, old_data):
-        self.update_links(old_redir)
-        self.update_data_index(old_data)
+    def update_links_and_data(self, old_redir, new_redir, old_data, new_data, dont_defer):
+        if dont_defer:
+            self.update_links(old_redir, new_redir)
+            self.update_data_index(old_data, new_data)
+        else:
+            deferred.defer(self.update_links, old_redir, new_redir)
+            deferred.defer(self.update_data_index, old_data, new_data)
 
-    def update_links(self, old_redir):
+    def update_links(self, old_redir, new_redir):
         """Updates outlinks of this page and inlinks of target pages"""
         # 1. process "redirect" metadata
-        new_redir = self.metadata.get('redirect')
         if old_redir != new_redir:
             if old_redir is not None:
                 source = WikiPage.get_by_title(old_redir, follow_redirect=True)
@@ -418,10 +395,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             self.outlinks[rel].sort()
         self.put()
 
-    def update_data_index(self, old_data):
-        caching.del_data(self.title)
-        new_data = self.data
-
+    def update_data_index(self, old_data, new_data):
         old_pairs = WikiPage._data_as_pairs(old_data)
         new_pairs = WikiPage._data_as_pairs(new_data)
 
@@ -440,6 +414,21 @@ class WikiPage(ndb.Model, PageOperationMixin):
         entities = [SchemaDataIndex(title=self.title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in inserts]
         if len(entities) > 0:
             ndb.put_multi(entities)
+
+    def _update_pub_state(self, new_md, old_md):
+        pub_old = u'pub' in old_md
+        pub_new = u'pub' in new_md
+        pub_old_title = old_md['pub'] if pub_old else None
+        pub_new_title = new_md['pub'] if pub_new else None
+        if pub_old and pub_new and (pub_old_title != pub_new_title):
+            # if target page is changed
+            self._unpublish(save=False)
+            self._publish(title=pub_new_title, save=False)
+        else:
+            if pub_new:
+                self._publish(title=pub_new_title, save=False)
+            else:
+                self._unpublish(save=False)
 
     def _publish(self, title, save):
         if self.published_at is not None and self.published_to == title:

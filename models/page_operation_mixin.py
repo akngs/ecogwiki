@@ -233,45 +233,33 @@ class PageOperationMixin(object):
         # just cut-off
         return body[:max_length - 3].strip() + u'...'
 
-    def can_read(self, user, default_acl=None, new_read_acl=None, new_write_acl=None):
-        if default_acl is None:
-            default_acl = main.DEFAULT_CONFIG['service']['default_permissions']
+    def can_read(self, user, default_acl=None, acl_r=None, acl_w=None):
+        default_acl = default_acl or main.DEFAULT_CONFIG['service']['default_permissions']
+        acl_r = acl_r or self.acl_read or default_acl['read'] or []
+        acl_w = acl_w or self.acl_write or default_acl['write'] or []
 
-        acl_read = new_read_acl or self.acl_read
-        acl_write = new_write_acl or self.acl_write
-
-        acl = acl_read.split(',') if acl_read else []
-        acl = acl or default_acl['read']
-        acl_write = acl_write.split(',') if acl_write else []
-        acl_write = acl_write or default_acl['write']
-
-        if u'all' in acl or len(acl) == 0:
+        if u'all' in acl_r or len(acl_r) == 0:
             return True
-        elif user is not None and u'login' in acl:
+        elif user is not None and u'login' in acl_r:
             return True
-        elif user is not None and (user.email() in acl or user.email() in acl_write):
+        elif user is not None and (user.email() in acl_r or user.email() in acl_w):
             return True
         elif is_admin_user(user):
             return True
         else:
             return False
 
-    def can_write(self, user, default_acl=None, new_read_acl=None, new_write_acl=None):
-        if default_acl is None:
-            default_acl = main.DEFAULT_CONFIG['service']['default_permissions']
+    def can_write(self, user, default_acl=None, acl_r=None, acl_w=None):
+        default_acl = default_acl or main.DEFAULT_CONFIG['service']['default_permissions']
+        acl_w = acl_w or self.acl_write or default_acl['write'] or []
 
-        acl_write = new_write_acl or self.acl_write
-
-        acl = acl_write.split(',') if acl_write else []
-        acl = acl or default_acl['write']
-
-        if (not self.can_read(user, default_acl, new_read_acl, new_write_acl)) and (user is None or user.email() not in acl):
+        if (not self.can_read(user, default_acl, acl_r, acl_w)) and (user is None or user.email() not in acl_w):
             return False
-        elif 'all' in acl:
+        elif 'all' in acl_w:
             return True
-        elif (len(acl) == 0 or u'login' in acl) and user is not None:
+        elif (len(acl_w) == 0 or u'login' in acl_w) and user is not None:
             return True
-        elif user is not None and user.email() in acl:
+        elif user is not None and user.email() in acl_w:
             return True
         elif is_admin_user(user):
             return True
@@ -367,29 +355,35 @@ class PageOperationMixin(object):
 
     @classmethod
     def parse_data(cls, title, itemtype, body):
+        # collect data
         default_data = {'name': title, 'schema': schema.get_itemtype_path(itemtype)}
         yaml_data = cls.parse_schema_yaml(body)
         body_data = pairs_to_dict((m.group('name'), m.group('value')) for m in re.finditer(cls.re_data, body))
-
         data = merge_dicts([default_data, yaml_data, body_data])
+
+        # validation and type conversion
         typed = schema.SchemaConverter.convert(itemtype, data)
+
         return typed
 
-    @staticmethod
-    def parse_metadata(body):
+    @classmethod
+    def parse_metadata(cls, body):
+        # extract lines
         matches = []
         for line in body.split(u'\n'):
-            m = re.match(PageOperationMixin.re_metadata, line.strip())
+            m = re.match(cls.re_metadata, line.strip())
             if m:
                 matches.append(m)
             else:
                 break
 
+        # default values
         metadata = {
             'content-type': 'text/x-markdown',
             'schema': 'Article',
         }
 
+        # parse
         for m in matches:
             key = m.group(1).strip()
             value = m.group(3)
@@ -397,6 +391,17 @@ class PageOperationMixin(object):
                 value = value.strip()
             metadata[key] = value
 
+        # validate
+        if u'pub' in metadata and u'redirect' in metadata:
+            raise ValueError('You cannot use "pub" and "redirect" metadata at '
+                             'the same time.')
+        if u'redirect' in metadata and len(PageOperationMixin.remove_metadata(body).strip()) != 0:
+            raise ValueError('Page with "redirect" metadata cannot have a body '
+                             'content.')
+        if u'read' in metadata and metadata['content-type'] != 'text/x-markdown':
+            raise ValueError('You cannot restrict read access of custom content-typed page.')
+
+        # done
         return metadata
 
     @staticmethod

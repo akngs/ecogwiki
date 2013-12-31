@@ -118,6 +118,12 @@ class PageValidationTest(AppEngineTestCase):
         self.update_page(u'Hello')
         self.assertRaises(ValueError, self.update_page, u'.read admin@x.com\nHello')
 
+    def test_should_not_allow_body_if_there_is_redirect_metadata(self):
+        self.assertRaises(ValueError, self.update_page, u'.redirect A\nHello')
+
+    def test_pub_and_redirect_metatada_should_not_be_used_together(self):
+        self.assertRaises(ValueError, self.update_page, u'.redirect A\n.pub')
+
 
 class YamlSchemaParserTest(AppEngineTestCase):
     def test_no_schema(self):
