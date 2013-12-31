@@ -84,14 +84,14 @@ def humane_item(itemtype, plural=False):
 
 def humane_property(itemtype, prop, rev=False):
     try:
-        if rev:
-            propstr = get_property(prop)['reversed_label']
-            if propstr.find('%s') == -1:
-                return propstr
-            else:
-                return propstr % humane_item(itemtype, True)
-        else:
+        if not rev:
             return get_property(prop)['label']
+
+        propstr = get_property(prop)['reversed_label']
+        if propstr.find('%s') == -1:
+            return propstr
+        else:
+            return propstr % humane_item(itemtype, True)
     except KeyError:
         return prop.capitalize()
 
@@ -172,14 +172,14 @@ def to_html(o, key=None):
 def render_dict(o):
     if len(o) == 1:
         return to_html(o.values()[0])
-    else:
-        html = ['<dl class="wq wq-dict">']
-        for key, value in o.items():
-            html.append('<dt class="wq-key-%s">%s</dt>' % (key, key))
-            html.append('<dd class="wq-value-%s">%s</dd>' % (key, to_html(value, key)))
-        html.append('</dl>')
 
-        return '\n'.join(html)
+    html = ['<dl class="wq wq-dict">']
+    for key, value in o.items():
+        html.append('<dt class="wq-key-%s">%s</dt>' % (key, key))
+        html.append('<dd class="wq-value-%s">%s</dd>' % (key, to_html(value, key)))
+    html.append('</dl>')
+
+    return '\n'.join(html)
 
 
 def render_list(o):
@@ -218,8 +218,7 @@ class SchemaConverter(object):
 
     @staticmethod
     def convert(itemtype, data):
-        converter = SchemaConverter(itemtype, data)
-        return converter.convert_schema()
+        return SchemaConverter(itemtype, data).convert_schema()
 
     @staticmethod
     def _convert_prop(itemtype, pkey, pvalue):
@@ -262,11 +261,7 @@ class Property(object):
         self.pvalue = pvalue
 
     def __eq__(self, o):
-        if type(o) != type(self):
-            return False
-        if o.pvalue != self.pvalue:
-            return False
-        return True
+        return type(o) == type(self) and o.pvalue == self.pvalue
 
     def is_wikilink(self):
         return False
@@ -293,11 +288,7 @@ class ThingProperty(Property):
         self.value = pvalue
 
     def __eq__(self, o):
-        if not super(ThingProperty, self).__eq__(o):
-            return False
-        if o.value != self.value:
-            return False
-        return True
+        return super(ThingProperty, self).__eq__(o) and o.value == self.value
 
     def is_wikilink(self):
         return True
@@ -313,13 +304,7 @@ class TypeProperty(Property):
             raise ValueError('Unknown datatype: %s' % ptype)
 
     def __eq__(self, o):
-        if not super(TypeProperty, self).__eq__(o):
-            return False
-        if o.ptype != self.ptype:
-            return False
-        if o.pvalue != self.pvalue:
-            return False
-        return True
+        return super(TypeProperty, self).__eq__(o) and o.ptype == self.ptype and o.pvalue == self.pvalue
 
 
 class BooleanProperty(TypeProperty):
@@ -422,17 +407,7 @@ class DateProperty(TypeProperty):
         self.bce = m.group('bce') == 'BCE'
 
     def __eq__(self, o):
-        if not super(DateProperty, self).__eq__(o):
-            return False
-        if o.year != self.year:
-            return False
-        if o.month != self.month:
-            return False
-        if o.day != self.day:
-            return False
-        if o.bce != self.bce:
-            return False
-        return True
+        return super(DateProperty, self).__eq__(o) and o.year == self.year and o.month == self.month and o.day == self.day and o.bce == self.bce
 
     def is_year_only(self):
         return self.month is None and self.day is None
