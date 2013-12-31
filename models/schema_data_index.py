@@ -15,13 +15,13 @@ class SchemaDataIndex(ndb.Model):
         ndb.delete_multi(keys)
 
         # insert
-        entities = [cls(title=title, name=name, value=v.pvalue if isinstance(v, schema.Property) else v) for name, v in cls._data_as_pairs(data)]
+        entities = [cls(title=title, name=name, value=v.pvalue if isinstance(v, schema.Property) else v) for name, v in cls.data_as_pairs(data)]
         ndb.put_multi(entities)
 
     @classmethod
     def update_index(cls, title, old_data, new_data):
-        old_pairs = cls._data_as_pairs(old_data)
-        new_pairs = cls._data_as_pairs(new_data)
+        old_pairs = cls.data_as_pairs(old_data)
+        new_pairs = cls.data_as_pairs(new_data)
 
         deletes = old_pairs.difference(new_pairs)
         inserts = new_pairs.difference(old_pairs)
@@ -53,12 +53,11 @@ class SchemaDataIndex(ndb.Model):
         return cls.query(cls.title == title, cls.name == name, cls.value == value).count() > 0
 
     @staticmethod
-    def _data_as_pairs(data):
+    def data_as_pairs(data):
         pairs = set()
         for key, value in data.items():
             if type(value) == list:
-                for v in value:
-                    pairs.add((key, v))
+                pairs.update((key, v) for v in value)
             else:
                 pairs.add((key, value))
         return pairs

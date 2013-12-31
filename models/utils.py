@@ -51,6 +51,8 @@ def title_grouper(title):
 
 def merge_dicts(dicts, sort_values=False, force_list=False):
     merged = {}
+
+    # merge
     for d in dicts:
         for name, value in d.items():
             if name not in merged:
