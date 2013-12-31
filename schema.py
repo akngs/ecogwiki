@@ -202,11 +202,6 @@ def render_list(o):
 
 
 class SchemaConverter(object):
-    @staticmethod
-    def convert(itemtype, data):
-        converter = SchemaConverter(itemtype, data)
-        return converter.convert_schema()
-
     def __init__(self, itemtype, data):
         self._itemtype = itemtype
         self._data = data
@@ -221,58 +216,66 @@ class SchemaConverter(object):
         unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'] + ['schema'])
         known_props = props.difference(unknown_props)
 
-        knowns = [(prop, self.convert_prop(self._itemtype, prop, self._data[prop])) for prop in known_props]
+        knowns = [(prop, SchemaConverter.convert_prop(self._itemtype, prop, self._data[prop])) for prop in known_props]
         unknowns = [(prop, InvalidProperty(self._itemtype, prop, self._data[prop])) for prop in unknown_props]
         return dict(knowns + unknowns)
 
-    def convert_prop(self, itemtype, key, value):
-        if type(value) is list:
-            return [self._convert_prop(itemtype, key, v) for v in value]
+    @classmethod
+    def convert_prop(cls, itemtype, pkey, pvalue):
+        if type(pvalue) is list:
+            return [cls._convert_prop(itemtype, pkey, pv) for pv in pvalue]
         else:
-            return self._convert_prop(itemtype, key, value)
+            return cls._convert_prop(itemtype, pkey, pvalue)
 
-    def _convert_prop(self, itemtype, key, value):
-        if key == 'schema':
-            return TextProperty(itemtype, 'Text', value)
+    @staticmethod
+    def convert(itemtype, data):
+        converter = SchemaConverter(itemtype, data)
+        return converter.convert_schema()
 
-        for t in get_property(key)['ranges']:
+    @staticmethod
+    def _convert_prop(itemtype, pkey, pvalue):
+        if pkey == 'schema':
+            return TextProperty(itemtype, 'Text', pvalue)
+
+        for ptype in get_property(pkey)['ranges']:
             try:
-                if t == 'Boolean':
-                    return BooleanProperty(itemtype, t, value)
-                elif t == 'Date':
-                    return DateProperty(itemtype, t, value)
-                elif t == 'DateTime':
-                    return DateTimeProperty(itemtype, t, value)
-                elif t == 'Number':
-                    return NumberProperty(itemtype, t, value)
-                elif t == 'Float':
-                    return FloatProperty(itemtype, t, value)
-                elif t == 'Integer':
-                    return IntegerProperty(itemtype, t, value)
-                elif t == 'Text':
-                    return TextProperty(itemtype, t, value)
-                elif t == 'URL':
-                    return URLProperty(itemtype, t, value)
-                elif t == 'Time':
-                    return TimeProperty(itemtype, t, value)
-                elif t == 'ISBN':
-                    return IsbnProperty(itemtype, t, value)
+                if ptype == 'Boolean':
+                    return BooleanProperty(itemtype, ptype, pvalue)
+                elif ptype == 'Date':
+                    return DateProperty(itemtype, ptype, pvalue)
+                elif ptype == 'DateTime':
+                    return DateTimeProperty(itemtype, ptype, pvalue)
+                elif ptype == 'Number':
+                    return NumberProperty(itemtype, ptype, pvalue)
+                elif ptype == 'Float':
+                    return FloatProperty(itemtype, ptype, pvalue)
+                elif ptype == 'Integer':
+                    return IntegerProperty(itemtype, ptype, pvalue)
+                elif ptype == 'Text':
+                    return TextProperty(itemtype, ptype, pvalue)
+                elif ptype == 'URL':
+                    return URLProperty(itemtype, ptype, pvalue)
+                elif ptype == 'Time':
+                    return TimeProperty(itemtype, ptype, pvalue)
+                elif ptype == 'ISBN':
+                    return IsbnProperty(itemtype, ptype, pvalue)
                 else:
-                    return ThingProperty(itemtype, t, value)
+                    return ThingProperty(itemtype, ptype, pvalue)
             except ValueError:
                 pass
-        return InvalidProperty(itemtype, 'Invalid', value)
+        return InvalidProperty(itemtype, 'Invalid', pvalue)
 
 
 class Property(object):
-    def __init__(self, itemtype, t, value):
+    def __init__(self, itemtype, ptype, pvalue):
         self.itemtype = itemtype
-        self.rawvalue = value
+        self.ptype = ptype
+        self.pvalue = pvalue
 
     def __eq__(self, o):
         if type(o) != type(self):
             return False
-        if o.rawvalue != self.rawvalue:
+        if o.pvalue != self.pvalue:
             return False
         return True
 
@@ -280,28 +283,25 @@ class Property(object):
         return False
 
     def render(self):
-        return self.rawvalue
+        return self.pvalue
 
 
 class InvalidProperty(Property):
-    def __init__(self, itemtype, t, value):
-        super(InvalidProperty, self).__init__(itemtype, t, value)
-
     def __eq__(self, other):
         return False
 
     def render(self):
-        return u'<span class="error">%s</span>' % self.rawvalue
+        return u'<span class="error">%s</span>' % self.pvalue
 
 
 class ThingProperty(Property):
-    def __init__(self, itemtype, t, value):
-        super(ThingProperty, self).__init__(itemtype, t, value)
+    def __init__(self, itemtype, ptype, pvalue):
+        super(ThingProperty, self).__init__(itemtype, ptype, pvalue)
         try:
-            get_schema(t)
+            get_schema(ptype)
         except KeyError:
-            raise ValueError('Unknown itemtype: %s' % t)
-        self.value = value
+            raise ValueError('Unknown itemtype: %s' % ptype)
+        self.value = pvalue
 
     def __eq__(self, o):
         if not super(ThingProperty, self).__eq__(o):
@@ -314,94 +314,74 @@ class ThingProperty(Property):
         return True
 
     def render(self):
-        return md_wikilink.render_wikilink(self.rawvalue)
+        return md_wikilink.render_wikilink(self.value)
 
 
 class TypeProperty(Property):
-    def __init__(self, itemtype, t, value):
-        super(TypeProperty, self).__init__(itemtype, t, value)
-        if t not in get_schema_set()['datatypes']:
-            raise ValueError('Unknown datatype: %s' % t)
-        self.datatype = t
+    def __init__(self, itemtype, ptype, pvalue):
+        super(TypeProperty, self).__init__(itemtype, ptype, pvalue)
+        if ptype not in get_schema_set()['datatypes']:
+            raise ValueError('Unknown datatype: %s' % ptype)
 
     def __eq__(self, o):
         if not super(TypeProperty, self).__eq__(o):
             return False
-        if o.datatype != self.datatype:
+        if o.ptype != self.ptype:
+            return False
+        if o.pvalue != self.pvalue:
             return False
         return True
 
 
 class BooleanProperty(TypeProperty):
-    def __init__(self, itemtype, t, value):
-        super(BooleanProperty, self).__init__(itemtype, t, value)
-        if value.lower() in ('1', 'yes', 'true'):
+    def __init__(self, itemtype, ptype, pvalue):
+        super(BooleanProperty, self).__init__(itemtype, ptype, pvalue)
+        if pvalue.lower() in ('1', 'yes', 'true'):
             self.value = True
-        elif value.lower() in ('0', 'no', 'false'):
+        elif pvalue.lower() in ('0', 'no', 'false'):
             self.value = False
         else:
-            raise ValueError('Invalid boolean: %s' % value)
-
-    def __eq__(self, o):
-        if not super(BooleanProperty, self).__eq__(o):
-            return False
-        if o.value != self.value:
-            return False
-        return True
+            raise ValueError('Invalid boolean: %s' % pvalue)
 
 
 class TextProperty(TypeProperty):
-    def __init__(self, itemtype, t, value):
-        super(TextProperty, self).__init__(itemtype, t, value)
-        self.value = value
-
-    def __eq__(self, o):
-        if not super(TextProperty, self).__eq__(o):
-            return False
-        if o.value != self.value:
-            return False
-        return True
+    def __init__(self, itemtype, ptype, pvalue):
+        super(TextProperty, self).__init__(itemtype, ptype, pvalue)
+        self.value = pvalue
 
 
 class NumberProperty(TypeProperty):
-    def __init__(self, itemtype, t, value):
-        super(NumberProperty, self).__init__(itemtype, t, value)
+    def __init__(self, itemtype, ptype, pvalue):
+        super(NumberProperty, self).__init__(itemtype, ptype, pvalue)
         try:
-            if value.find('.') == -1:
-                self.value = int(value)
+            if pvalue.find('.') == -1:
+                self.value = int(pvalue)
             else:
-                self.value = float(value)
+                self.value = float(pvalue)
         except ValueError:
-            raise ValueError('Invalid number: %s' % value)
-
-    def __eq__(self, o):
-        if not super(NumberProperty, self).__eq__(o):
-            return False
-        if o.value != self.value:
-            return False
-        return True
+            raise ValueError('Invalid number: %s' % pvalue)
 
 
 class IntegerProperty(NumberProperty):
-    def __init__(self, itemtype, t, value):
-        super(IntegerProperty, self).__init__(itemtype, t, value)
+    def __init__(self, itemtype, ptype, pvalue):
+        super(IntegerProperty, self).__init__(itemtype, ptype, pvalue)
 
         try:
-            self.value = int(value)
+            self.value = int(pvalue)
         except ValueError:
-            raise ValueError('Invalid integer: %s' % value)
-        if self.value != float(value):
-            raise ValueError('Invalid integer: %s' % value)
+            raise ValueError('Invalid integer: %s' % pvalue)
+        if self.value != float(pvalue):
+            raise ValueError('Invalid integer: %s' % pvalue)
 
 
 class FloatProperty(NumberProperty):
-    def __init__(self, itemtype, t, value):
-        super(FloatProperty, self).__init__(itemtype, t, value)
+    def __init__(self, itemtype, ptype, pvalue):
+        super(FloatProperty, self).__init__(itemtype, ptype, pvalue)
 
         try:
-            self.value = float(value)
+            self.value = float(pvalue)
         except ValueError:
-            raise ValueError('Invalid float: %s' % value)
+            raise ValueError('Invalid float: %s' % pvalue)
 
 
 class DateTimeProperty(TextProperty):
@@ -417,30 +397,23 @@ class TimeProperty(TextProperty):
 class URLProperty(TypeProperty):
     P_URL = ur'\w+://[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\-\_\=\+\[\]\\\:\;\"\'\,\.\'\?/]+'
 
-    def __init__(self, itemtype, t, value):
-        super(URLProperty, self).__init__(itemtype, t, value)
-        m = re.match(URLProperty.P_URL, value)
+    def __init__(self, itemtype, ptype, pvalue):
+        super(URLProperty, self).__init__(itemtype, ptype, pvalue)
+        m = re.match(URLProperty.P_URL, pvalue)
         if m is None:
-            raise ValueError('Invalid URL: %s' % value)
-        self.value = value
-
-    def __eq__(self, o):
-        if not super(URLProperty, self).__eq__(o):
-            return False
-        if o.value != self.value:
-            return False
-        return True
+            raise ValueError('Invalid URL: %s' % pvalue)
+        self.value = pvalue
 
 
 class DateProperty(TypeProperty):
     P_DATE = ur'(?P<y>\d+)(-(?P<m>(\d\d|\?\?))-(?P<d>(\d\d|\?\?)))?( (?P<bce>BCE))?'
 
-    def __init__(self, itemtype, t, value):
-        super(DateProperty, self).__init__(itemtype, t, value)
-        m = re.match(DateProperty.P_DATE, value)
+    def __init__(self, itemtype, ptype, pvalue):
+        super(DateProperty, self).__init__(itemtype, ptype, pvalue)
+        m = re.match(DateProperty.P_DATE, pvalue)
 
         if m is None:
-            raise ValueError('Invalid value: %s' % value)
+            raise ValueError('Invalid value: %s' % pvalue)
         self.year = int(m.group('y'))
 
         if m.group('m') == u'??':
@@ -479,25 +452,17 @@ class DateProperty(TypeProperty):
         return True
 
     def render(self):
-        return md_wikilink.render_wikilink(self.rawvalue)
+        return md_wikilink.render_wikilink(self.pvalue)
 
 
 class IsbnProperty(TypeProperty):
     P_ISBN = ur'[\dxX]{10,13}'
 
-    def __init__(self, itemtype, t, value):
-        super(IsbnProperty, self).__init__(itemtype, t, value)
-        m = re.match(IsbnProperty.P_ISBN, value)
-        if m is None:
-            raise ValueError('Invalid ISBN: %s' % value)
-        self.value = value
-
-    def __eq__(self, o):
-        if not super(IsbnProperty, self).__eq__(o):
-            return False
-        if o.value != self.value:
-            return False
-        return True
+    def __init__(self, itemtype, ptype, pvalue):
+        super(IsbnProperty, self).__init__(itemtype, ptype, pvalue)
+        if re.match(IsbnProperty.P_ISBN, pvalue) is None:
+            raise ValueError('Invalid ISBN: %s' % pvalue)
+        self.value = pvalue
 
     def render(self):
         if self.value[:2] == '89':

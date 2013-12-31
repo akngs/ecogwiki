@@ -90,18 +90,18 @@ class EmbeddedSchemaDataTest(AppEngineTestCase):
     def test_no_data(self):
         page = self.update_page(u'Hello', u'Hello')
         self.assertEquals(['name', 'schema'], page.data.keys())
-        self.assertEqual(u'Hello', page.data['name'].rawvalue)
-        self.assertEqual(u'Thing/CreativeWork/Article/', page.data['schema'].rawvalue)
+        self.assertEqual(u'Hello', page.data['name'].pvalue)
+        self.assertEqual(u'Thing/CreativeWork/Article/', page.data['schema'].pvalue)
 
     def test_author_and_isbn(self):
         page = self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}')
-        self.assertEqual(u'AK', page.data['author'].rawvalue)
-        self.assertEqual(u'1234567890', page.data['isbn'].rawvalue)
+        self.assertEqual(u'AK', page.data['author'].pvalue)
+        self.assertEqual(u'1234567890', page.data['isbn'].pvalue)
 
     def test_multiple_authors(self):
         page = self.update_page(u'.schema Book\n[[author::AK]] and [[author::TK]]')
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEqual([u'AK', u'TK'], [v.rawvalue for v in page.data['author']])
+        self.assertEqual([u'AK', u'TK'], [v.pvalue for v in page.data['author']])
 
 
 class YamlSchemaDataTest(AppEngineTestCase):
@@ -113,24 +113,24 @@ class YamlSchemaDataTest(AppEngineTestCase):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello', u'Hello')
         self.assertEqual({u'Book/author': [u'AK']}, page.outlinks)
         self.assertEquals({'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'},
-                          dict((k, v.rawvalue) for k, v in page.data.items()))
+                          dict((k, v.pvalue) for k, v in page.data.items()))
 
     def test_list_value(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\nHello', u'Hello')
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEquals([u'AK', u'TK'], [v.rawvalue for v in page.data['author']])
+        self.assertEquals([u'AK', u'TK'], [v.pvalue for v in page.data['author']])
 
     def test_mix_with_embedded_data(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::1234567890}}\n\n[[author::JK]]', u'Hello')
         self.assertEqual({u'Book/author': [u'AK', u'JK', u'TK']}, page.outlinks)
-        self.assertEqual([u'AK', u'TK', u'JK'], [v.rawvalue for v in page.data['author']])
-        self.assertEqual(u'1234567890', page.data['isbn'].rawvalue)
-        self.assertEqual(u'Hello', page.data['name'].rawvalue)
+        self.assertEqual([u'AK', u'TK', u'JK'], [v.pvalue for v in page.data['author']])
+        self.assertEqual(u'1234567890', page.data['isbn'].pvalue)
+        self.assertEqual(u'Hello', page.data['name'].pvalue)
 
     def test_no_duplications(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::1234567890}}\n\n[[author::TK]]')
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEquals([u'AK', u'TK'], [v.rawvalue for v in page.data['author']])
+        self.assertEquals([u'AK', u'TK'], [v.pvalue for v in page.data['author']])
 
     def test_yaml_block_should_not_be_rendered(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello')
@@ -186,7 +186,7 @@ class TypeConversionTest(AppEngineTestCase):
 
     def test_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300-05-15 BCE'})
-        self.assertEqual(u'300-05-15 BCE', data['birthDate'].rawvalue)
+        self.assertEqual(u'300-05-15 BCE', data['birthDate'].pvalue)
         self.assertEqual(300, data['birthDate'].year)
         self.assertTrue(data['birthDate'].bce)
         self.assertEqual(5, data['birthDate'].month)
@@ -211,15 +211,15 @@ class TypeConversionTest(AppEngineTestCase):
     def test_invalid_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'Ten years ago'})['birthDate']
         self.assertEqual(schema.InvalidProperty, type(data))
-        self.assertEqual(u'Ten years ago', data.rawvalue)
+        self.assertEqual(u'Ten years ago', data.pvalue)
 
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-13-05'})['birthDate']
         self.assertEqual(schema.InvalidProperty, type(data))
-        self.assertEqual(u'1979-13-05', data.rawvalue)
+        self.assertEqual(u'1979-13-05', data.pvalue)
 
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-05-40'})['birthDate']
         self.assertEqual(schema.InvalidProperty, type(data))
-        self.assertEqual(u'1979-05-40', data.rawvalue)
+        self.assertEqual(u'1979-05-40', data.pvalue)
 
     def test_boolean(self):
         for l in [u'1', u'true', u'TRUE', u'yes', u'YES']:

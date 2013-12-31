@@ -15,7 +15,7 @@ class SchemaDataIndex(ndb.Model):
         ndb.delete_multi(keys)
 
         # insert
-        entities = [cls(title=title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v) for name, v in cls._data_as_pairs(data)]
+        entities = [cls(title=title, name=name, value=v.pvalue if isinstance(v, schema.Property) else v) for name, v in cls._data_as_pairs(data)]
         ndb.put_multi(entities)
 
     @classmethod
@@ -27,7 +27,7 @@ class SchemaDataIndex(ndb.Model):
         inserts = new_pairs.difference(old_pairs)
 
         # delete
-        queries = [cls.query(cls.title == title, cls.name == name, cls.value == (v.rawvalue if isinstance(v, schema.Property) else v))
+        queries = [cls.query(cls.title == title, cls.name == name, cls.value == (v.pvalue if isinstance(v, schema.Property) else v))
                    for name, v in deletes]
         entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
         keys = [e.key for e in entities]
@@ -35,7 +35,7 @@ class SchemaDataIndex(ndb.Model):
             ndb.delete_multi(keys)
 
         # insert
-        entities = [cls(title=title, name=name, value=v.rawvalue if isinstance(v, schema.Property) else v)
+        entities = [cls(title=title, name=name, value=v.pvalue if isinstance(v, schema.Property) else v)
                     for name, v in inserts]
         if len(entities) > 0:
             ndb.put_multi(entities)

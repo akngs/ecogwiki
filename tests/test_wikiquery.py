@@ -89,12 +89,12 @@ class WikiqueryEvaluationTest(AppEngineTestCase):
 
     def test_specifying_attr(self):
         result = WikiPage.wikiquery(u'"GEB" > author')
-        self.assertEqual(u'Douglas Hofstadter', result['author'].rawvalue)
+        self.assertEqual(u'Douglas Hofstadter', result['author'].pvalue)
 
         result = WikiPage.wikiquery(u'"GEB" > name, author, datePublished')
-        self.assertEqual(u'Douglas Hofstadter', result['author'].rawvalue)
-        self.assertEqual(u'GEB', result['name'].rawvalue)
-        self.assertEqual(u'1979', result['datePublished'].rawvalue)
+        self.assertEqual(u'Douglas Hofstadter', result['author'].pvalue)
+        self.assertEqual(u'GEB', result['name'].pvalue)
+        self.assertEqual(u'1979', result['datePublished'].pvalue)
 
     def test_logical_operations(self):
         self.assertEqual([{u'name': u'The Mind\'s I'}, {u'name': u'GEB'}],
@@ -106,10 +106,10 @@ class WikiqueryEvaluationTest(AppEngineTestCase):
 
     def test_complex(self):
         result = WikiPage.wikiquery(u'schema:"Thing/CreativeWork/Book/" > name, author')
-        self.assertEqual([u'Daniel Dennett', u'Douglas Hofstadter'], [v.rawvalue for v in result[0]['author']])
-        self.assertEqual(u'The Mind\'s I', result[0]['name'].rawvalue)
-        self.assertEqual(u'Douglas Hofstadter', result[1]['author'].rawvalue)
-        self.assertEqual(u'GEB', result[1]['name'].rawvalue)
+        self.assertEqual([u'Daniel Dennett', u'Douglas Hofstadter'], [v.pvalue for v in result[0]['author']])
+        self.assertEqual(u'The Mind\'s I', result[0]['name'].pvalue)
+        self.assertEqual(u'Douglas Hofstadter', result[1]['author'].pvalue)
+        self.assertEqual(u'GEB', result[1]['name'].pvalue)
 
 
 class WikiqueryAclEvaluationTest(AppEngineTestCase):

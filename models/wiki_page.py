@@ -508,7 +508,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     def _schema_item_to_links(self, name, value):
         if isinstance(value, schema.Property) and value.is_wikilink():
-            return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value.rawvalue))
+            return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value.pvalue))
         elif type(value) == str or type(value) == unicode:
             return md_wikilink.parse_wikilinks(self.itemtype, u'[[%s::%s]]' % (name, value))
         else:

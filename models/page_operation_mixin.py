@@ -161,7 +161,7 @@ class PageOperationMixin(object):
     @property
     def rawdata(self):
         data = self.data
-        return dict((k, v.rawvalue if isinstance(v, schema.Property) else v) for k, v in data.items())
+        return dict((k, v.pvalue if isinstance(v, schema.Property) else v) for k, v in data.items())
 
     @property
     def metadata(self):
