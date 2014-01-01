@@ -18,6 +18,7 @@ class AppEngineTestCase(unittest.TestCase):
         caching.flush_all()
 
     def tearDown(self):
+        caching.flush_all()
         self.testbed.deactivate()
         self.logout()
 

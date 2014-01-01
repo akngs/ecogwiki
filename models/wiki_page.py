@@ -183,7 +183,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # update model and save
         self.body = new_body
         self.modifier = user
-        self.description = self.make_description()
+        self.description = PageOperationMixin.make_description(new_body)
         self.acl_read = new_md.get('read', '')
         self.acl_write = new_md.get('write', '')
         self.comment = comment
@@ -250,7 +250,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             raise e
 
         # check data
-        new_data = PageOperationMixin.parse_data(self.title, new_md['schema'], new_body)
+        new_data = PageOperationMixin.parse_data(self.title, new_body, new_md['schema'])
         if any(type(value) == schema.InvalidProperty for value in new_data.values()):
             raise ValueError('Invalid schema data')
 

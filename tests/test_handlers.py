@@ -66,39 +66,34 @@ class PageHandlerTest(AppEngineTestCase):
         self.browser = Browser()
 
     def test_get_sp_chages(self):
-        for _ in range(2):
-            self.browser.get('/sp.changes')
-            links = self.browser.query('.//table//a')
-            link_texts = [link.text for link in links]
-            self.assertEqual([u'BBS', u'Post C', u'Post B', u'Post A', u'A', u'Home'], link_texts)
+        self.browser.get('/sp.changes')
+        links = self.browser.query('.//table//a')
+        link_texts = [link.text for link in links]
+        self.assertEqual([u'BBS', u'Post C', u'Post B', u'Post A', u'A', u'Home'], link_texts)
 
     def test_get_sp_index(self):
-        for _ in range(2):
-            self.browser.get('/sp.index')
-            links = self.browser.query('.//table//a')
-            link_texts = [link.text for link in links]
-            self.assertEqual([u'A', u'BBS', u'Home', u'Post A', u'Post B', u'Post C'], link_texts)
+        self.browser.get('/sp.index')
+        links = self.browser.query('.//table//a')
+        link_texts = [link.text for link in links]
+        self.assertEqual([u'A', u'BBS', u'Home', u'Post A', u'Post B', u'Post C'], link_texts)
 
     def test_get_sp_posts(self):
-        for _ in range(2):
-            self.browser.get('/sp.posts')
-            links = self.browser.query('.//table//a')
-            link_texts = [link.text for link in links]
-            self.assertEqual([u'Post B', u'Post A'], link_texts)
+        self.browser.get('/sp.posts')
+        links = self.browser.query('.//table//a')
+        link_texts = [link.text for link in links]
+        self.assertEqual([u'Post B', u'Post A'], link_texts)
 
     def test_get_posts_to_page(self):
-        for _ in range(2):
-            self.browser.get('/BBS')
-            links = self.browser.query('.//table//a')
-            link_texts = [link.text for link in links]
-            self.assertEqual([u'Post C'], link_texts)
+        self.browser.get('/BBS')
+        links = self.browser.query('.//table//a')
+        link_texts = [link.text for link in links]
+        self.assertEqual([u'Post C'], link_texts)
 
     def test_get_wikipage(self):
-        for _ in range(2):
-            self.browser.get('/A')
-            links = self.browser.query('.//article//a[@class=\'wikipage\']')
-            link_texts = [link.text for link in links]
-            self.assertEqual(['Home'], link_texts)
+        self.browser.get('/A')
+        links = self.browser.query('.//article//a[@class=\'wikipage\']')
+        link_texts = [link.text for link in links]
+        self.assertEqual(['Home'], link_texts)
 
     def test_post_in_json(self):
         self.oauth_stub.login('jh@gmail.com', 'jh')
@@ -127,23 +122,21 @@ class PageHandlerTest(AppEngineTestCase):
         self.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
-        for _ in range(2):
-            self.browser.get('/sp.changes')
-            links = self.browser.query('.//table//a')
-            link_texts = [link.text for link in links]
-            self.assertEqual([u'New page', u'BBS', u'Post C', u'Post B', u'Post A', u'A', u'Home'],
-                             link_texts)
+        self.browser.get('/sp.changes')
+        links = self.browser.query('.//table//a')
+        link_texts = [link.text for link in links]
+        self.assertEqual([u'New page', u'BBS', u'Post C', u'Post B', u'Post A', u'A', u'Home'],
+                         link_texts)
 
     def test_new_page_should_be_shown_in_sp_index(self):
         self.login('ak@gmail.com', 'ak')
         self.browser.post('/New_page?_method=PUT', 'body=[[Link!]]&revision=0')
 
-        for _ in range(2):
-            self.browser.get('/sp.index')
-            links = self.browser.query('.//table//a')
-            link_texts = [link.text for link in links]
-            self.assertEqual([u'A', u'BBS', u'Home', u'New page', u'Post A', u'Post B', u'Post C'],
-                             link_texts)
+        self.browser.get('/sp.index')
+        links = self.browser.query('.//table//a')
+        link_texts = [link.text for link in links]
+        self.assertEqual([u'A', u'BBS', u'Home', u'New page', u'Post A', u'Post B', u'Post C'],
+                         link_texts)
 
     def test_redirect_metadata(self):
         self.update_page(u'.redirect Hello World', u'Hi')

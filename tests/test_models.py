@@ -128,7 +128,7 @@ class PageValidationTest(AppEngineTestCase):
         self.assertRaises(ValueError, self.update_page, u'.redirect A\n.pub')
 
 
-class YamlSchemaParserTest(AppEngineTestCase):
+class YamlSchemaParserTest(unittest.TestCase):
     def test_no_schema(self):
         self.assertEqual({}, PageOperationMixin.parse_schema_yaml(u'Hello'))
 
@@ -137,37 +137,33 @@ class YamlSchemaParserTest(AppEngineTestCase):
         self.assertRaises(ValueError, PageOperationMixin.parse_schema_yaml, u'.schema Book\n\n    #!yaml/schema\n    y: [1, 2\n')
 
 
-class MetadataParserTest(AppEngineTestCase):
+class MetadataParserTest(unittest.TestCase):
     def setUp(self):
-        super(MetadataParserTest, self).setUp()
         self.default_md = {
             'content-type': 'text/x-markdown',
             'schema': 'Article',
         }
 
     def test_normal(self):
-        page = WikiPage.get_by_title(u'Hello')
         expected = {
             u'hello': u'a b c',
             u'x': None,
             u'z': u'what?',
         }
         expected.update(self.default_md)
-        actual = page.parse_metadata(u'.hello a b c\n.x\n.z what?\nblahblah')
+        actual = PageOperationMixin.parse_metadata(u'.hello a b c\n.x\n.z what?\nblahblah')
         self.assertEqual(expected, actual)
 
     def test_empty_string(self):
-        page = WikiPage.get_by_title(u'Hello')
         expected = {}
         expected.update(self.default_md)
-        actual = page.parse_metadata(u'')
+        actual = PageOperationMixin.parse_metadata(u'')
         self.assertEqual(expected, actual)
 
     def test_no_metadata(self):
-        page = WikiPage.get_by_title(u'Hello')
         expected = {}
         expected.update(self.default_md)
-        actual = page.parse_metadata(u'Hello\nThere')
+        actual = PageOperationMixin.parse_metadata(u'Hello\nThere')
         self.assertEqual(expected, actual)
 
     def test_get_body_only(self):
@@ -221,7 +217,7 @@ class WikiLinkParserTest(unittest.TestCase):
         self.assertEqual({}, parse_wikilinks('Article', u'[[=schema:"Article"]]'))
 
 
-class TitleToPathConvertTest(AppEngineTestCase):
+class TitleToPathConvertTest(unittest.TestCase):
     def test_title_to_path(self):
         self.assertEqual('Hello_World', WikiPage.title_to_path(u'Hello World'))
         self.assertEqual('A%26B', WikiPage.title_to_path(u'A&B'))
@@ -296,7 +292,7 @@ class RelatedPageUpdatingTest(AppEngineTestCase):
         self.assertRaises(ValueError, self.update_page, u'.redirect A', u'A')
 
 
-class SimilarTitlesTest(AppEngineTestCase):
+class SimilarTitlesTest(unittest.TestCase):
     def test_similar_pages(self):
         titles = [
             u'hello',
@@ -335,29 +331,25 @@ class SimilarTitlesTest(AppEngineTestCase):
             self.assertEqual(u'hellothere', WikiPage.normalize_title(t))
 
 
-class DescriptionTest(AppEngineTestCase):
-    def setUp(self):
-        super(DescriptionTest, self).setUp()
-        self.login('ak@gmail.com', 'ak')
-
+class DescriptionTest(unittest.TestCase):
     def test_try_newline(self):
-        self.assertEqual(u'Hello', self.update_page(u'Hello\nWorld').make_description(20))
+        self.assertEqual(u'Hello', PageOperationMixin.make_description(u'Hello\nWorld', 20))
 
     def test_try_period(self):
         self.assertEqual(u'Hi. Hello. World.',
-                         self.update_page(u'Hi. Hello. World. Sentences.').make_description(20))
+                         PageOperationMixin.make_description(u'Hi. Hello. World. Sentences.', 20))
 
     def test_cut_off(self):
         self.assertEqual(u'Hi Hello World Se...',
-                         self.update_page(u'Hi Hello World Sentences.').make_description(20))
+                         PageOperationMixin.make_description(u'Hi Hello World Sentences.', 20))
 
     def test_should_ignore_metadata(self):
         self.assertEqual(u'Hello',
-                         self.update_page(u'.pub\n\nHello').make_description(20))
+                         PageOperationMixin.make_description(u'.pub\n\nHello', 20))
 
     def test_should_ignore_yaml_schema_block(self):
         self.assertEqual(u'Hello',
-                         self.update_page(u'.schema Book\n    #!yaml/schema\n    author: A\n\nHello').make_description(20))
+                         PageOperationMixin.make_description(u'.schema Book\n    #!yaml/schema\n    author: A\n\nHello', 20))
 
 
 class SpecialTitlesTest(AppEngineTestCase):

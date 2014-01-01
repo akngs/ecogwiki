@@ -2,7 +2,7 @@
 import schema
 import unittest2 as unittest
 from tests import AppEngineTestCase
-from models import SchemaDataIndex
+from models import SchemaDataIndex, PageOperationMixin
 
 
 class SchemaTest(AppEngineTestCase):
@@ -95,26 +95,21 @@ class SchemaPathTest(unittest.TestCase):
                          schema.get_itemtype_path('Article'))
 
 
-class EmbeddedSchemaDataTest(AppEngineTestCase):
-    def setUp(self):
-        super(EmbeddedSchemaDataTest, self).setUp()
-        self.login('ak@gmail.com', 'ak')
-
+class EmbeddedSchemaDataTest(unittest.TestCase):
     def test_no_data(self):
-        page = self.update_page(u'Hello', u'Hello')
-        self.assertEquals(['name', 'schema'], page.data.keys())
-        self.assertEqual(u'Hello', page.data['name'].pvalue)
-        self.assertEqual(u'Thing/CreativeWork/Article/', page.data['schema'].pvalue)
+        data = PageOperationMixin.parse_data(u'Hello', u'Hello')
+        self.assertEquals(['name', 'schema'], data.keys())
+        self.assertEqual(u'Hello', data['name'].pvalue)
+        self.assertEqual(u'Thing/CreativeWork/Article/', data['schema'].pvalue)
 
     def test_author_and_isbn(self):
-        page = self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}')
-        self.assertEqual(u'AK', page.data['author'].pvalue)
-        self.assertEqual(u'1234567890', page.data['isbn'].pvalue)
+        data = PageOperationMixin.parse_data(u'Hello', u'[[author::AK]]\n{{isbn::1234567890}}', u'Book')
+        self.assertEqual(u'AK', data['author'].pvalue)
+        self.assertEqual(u'1234567890', data['isbn'].pvalue)
 
     def test_multiple_authors(self):
-        page = self.update_page(u'.schema Book\n[[author::AK]] and [[author::TK]]')
-        self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEqual([u'AK', u'TK'], [v.pvalue for v in page.data['author']])
+        data = PageOperationMixin.parse_data(u'Hello', u'[[author::AK]] and [[author::TK]]', u'Book')
+        self.assertEqual([u'AK', u'TK'], [v.pvalue for v in data['author']])
 
 
 class YamlSchemaDataTest(AppEngineTestCase):

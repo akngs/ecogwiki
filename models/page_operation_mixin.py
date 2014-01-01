@@ -88,7 +88,7 @@ class PageOperationMixin(object):
 
     @property
     def data(self):
-        return PageOperationMixin.parse_data(self.title, self.itemtype, self.body)
+        return PageOperationMixin.parse_data(self.title, self.body, self.itemtype)
 
     @property
     def rawdata(self):
@@ -137,33 +137,6 @@ class PageOperationMixin(object):
     @property
     def hashbangs(self):
         return PageOperationMixin.extract_hashbangs(self.rendered_body)
-
-    def make_description(self, max_length=200):
-        # remove yaml/schema block and metadata
-        body = re.sub(PageOperationMixin.re_yaml_schema, u'\n', self.body)
-        body = PageOperationMixin.remove_metadata(body).strip()
-
-        # try newline
-        index = body.find(u'\n')
-        if index != -1:
-            body = body[:index].strip()
-
-        # try period
-        index = 0
-        while index < max_length:
-            next_index = body.find(u'. ', index)
-            if next_index == -1:
-                break
-            index = next_index + 1
-
-        if index > 3:
-            return body[:index].strip()
-
-        if len(body) <= max_length:
-            return body
-
-        # just cut-off
-        return body[:max_length - 3].strip() + u'...'
 
     def can_read(self, user, default_acl=None, acl_r=None, acl_w=None):
         default_acl = default_acl or main.DEFAULT_CONFIG['service']['default_permissions']
@@ -257,6 +230,34 @@ class PageOperationMixin(object):
         return ss
 
     @staticmethod
+    def make_description(body, max_length=200):
+        # remove yaml/schema block and metadata
+        body = re.sub(PageOperationMixin.re_yaml_schema, u'\n', body)
+        body = PageOperationMixin.remove_metadata(body).strip()
+
+        # try newline
+        index = body.find(u'\n')
+        if index != -1:
+            body = body[:index].strip()
+
+        # try period
+        index = 0
+        while index < max_length:
+            next_index = body.find(u'. ', index)
+            if next_index == -1:
+                break
+            index = next_index + 1
+
+        if index > 3:
+            return body[:index].strip()
+
+        if len(body) <= max_length:
+            return body
+
+        # just cut-off
+        return body[:max_length - 3].strip() + u'...'
+
+    @staticmethod
     def sanitize_html(rendered):
         if rendered:
             cleaner = Cleaner(safe_attrs_only=False)
@@ -302,7 +303,7 @@ class PageOperationMixin(object):
         return parsed
 
     @classmethod
-    def parse_data(cls, title, itemtype, body):
+    def parse_data(cls, title, body, itemtype=u'Article'):
         # collect data
         default_data = {'name': title, 'schema': schema.get_itemtype_path(itemtype)}
         yaml_data = cls.parse_schema_yaml(body)
