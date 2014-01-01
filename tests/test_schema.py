@@ -165,10 +165,7 @@ class SchemaIndexTest(AppEngineTestCase):
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'datePublished', u'2013'))
 
 
-class TypeConversionTest(AppEngineTestCase):
-    def test_update_page_should_perform_validation(self):
-        self.assertRaises(ValueError, self.update_page, u'.schema UnknownSchema')
-
+class TypeConversionTest(unittest.TestCase):
     def test_unknown_itemtype(self):
         self.assertRaises(ValueError, schema.SchemaConverter.convert, u'UnknownSchema', {})
 
@@ -286,3 +283,9 @@ class TypeConversionTest(AppEngineTestCase):
         self.assertEqual(2, len(data['author']))
         self.assertEqual(u'AK', data['author'][0].value)
         self.assertEqual(u'CK', data['author'][1].value)
+
+
+class ConversionPriorityTest(unittest.TestCase):
+    def test_try_url_first_then_text(self):
+        prop = schema.SchemaConverter.convert(u'SoftwareApplication', {u'featureList': u'http://x.com'})['featureList']
+        self.assertEqual(schema.URLProperty, type(prop))

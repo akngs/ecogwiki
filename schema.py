@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+import sys
 import json
 import caching
-import urllib2
+import operator
 from markdownext import md_wikilink
 
 
@@ -217,33 +218,24 @@ class SchemaConverter(object):
         if pkey == 'schema':
             return TextProperty(itemtype, 'Text', pvalue)
 
-        for ptype in get_property(pkey)['ranges']:
+        ranges = get_property(pkey)['ranges']
+        types = [(SchemaConverter.type_by_name(ptype), ptype) for ptype in ranges]
+        types = [(type_obj, ptype, PRIORITY[type_obj]) for type_obj, ptype in types]
+        sorted_types = sorted(types, key=operator.itemgetter(2))
+
+        for type_obj, ptype, _ in sorted_types:
             try:
-                if ptype == 'Boolean':
-                    return BooleanProperty(itemtype, ptype, pvalue)
-                elif ptype == 'Date':
-                    return DateProperty(itemtype, ptype, pvalue)
-                elif ptype == 'DateTime':
-                    return DateTimeProperty(itemtype, ptype, pvalue)
-                elif ptype == 'Number':
-                    return NumberProperty(itemtype, ptype, pvalue)
-                elif ptype == 'Float':
-                    return FloatProperty(itemtype, ptype, pvalue)
-                elif ptype == 'Integer':
-                    return IntegerProperty(itemtype, ptype, pvalue)
-                elif ptype == 'Text':
-                    return TextProperty(itemtype, ptype, pvalue)
-                elif ptype == 'URL':
-                    return URLProperty(itemtype, ptype, pvalue)
-                elif ptype == 'Time':
-                    return TimeProperty(itemtype, ptype, pvalue)
-                elif ptype == 'ISBN':
-                    return IsbnProperty(itemtype, ptype, pvalue)
-                else:
-                    return ThingProperty(itemtype, ptype, pvalue)
+                return type_obj(itemtype, ptype, pvalue)
             except ValueError:
                 pass
         return InvalidProperty(itemtype, 'Invalid', pvalue)
+
+    @staticmethod
+    def type_by_name(name):
+        try:
+            return getattr(sys.modules[__name__], '%sProperty' % name)
+        except AttributeError:
+            return ThingProperty
 
 
 class Property(object):
@@ -410,12 +402,12 @@ class DateProperty(TypeProperty):
         return md_wikilink.render_wikilink(self.pvalue)
 
 
-class IsbnProperty(TypeProperty):
+class ISBNProperty(TypeProperty):
     P_ISBN = ur'[\dxX]{10,13}'
 
     def __init__(self, itemtype, ptype, pvalue):
-        super(IsbnProperty, self).__init__(itemtype, ptype, pvalue)
-        if re.match(IsbnProperty.P_ISBN, pvalue) is None:
+        super(ISBNProperty, self).__init__(itemtype, ptype, pvalue)
+        if re.match(ISBNProperty.P_ISBN, pvalue) is None:
             raise ValueError('Invalid ISBN: %s' % pvalue)
         self.value = pvalue
 
@@ -428,3 +420,28 @@ class IsbnProperty(TypeProperty):
             url = u'http://www.amazon.com/gp/product/%s' % self.value
 
         return u'<a href="%s" class="isbn" itemprop="isbn">%s</a>' % (url, self.value)
+
+
+PRIORITY = {
+    ISBNProperty: 1,
+    URLProperty: 1,
+
+    DateProperty: 2,
+    DateTimeProperty: 2,
+    TimeProperty: 2,
+
+    BooleanProperty: 3,
+
+    IntegerProperty: 3,
+    FloatProperty: 3,
+    NumberProperty: 3,
+
+    TextProperty: 4,
+
+    TypeProperty: 5,
+
+    ThingProperty: 6,
+    InvalidProperty: 6,
+
+    Property: 7,
+}
