@@ -135,7 +135,7 @@ window.fbAsyncInit = function() {
 
             {% if page.can_write(user) %}
             <li class="edit_menu">
-                <a href="{{ page.absolute_url|e }}?view=edit" id="edit" {% if 'pt' not in page.metadata %}class='btn btn-primary'{% endif %}>Edit</a>
+                <a href="{{ page.absolute_latest_url|e }}?view=edit" id="edit" {% if 'pt' not in page.metadata %}class='btn btn-primary'{% endif %}>Edit</a>
             </li>
             {% endif %}
         </ul>
@@ -248,8 +248,8 @@ window.fbAsyncInit = function() {
 {% if page.published_at and 'pt' not in page.metadata %}
 <div class="social">
     <!-- Facebook { -->
-    <div class="fb-like" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="300" data-layout="standard" data-show-faces="true" data-send="true"></div>
-    <div class="fb-comments" data-href="http://{{ config.service.domain }}{{ page.absolute_url|e }}" data-width="630"></div>
+    <div class="fb-like" data-href="http://{{ config.service.domain }}{{ page.absolute_latest_url|e }}" data-width="300" data-layout="standard" data-show-faces="true" data-send="true"></div>
+    <div class="fb-comments" data-href="http://{{ config.service.domain }}{{ page.absolute_latest_url|e }}" data-width="630"></div>
     <!-- } Facebook -->
 </div>
 {% endif %}
@@ -290,9 +290,8 @@ window.fbAsyncInit = function() {
     <script src="/statics/js/highlight-run.js?ver={{ app.version }}" type="text/javascript"></script>
     {% endif %}
 
-
     {% if page.revision == 0 %}
-    <script>
+    <script type="text/javascript">
     $(function() {ga('send', 'event', 'page', 'error', 'not found');});
     </script>
     {% endif %}
