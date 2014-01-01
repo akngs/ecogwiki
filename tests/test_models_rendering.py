@@ -129,3 +129,23 @@ class SchemaItemPropertyRenderingTest(RenderingTestCase):
             u'{{.hello::world from ak}}',
             u'<p><span class="hello">world from ak</span></p>'
         )
+
+
+class SectionRenderingTest(RenderingTestCase):
+    def test_simple(self):
+        self.assertRenderedText(
+            u'description::---\n\nHello\n',
+            u'<div class="section" itemprop="description">\n<p>Hello</p>\n</div>'
+        )
+
+    def test_section_containing_multiple_blocks(self):
+        self.assertRenderedText(
+            u'description::---\n\nHello\n\nTh*e*re',
+            u'<div class="section" itemprop="description">\n<p>Hello</p>\n<p>Th<em>e</em>re</p>\n</div>'
+        )
+
+    def test_multiple_sections(self):
+        self.assertRenderedText(
+            u'description::---\n\nHello\n\naward::---\n\nThere\n',
+            u'<div class="section" itemprop="description">\n<p>Hello</p>\n</div>\n<div class="section" itemprop="award">\n<p>There</p>\n</div>'
+        )
