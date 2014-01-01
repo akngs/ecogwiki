@@ -55,56 +55,7 @@ class PageOperationMixin(object):
 
     @property
     def rendered_body(self):
-        # body
-        body_parts = [PageOperationMixin.remove_metadata(self.body)]
-
-        # incoming links
-        if len(self.inlinks) > 0:
-            lines = [u'# Incoming Links']
-            for rel, links in self.inlinks.items():
-                itemtype, rel = rel.split('/')
-                lines.append(u'## %s' % schema.humane_property(itemtype, rel, True))
-                # remove dups and sort
-                links = list(set(links))
-                links.sort()
-
-                lines += [u'* [[%s]]' % title for title in links]
-            body_parts.append(u'\n'.join(lines))
-
-        # related links
-        related_links = self.related_links_by_score
-        if len(related_links) > 0:
-            lines = [u'# Suggested Pages']
-            lines += [u'* {{.score::%.3f}} [[%s]]\n{.noli}' % (score, title)
-                      for title, score in related_links.items()[:10]]
-            body_parts.append(u'\n'.join(lines))
-
-        # other posts
-        if self.older_title or self.newer_title:
-            lines = [u'# Other Posts']
-            if self.newer_title:
-                lines.append(u'* {{.newer::newer}} [[%s]]\n{.noli}' % self.newer_title)
-            if self.older_title:
-                lines.append(u'* {{.older::older}} [[%s]]\n{.noli}' % self.older_title)
-            body_parts.append(u'\n'.join(lines))
-
-        # remove yaml/schema block
-        joined = u'\n'.join(body_parts)
-        joined = re.sub(PageOperationMixin.re_yaml_schema, u'\n', joined)
-
-        # render to html
-        rendered = md.convert(joined)
-
-        # add table of contents
-        rendered = TocGenerator(rendered).add_toc()
-
-        # add class for embedded image
-        rendered = PageOperationMixin.re_img.sub(ur'<\1 class="img-container"><img\2/></\3>', rendered)
-
-        # add structured data block
-        rendered = self.rendered_data + rendered
-
-        return PageOperationMixin.sanitize_html(rendered)
+        return PageOperationMixin.render_body(self.body, self.rendered_data, self.inlinks, self.related_links_by_score, self.older_title, self.newer_title)
 
     @property
     def paths(self):
@@ -419,3 +370,56 @@ class PageOperationMixin(object):
         if re.match(ur'.*(\\\(.+\\\)|\$\$.+\$\$)', html, re.DOTALL):
             matches.append('mathjax')
         return matches
+
+    @classmethod
+    def render_body(cls, body, rendered_data='', inlinks={}, related_links_by_score={}, older_title=None, newer_title=None):
+        # body
+        body_parts = [cls.remove_metadata(body)]
+
+        # incoming links
+        if len(inlinks) > 0:
+            lines = [u'# Incoming Links']
+            for rel, links in inlinks.items():
+                itemtype, rel = rel.split('/')
+                lines.append(u'## %s' % schema.humane_property(itemtype, rel, True))
+                # remove dups and sort
+                links = list(set(links))
+                links.sort()
+
+                lines += [u'* [[%s]]' % title for title in links]
+            body_parts.append(u'\n'.join(lines))
+
+        # related links
+        related_links = related_links_by_score
+        if len(related_links) > 0:
+            lines = [u'# Suggested Pages']
+            lines += [u'* {{.score::%.3f}} [[%s]]\n{.noli}' % (score, title)
+                      for title, score in related_links.items()[:10]]
+            body_parts.append(u'\n'.join(lines))
+
+        # other posts
+        if older_title or newer_title:
+            lines = [u'# Other Posts']
+            if newer_title:
+                lines.append(u'* {{.newer::newer}} [[%s]]\n{.noli}' % newer_title)
+            if older_title:
+                lines.append(u'* {{.older::older}} [[%s]]\n{.noli}' % older_title)
+            body_parts.append(u'\n'.join(lines))
+
+        # remove yaml/schema block
+        joined = u'\n'.join(body_parts)
+        joined = re.sub(PageOperationMixin.re_yaml_schema, u'\n', joined)
+
+        # render to html
+        rendered = md.convert(joined)
+
+        # add table of contents
+        rendered = TocGenerator(rendered).add_toc()
+
+        # add class for embedded image
+        rendered = PageOperationMixin.re_img.sub(ur'<\1 class="img-container"><img\2/></\3>', rendered)
+
+        # add structured data block
+        rendered = rendered_data + rendered
+
+        return cls.sanitize_html(rendered)

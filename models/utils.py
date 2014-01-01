@@ -3,7 +3,7 @@ import caching
 import markdown
 from markdown.extensions.def_list import DefListExtension
 from markdown.extensions.attr_list import AttrListExtension
-from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax, md_strikethrough, md_tables, md_checkbox
+from markdownext import md_url, md_wikilink, md_itemprop, md_mathjax, md_strikethrough, md_tables, md_checkbox, md_section
 
 from google.appengine.api import users
 from google.appengine.api import oauth
@@ -139,6 +139,7 @@ md = markdown.Markdown(
         md_strikethrough.StrikethroughExtension(),
         md_checkbox.CheckboxExtension(),
         md_tables.TableExtension(),
+        md_section.SectionExtension(),
         DefListExtension(),
         AttrListExtension(),
     ],
