@@ -289,3 +289,6 @@ class ConversionPriorityTest(unittest.TestCase):
     def test_try_url_first_then_text(self):
         prop = schema.SchemaConverter.convert(u'SoftwareApplication', {u'featureList': u'http://x.com'})['featureList']
         self.assertEqual(schema.URLProperty, type(prop))
+
+        prop = schema.SchemaConverter.convert(u'SoftwareApplication', {u'featureList': u'See http://x.com'})['featureList']
+        self.assertEqual(schema.TextProperty, type(prop))
