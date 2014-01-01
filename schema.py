@@ -8,7 +8,7 @@ import operator
 from markdownext import md_wikilink
 
 
-SCHEMA_FILE_TO_LOAD = [
+SCHEMA_TO_LOAD = [
     'schema.json',
     'schema.supplement.json',
     'schema-custom.json',
@@ -20,22 +20,27 @@ def get_schema_set():
     if schema_set is not None:
         return schema_set
 
-    for schema_file in SCHEMA_FILE_TO_LOAD:
-        fullpath = os.path.join(os.path.dirname(__file__), schema_file)
-        try:
-            with open(fullpath) as f:
-                schema_set = _merge_schema_set(json.load(f), schema_set)
-        except IOError:
-            pass
+    for s in SCHEMA_TO_LOAD:
+        if type(s) == dict:
+            new_schema = s
+        else:
+            fullpath = os.path.join(os.path.dirname(__file__), s)
+            try:
+                with open(fullpath) as f:
+                    new_schema = json.load(f)
+            except IOError:
+                new_schema = {}
 
-    # remove legacy spellings
-    props = schema_set['properties']
-    legacy_props = [pname for pname, pdata in props.items() if pdata['comment'].find('(legacy spelling;') != -1]
-    for legacy_prop in legacy_props:
-        del props[legacy_prop]
+        schema_set = _merge_schema_set(new_schema, schema_set)
 
     caching.set_schema_set(schema_set)
     return schema_set
+
+
+def get_legacy_spellings():
+    schema_set = get_schema_set()
+    props = schema_set['properties']
+    return {pname for pname, pdata in props.items() if pdata['comment'].find('(legacy spelling;') != -1}
 
 
 def get_schema(itemtype):
@@ -53,6 +58,12 @@ def get_schema(itemtype):
             schema['plural_label'] = u'%ses' % schema['label']
         else:
             schema['plural_label'] = u'%ss' % schema['label']
+
+    # remove legacy spellings
+    legacy_spellings = get_legacy_spellings()
+    schema['properties'] = list(set(schema['properties']).difference(legacy_spellings))
+    schema['specific_properties'] = list(set(schema['specific_properties']).difference(legacy_spellings))
+
     caching.set_schema(itemtype, schema)
     return schema
 
@@ -68,6 +79,9 @@ def get_datatype(type_name):
 
 
 def get_property(prop_name):
+    if prop_name in get_legacy_spellings():
+        raise KeyError('Legacy spelling: %s' % prop_name)
+
     prop = caching.get_schema_property(prop_name)
     if prop is not None:
         return prop
@@ -77,6 +91,21 @@ def get_property(prop_name):
         prop['reversed_label'] = '[%%s] %s' % prop['label']
     caching.set_schema_property(prop_name, prop)
     return prop
+
+
+def get_cardinality(itemtype, prop_name):
+    try:
+        item = get_schema(itemtype)
+        return item['cardinalities'][prop_name]
+    except KeyError:
+        prop = get_property(prop_name)
+        return prop['cardinality'] if 'cardinality' in prop else [0, 0]
+
+
+def get_cardinalities(itemtype):
+    item = get_schema(itemtype)
+    props = set(item['properties'] + item['specific_properties'])
+    return dict((pname, get_cardinality(itemtype, pname)) for pname in props)
 
 
 def humane_item(itemtype, plural=False):
@@ -192,7 +221,7 @@ def render_list(o):
 class SchemaConverter(object):
     def __init__(self, itemtype, data):
         self._itemtype = itemtype
-        self._data = data
+        self._data = data.copy()
 
     def convert_schema(self):
         try:
@@ -204,9 +233,28 @@ class SchemaConverter(object):
         unknown_props = props.difference(schema_item['properties'] + schema_item['specific_properties'] + ['schema'])
         known_props = props.difference(unknown_props)
 
+        self.check_cardinality()
+
         knowns = [(p, SchemaConverter.convert_prop(self._itemtype, p, self._data[p])) for p in known_props]
         unknowns = [(p, InvalidProperty(self._itemtype, p, self._data[p])) for p in unknown_props]
         return dict(knowns + unknowns)
+
+    def check_cardinality(self):
+        cardinalities = get_cardinalities(self._itemtype)
+        for pname, (cfrom, cto) in cardinalities.items():
+            if pname not in self._data:
+                num = 0
+            elif type(self._data[pname]) == list:
+                num = len(self._data[pname])
+            else:
+                num = 1
+
+            if cfrom > num:
+                raise ValueError('There should be at least %d [%s] item(s).' % (cfrom, pname))
+            elif cto == 1 and cto < num:
+                self._data[pname] = self._data[pname][0]
+            elif cto != 0 and cto < num:
+                self._data[pname] = self._data[pname][:cto]
 
     @classmethod
     def convert_prop(cls, itemtype, pkey, pvalue):
