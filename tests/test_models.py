@@ -102,6 +102,9 @@ class PageUpdateTest(AppEngineTestCase):
         revs = list(page.revisions)
         self.assertEqual(2, len(revs))
 
+    def test_schema_validation(self):
+        self.assertRaises(ValueError, self.update_page, u'.schema UnknownSchema')
+
 
 class PageValidationTest(AppEngineTestCase):
     def setUp(self):
