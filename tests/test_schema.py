@@ -28,6 +28,7 @@ class SchemaTest(AppEngineTestCase):
 
     def test_legacy_spells(self):
         self.assertRaises(KeyError, schema.get_property, 'contactPoints')
+        self.assertTrue('awards' not in schema.get_schema('Person')['properties'])
 
     def test_incoming_links(self):
         self.assertEqual(u'Related People', schema.humane_property('Person', 'relatedTo', True))
@@ -41,16 +42,16 @@ class SchemaTest(AppEngineTestCase):
         self.assertEqual(['DataType'], isbn['ancestors'])
 
 
-class CustomSchemaTest(AppEngineTestCase):
+class CustomTypeAndPropertyTest(AppEngineTestCase):
     def setUp(self):
-        super(CustomSchemaTest, self).setUp()
-        schema.SCHEMA_FILE_TO_LOAD.append('schema-custom.json.sample')
+        super(CustomTypeAndPropertyTest, self).setUp()
+        schema.SCHEMA_TO_LOAD.append('schema-custom.json.sample')
         self.person = schema.get_schema('Person')
         self.politician = schema.get_schema('Politician')
 
     def tearDown(self):
-        super(CustomSchemaTest, self).tearDown()
-        schema.SCHEMA_FILE_TO_LOAD = schema.SCHEMA_FILE_TO_LOAD[:-1]
+        schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
+        super(CustomTypeAndPropertyTest, self).tearDown()
 
     def test_inheritance_relationship(self):
         self.assertTrue('Politician' in self.person['subtypes'])
@@ -65,6 +66,15 @@ class CustomSchemaTest(AppEngineTestCase):
     def test_property_inheritance(self):
         self.assertEqual(self.person['properties'], self.politician['properties'])
         self.assertEqual([u'politicalParty'], self.politician['specific_properties'])
+
+    def test_default_cardinality(self):
+        self.assertEqual([0, 0], schema.get_cardinality('Person', 'children'))
+
+    def test_prop_cardinality(self):
+        self.assertEqual([1, 1], schema.get_cardinality('Thing', 'url'))
+
+    def test_cardinality_in_item_should_override_prop_candinality(self):
+        self.assertEqual([0, 1], schema.get_cardinality('Person', 'url'))
 
 
 class SchemaPathTest(unittest.TestCase):
@@ -286,6 +296,23 @@ class TypeConversionTest(unittest.TestCase):
         self.assertEqual(2, len(data['author']))
         self.assertEqual(u'AK', data['author'][0].value)
         self.assertEqual(u'CK', data['author'][1].value)
+
+
+class TypeConversionWithCardinalityTest(AppEngineTestCase):
+    def setUp(self):
+        super(TypeConversionWithCardinalityTest, self).setUp()
+        schema.SCHEMA_TO_LOAD.append('schema-custom.json.sample')
+
+    def tearDown(self):
+        schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
+        super(TypeConversionWithCardinalityTest, self).tearDown()
+
+    def test_props_gt_cardinality(self):
+        data = schema.SchemaConverter.convert(u'Person', {'url': ['http://x.com', 'http://y.com']})
+        self.assertEqual('http://x.com', data['url'].value)
+
+    def test_props_lt_cardinality(self):
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Thing', {})
 
 
 class ConversionPriorityTest(unittest.TestCase):

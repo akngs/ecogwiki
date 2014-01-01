@@ -2,6 +2,9 @@
   "datatypes": {
   },
   "properties": {
+    "url": {
+      "cardinality": [1, 1]
+    },
     "politicalParty": {
       "comment": "Political party.",
       "comment_plain": "Political party.",
@@ -17,6 +20,11 @@
     }
   },
   "types": {
+    "Person": {
+      "cardinalities": {
+        "url": [0, 1]
+      }
+    },
     "Politician": {
       "ancestors": [
         "Thing",
