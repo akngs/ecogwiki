@@ -42,14 +42,14 @@ def set_titles(email, content):
         add_recent_email(email)
         c.set('model\ttitles\t%s' % email, content)
     except:
-        return None
+        pass
 
 
 def get_titles(email):
     try:
         return c.get('model\ttitles\t%s' % email)
     except:
-        return None
+        pass
 
 
 def del_titles():
@@ -59,7 +59,7 @@ def del_titles():
                 for email in emails + ['None']]
         c.delete_multi(keys)
     except:
-        return None
+        pass
 
 
 def set_schema_set(value):
@@ -152,22 +152,6 @@ def get_metadata(title):
 
 def get_hashbangs(title):
     return _get_cache('model\thashbangs\t%s' % title)
-
-
-def del_schema_set():
-    _del_cache('schema_set')
-
-
-def del_schema(key):
-    _del_cache('schema\t%s' % key)
-
-
-def del_schema_property(prop_name):
-    _del_cache('schema\tprop\t%s' % prop_name)
-
-
-def del_schema_datatype(type_name):
-    _del_cache('schema\tdatatype\t%s' % type_name)
 
 
 def del_config():
