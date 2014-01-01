@@ -26,6 +26,9 @@ class SchemaTest(AppEngineTestCase):
         self.assertEqual(u'Date Published', schema.get_property('datePublished')['label'])
         self.assertEqual(u'Published %s', schema.get_property('datePublished')['reversed_label'])
 
+    def test_legacy_spells(self):
+        self.assertRaises(KeyError, schema.get_property, 'contactPoints')
+
     def test_incoming_links(self):
         self.assertEqual(u'Related People', schema.humane_property('Person', 'relatedTo', True))
         self.assertEqual(u'Children (People)', schema.humane_property('Person', 'parent', True))

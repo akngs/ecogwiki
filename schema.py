@@ -28,6 +28,12 @@ def get_schema_set():
         except IOError:
             pass
 
+    # remove legacy spellings
+    props = schema_set['properties']
+    legacy_props = [pname for pname, pdata in props.items() if pdata['comment'].find('(legacy spelling;') != -1]
+    for legacy_prop in legacy_props:
+        del props[legacy_prop]
+
     caching.set_schema_set(schema_set)
     return schema_set
 
