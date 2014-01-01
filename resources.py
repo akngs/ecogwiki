@@ -536,6 +536,8 @@ class SchemaResource(Resource):
             return schema.get_schema(tokens[1])
         elif tokens[0] == 'properties':
             return schema.get_property(tokens[1])
+        elif tokens[0] == 'datatypes':
+            return schema.get_datatype(tokens[1])
         else:
             return None
 
