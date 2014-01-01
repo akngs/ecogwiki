@@ -5,7 +5,7 @@ from itertools import groupby
 from tests import AppEngineTestCase
 from google.appengine.api import users
 from markdownext.md_wikilink import parse_wikilinks
-from models import md, WikiPage, PageOperationMixin, UserPreferences, title_grouper, ConflictError
+from models import WikiPage, PageOperationMixin, UserPreferences, title_grouper, ConflictError
 
 
 class PartialUpdateTest(AppEngineTestCase):
@@ -219,131 +219,6 @@ class WikiLinkParserTest(unittest.TestCase):
     def test_wikiquery(self):
         self.assertEqual({}, parse_wikilinks('Article', u'[[="Hello"]]'))
         self.assertEqual({}, parse_wikilinks('Article', u'[[=schema:"Article"]]'))
-
-
-class RenderingTest(AppEngineTestCase):
-    def setUp(self):
-        super(RenderingTest, self).setUp()
-        self.login('ak@gmail.com', 'ak')
-
-    def test_embedded_image_in_p(self):
-        self.assertRenderedText(u'![Test](http://x.com/x.jpg)',
-                                u'<p class="img-container"><img alt="Test" src="http://x.com/x.jpg"></p>')
-
-    def test_embedded_image_in_li(self):
-        self.assertRenderedText(u'*   ![Test](http://x.com/x.jpg)',
-                                u'<ul>\n<li class="img-container"><img alt="Test" src="http://x.com/x.jpg"></li>\n</ul>')
-
-    def test_strikethrough(self):
-        self.assertRenderedText(u'Hello ~~AK~~?', u'<p>Hello <strike>AK</strike>?</p>')
-
-    def test_checkbox(self):
-        self.assertRenderedText(u'[ ] Hello [x] There',
-                                u'<p><input type="checkbox"> Hello <input checked type="checkbox"> There</p>')
-
-    def test_mathjax(self):
-        self.assertRenderedText(u'Hello \\([[blah]]\\) There', u'<p>Hello \\([[blah]]\\) There</p>')
-
-    def test_mathjax_inline(self):
-        self.assertRenderedText(u'Hello\n$$\n[[blah]]\n$$\nThere', u'<p>Hello\n$$\n[[blah]]\n$$\nThere</p>')
-
-    def test_table(self):
-        self.assertRenderedText(u'| a | b |\n|---|---|\n| c | d |', u'<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>c</td>\n<td>d</td>\n</tr>\n</tbody>\n</table>')
-
-    def test_html(self):
-        self.assertRenderedText(u'<div class="test">He*l*lo</div>\nWo*r*ld',
-                                u'<div class="test">He*l*lo</div>\n\n<p>Wo<em>r</em>ld</p>')
-
-    def test_html_sanitization(self):
-        self.assertRenderedText(u'Hey<script>alert(1)</script>you', u'<p>Heyyou</p>')
-
-
-class WikilinkRenderingTest(AppEngineTestCase):
-    def setUp(self):
-        super(WikilinkRenderingTest, self).setUp()
-        self.login('ak@gmail.com', 'ak')
-
-    def test_plain(self):
-        self.assertRenderedText(u'[[heyyou]]', u'<p><a class="wikipage" href="/heyyou">heyyou</a></p>')
-
-    def test_space(self):
-        self.assertRenderedText(u'[[Hey you]]', u'<p><a class="wikipage" href="/Hey_you">Hey you</a></p>')
-
-    def test_special_character(self):
-        self.assertRenderedText(u'[[너 & 나]]', u'<p><a class="wikipage" href="/%EB%84%88_%26_%EB%82%98">너 &amp; 나</a></p>')
-
-    def test_possible_conflict_with_plain_link(self):
-        self.assertRenderedText(u'[[Hello]](there)', u'<p><a class="wikipage" href="/Hello">Hello</a>(there)</p>')
-
-    def test_dates(self):
-        self.assertRenderedText(u'[[1979-03-05]]',
-                                u'<p><time datetime="1979-03-05"><a class="wikipage" href="/1979">1979</a><span>-</span><a class="wikipage" href="/March_5">03-05</a></time></p>')
-        self.assertRenderedText(u'[[1979-03-??]]',
-                                u'<p><time datetime="1979-03-??"><a class="wikipage" href="/1979">1979</a><span>-</span><a class="wikipage" href="/March">03-??</a></time></p>')
-        self.assertRenderedText(u'[[1979-??-??]]',
-                                u'<p><time datetime="1979-??-??"><a class="wikipage" href="/1979">1979</a><span>-</span><span>??-??</span></time></p>')
-        self.assertRenderedText(u'[[1979-03-05 BCE]]',
-                                u'<p><time datetime="1979-03-05 BCE"><a class="wikipage" href="/1979_BCE">1979</a><span>-</span><a class="wikipage" href="/March_5">03-05</a><span> BCE</span></time></p>')
-
-    def test_url(self):
-        markdowns = [
-            u'http://x.co',
-            u'(http://x.co)',
-            u'http://x.co에',
-            u'http://x.co?y',
-            u'codeRepository::http://x.co',
-            u'a@x.com',
-            u'a@x.kr에',
-            u'http://www.youtube.com/watch?v=w5gmK-ZXIMQ',
-            u'http://vimeo.com/1747316',
-        ]
-        htmls = [
-            u'<p><a class="plainurl" href="http://x.co">http://x.co</a></p>',
-            u'<p>(<a class="plainurl" href="http://x.co">http://x.co</a>)</p>',
-            u'<p><a class="plainurl" href="http://x.co">http://x.co</a>에</p>',
-            u'<p><a class="plainurl" href="http://x.co?y">http://x.co?y</a></p>',
-            u'<p><a class="plainurl" href="http://x.co" '
-            u'itemprop="codeRepository">http://x.co</a></p>',
-            u'<p><a class="email" href="mailto:a@x.com">a@x.com</a></p>',
-            u'<p><a class="email" href="mailto:a@x.kr">a@x.kr</a>에</p>',
-            u'<p>\n</p><div class="video youtube">\n<iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe>\n</div>\n',
-            u'<p>\n</p><div class="video vimeo">\n<iframe allowfullscreen="true" frameborder="0" height="281" src="http://player.vimeo.com/video/1747316" width="500"></iframe>\n</div>\n',
-        ]
-
-        for markdown, html in zip(markdowns, htmls):
-            self.assertRenderedText(markdown, html)
-
-
-class SchemaItemPropertyRenderingTest(unittest.TestCase):
-    def test_isbn(self):
-        actual = md.convert(u'{{isbn::0618680004}}')
-        expected = u'<p><a class="isbn" href="http://www.amazon.com/gp/' \
-                   u'product/0618680004" itemprop="isbn">0618680004</a></p>'
-        self.assertEqual(expected, actual)
-
-    def test_isbn_kr(self):
-        actual = md.convert(u'{{isbn::8936437267}}')
-        expected = u'<p><a class="isbn" href="http://www.aladin.co.kr/' \
-                   u'shop/wproduct.aspx?ISBN=' \
-                   u'9788936437267" itemprop="isbn">9788936437267</a></p>'
-        self.assertEqual(expected, actual)
-
-    def test_isbn13_kr(self):
-        actual = md.convert(u'{{isbn::9788936437267}}')
-        expected = u'<p><a class="isbn" href="http://www.aladin.co.kr/' \
-                   u'shop/wproduct.aspx?ISBN=' \
-                   u'9788936437267" itemprop="isbn">9788936437267</a></p>'
-        self.assertEqual(expected, actual)
-
-    def test_generic_key_value(self):
-        actual = md.convert(u'{{hello::world from ak}}')
-        expected = u'<p><span itemprop="hello">world from ak</span></p>'
-        self.assertEqual(expected, actual)
-
-    def test_class(self):
-        actual = md.convert(u'{{.hello::world from ak}}')
-        expected = u'<p><span class="hello">world from ak</span></p>'
-        self.assertEqual(expected, actual)
 
 
 class TitleToPathConvertTest(AppEngineTestCase):

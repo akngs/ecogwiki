@@ -41,7 +41,3 @@ class AppEngineTestCase(unittest.TestCase):
         page = WikiPage.get_by_title(title)
         page.update_content(content, page.revision, user=self.get_cur_user(), dont_defer=True)
         return page
-
-    def assertRenderedText(self, markdown, html):
-        page = self.update_page(markdown)
-        self.assertEqual(html, page.rendered_body)
