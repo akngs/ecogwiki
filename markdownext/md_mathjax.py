@@ -15,9 +15,6 @@ class MathJaxExtension(Extension):
 class MathJax(Pattern):
     def handleMatch(self, m):
         if m.group('inline'):
-            a = u'\\(%s\\)' % m.group('tinline')
-        elif m.group('block'):
-            a = u'$$%s$$' % m.group('tblock')
+            return u'\\(%s\\)' % m.group('tinline')
         else:
-            a = ''
-        return a
+            return u'$$%s$$' % m.group('tblock')

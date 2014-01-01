@@ -238,6 +238,15 @@ class RenderingTest(AppEngineTestCase):
         self.assertRenderedText(u'[ ] Hello [x] There',
                                 u'<p><input type="checkbox"> Hello <input checked type="checkbox"> There</p>')
 
+    def test_mathjax(self):
+        self.assertRenderedText(u'Hello \\([[blah]]\\) There', u'<p>Hello \\([[blah]]\\) There</p>')
+
+    def test_mathjax_inline(self):
+        self.assertRenderedText(u'Hello\n$$\n[[blah]]\n$$\nThere', u'<p>Hello\n$$\n[[blah]]\n$$\nThere</p>')
+
+    def test_table(self):
+        self.assertRenderedText(u'| a | b |\n|---|---|\n| c | d |', u'<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>c</td>\n<td>d</td>\n</tr>\n</tbody>\n</table>')
+
     def test_html(self):
         self.assertRenderedText(u'<div class="test">He*l*lo</div>\nWo*r*ld',
                                 u'<div class="test">He*l*lo</div>\n\n<p>Wo<em>r</em>ld</p>')

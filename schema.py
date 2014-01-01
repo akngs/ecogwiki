@@ -156,10 +156,6 @@ def to_html(o, key=None):
         return render_dict(o)
     elif obj_type == list:
         return render_list(o)
-    elif obj_type == str or obj_type == unicode:
-        if key is not None and key == 'schema':
-            return o
-        return '<a href="/%s">%s</a>' % (urllib2.quote(o.replace(u' ', u'_').encode('utf-8')), o)
     elif isinstance(o, Property):
         return o.render()
     return str(o)

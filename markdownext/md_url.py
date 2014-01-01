@@ -41,15 +41,14 @@ class UrlPattern(Pattern):
             return UrlPattern._create_video(m, 'youtube', 640, 390, 'http://www.youtube.com/embed/%s')
         elif m.group('vimeo'):
             return UrlPattern._create_video(m, 'vimeo', 500, 281, 'http://player.vimeo.com/video/%s')
-        elif m.group('email'):
+        else:
+            # m.group('email'):
             url = m.group('email')
             a = etree.Element('a')
             a.text = url
             a.set('href', 'mailto:%s' % url)
             a.set('class', 'email')
             return a
-        else:
-            raise Exception()
 
     @staticmethod
     def _create_video(m, vtype, width, height, url):

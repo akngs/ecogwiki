@@ -98,22 +98,19 @@ def parse_wikilinks(itemtype, text):
             # skip wikiquery
             continue
 
-        if m.group('rel'):
-            rel = u'%s/%s' % (itemtype, m.group('rel'))
-        else:
-            rel = u'%s/%s' % (itemtype, u'relatedTo')
+        rel_type = m.group('rel') if m.group('rel') else u'relatedTo'
+        rel = u'%s/%s' % (itemtype, rel_type)
 
         if rel not in wikilinks:
             wikilinks[rel] = []
 
         if m.group('plain'):
             wikilinks[rel].append(m.group('plain'))
-        elif m.group('date'):
+        else:
+            # m.group('date'):
             links = date_links(m)
             for link in links:
                 wikilinks[rel].append(link[1])
-        else:
-            raise Exception('Should not reach here')
 
     return wikilinks
 
