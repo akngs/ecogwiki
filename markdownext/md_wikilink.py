@@ -15,22 +15,12 @@ RE_WIKILINK = ur'\[\[' \
 
 
 class WikiLinkExtension(Extension):
-    def __init__(self):
-        super(WikiLinkExtension, self).__init__()
-        self.md = None
-
     def extendMarkdown(self, md, md_globals):
-        self.md = md
         wikilink_pattern = WikiLinks(RE_WIKILINK)
-        wikilink_pattern.md = md
         md.inlinePatterns.add('wikilink', wikilink_pattern, "<link")
 
 
 class WikiLinks(Pattern):
-    def __init__(self, pattern):
-        super(WikiLinks, self).__init__(pattern)
-        self.config = []
-
     def handleMatch(self, m):
         return _render_match(m)
 

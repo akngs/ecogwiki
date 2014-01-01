@@ -29,9 +29,7 @@ class PageOperationMixin(object):
 
     @property
     def rendered_data(self):
-        data = [(n, v, schema.humane_property(self.itemtype, n))
-                for n, v in self.data.items()
-                if n not in ['schema', 'inlinks', 'outlinks']]
+        data = [(n, v, schema.humane_property(self.itemtype, n)) for n, v in self.data.items() if n != 'schema']
 
         if len(data) == 1:
             # only name and schema?
@@ -45,12 +43,13 @@ class PageOperationMixin(object):
 
         data = sorted(data, key=operator.itemgetter(2))
 
+        render_data_item = lambda itemname, itemvalue: u'<dd class="value value-%s"><span itemprop="%s">%s</span></dd>' % (itemname, itemname, itemvalue.render())
         for name, value, humane_name in data:
             html.append(u'<dt class="key key-%s">%s</dt>' % (name, humane_name))
             if type(value) == list:
-                html += [self._render_data_item(name, v) for v in value]
+                html += [render_data_item(name, v) for v in value]
             else:
-                html.append(self._render_data_item(name, value))
+                html.append(render_data_item(name, value))
         html.append(u'</dl></div>')
         return '\n'.join(html)
 
@@ -105,24 +104,7 @@ class PageOperationMixin(object):
         # add structured data block
         rendered = self.rendered_data + rendered
 
-        # sanitize
-        if rendered:
-            cleaner = Cleaner(safe_attrs_only=False)
-            cleaner.host_whitelist = (
-                'www.youtube.com',
-                'player.vimeo.com',
-            )
-            cleaner.forms = False
-            rendered = cleaner.clean_html(rendered)
-
-            # remove div wrapper if there is one
-            if rendered.startswith('<div>'):
-                rendered = rendered[5:-6]
-
-        return rendered
-
-    def _render_data_item(self, name, value):
-        return u'<dd class="value value-%s"><span itemprop="%s">%s</span></dd>' % (name, name, value.render())
+        return PageOperationMixin.sanitize_html(rendered)
 
     @property
     def paths(self):
@@ -322,6 +304,22 @@ class PageOperationMixin(object):
 
         ss[u'dates'] = range(1, max_date + 1)
         return ss
+
+    @staticmethod
+    def sanitize_html(rendered):
+        if rendered:
+            cleaner = Cleaner(safe_attrs_only=False)
+            cleaner.host_whitelist = (
+                'www.youtube.com',
+                'player.vimeo.com',
+            )
+            cleaner.forms = False
+            rendered = cleaner.clean_html(rendered)
+
+            # remove div wrapper if there is one
+            if rendered.startswith('<div>'):
+                rendered = rendered[5:-6]
+        return rendered
 
     @staticmethod
     def title_to_path(path):

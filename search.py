@@ -34,30 +34,23 @@ def evaluate(positives, negatives):
     keys = positives.keys() + negatives.keys()
     length = len(keys)
 
-    # calc positives
-    for scores in positives.values():
-        for title, score in scores.items():
-            if title in keys:
-                continue
-            if title not in scoretable:
-                scoretable[title] = 0.0
-            scoretable[title] += score / length
-
-    # calc negatives
-    for scores in negatives.values():
-        for title, score in scores.items():
-            if title in keys:
-                continue
-            if title not in scoretable:
-                scoretable[title] = 0.0
-            scoretable[title] -= score / length
-
-    # descending by score
+    _update_scoretable(keys, length, positives, scoretable, +1)
+    _update_scoretable(keys, length, negatives, scoretable, -1)
     sorted_tuples = sorted(scoretable.iteritems(),
                            key=operator.itemgetter(1),
                            reverse=True)
 
     return OrderedDict(sorted_tuples)
+
+
+def _update_scoretable(keys, length, matches, scoretable, sign):
+    for scores in matches.values():
+        for title, score in scores.items():
+            if title in keys:
+                continue
+            if title not in scoretable:
+                scoretable[title] = 0.0
+            scoretable[title] += sign * score / length
 
 
 # Wikiquery grammar

@@ -841,20 +841,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
     def _add_inout_links(links, titles, rel):
         if len(titles) == 0:
             return
-
         if rel not in links:
             links[rel] = []
-
         links[rel] += titles
         links[rel].sort()
 
     @staticmethod
     def _add_inout_link(links, title, rel):
-        if rel not in links:
-            links[rel] = []
-        if title not in links[rel]:
-            links[rel].append(title)
-            links[rel].sort()
+        WikiPage._add_inout_links(links, [title], rel)
 
     @staticmethod
     def _del_inout_link(links, title, rel=None):

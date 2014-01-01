@@ -11,22 +11,12 @@ RE_ITEMPROP = ur'\{\{(' \
 
 
 class ItemPropExtension(Extension):
-    def __init__(self):
-        super(ItemPropExtension, self).__init__()
-        self.md = None
-
     def extendMarkdown(self, md, md_globals):
-        self.md = md
         item_prop_pattern = ItemProp(RE_ITEMPROP)
-        item_prop_pattern.md = md
         md.inlinePatterns.add('itemprop', item_prop_pattern, "<link")
 
 
 class ItemProp(Pattern):
-    def __init__(self, pattern):
-        super(ItemProp, self).__init__(pattern)
-        self.config = []
-
     def handleMatch(self, m):
         if m.group('isbn'):
             num = m.group('isbnnum')

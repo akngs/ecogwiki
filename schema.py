@@ -381,7 +381,6 @@ class DateProperty(TypeProperty):
     def __init__(self, itemtype, ptype, pvalue):
         super(DateProperty, self).__init__(itemtype, ptype, pvalue)
         m = re.match(DateProperty.P_DATE, pvalue)
-
         if m is None:
             raise ValueError('Invalid value: %s' % pvalue)
         self.year = int(m.group('y'))

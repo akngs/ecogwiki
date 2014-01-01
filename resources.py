@@ -88,7 +88,8 @@ class PageLikeResource(Resource):
         return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
 
     def represent_atom_default(self, page):
-        content = render_posts_atom(self.req, page.title, page.get_posts(20))
+        content = render_atom(self.req, page.title, WikiPage.title_to_path(page.title),
+                              page.get_posts(20), include_content=True, use_published_date=True)
         return Representation(content, 'text/xml; charset=utf-8')
 
     def represent_txt_default(self, page):
@@ -423,20 +424,8 @@ class TitleIndexResource(Resource):
         return TemplateRepresentation({'page_group': page_group}, self.req, 'sp_index.html')
 
     def represent_atom_default(self, pages):
-        config = WikiPage.get_config()
-        host = self.req.host_url
-        url = "%s/sp.index?_type=atom" % host
-        feed = AtomFeed(title="%s: title index" % config['service']['title'],
-                        feed_url=url,
-                        url="%s/" % host,
-                        author=config['admin']['email'])
-        for page in pages:
-            feed.add(title=page.title,
-                     content_type="html",
-                     author=page.modifier,
-                     url='%s%s' % (host, page.absolute_url),
-                     updated=page.updated_at)
-        return Representation(feed.to_string(), 'text/xml; charset=utf-8')
+        content = render_atom(self.req, 'Title index', 'sp.index', pages)
+        return Representation(content, 'text/xml; charset=utf-8')
 
 
 class PostListResource(Resource):
@@ -447,7 +436,8 @@ class PostListResource(Resource):
         return TemplateRepresentation({'pages': posts}, self.req, 'sp_posts.html')
 
     def represent_atom_default(self, posts):
-        return Representation(render_posts_atom(self.req, None, posts), 'text/xml; charset=utf-8')
+        content = render_atom(self.req, 'Posts', 'sp.posts', posts)
+        return Representation(content, 'text/xml; charset=utf-8')
 
 
 class ChangeListResource(Resource):
@@ -458,20 +448,8 @@ class ChangeListResource(Resource):
         return TemplateRepresentation({'pages': pages}, self.req, 'sp_changes.html')
 
     def represent_atom_default(self, pages):
-        config = WikiPage.get_config()
-        host = self.req.host_url
-        url = "%s/sp.changes?_type=atom" % host
-        feed = AtomFeed(title="%s: changes" % config['service']['title'],
-                        feed_url=url,
-                        url="%s/" % host,
-                        author=config['admin']['email'])
-        for page in pages:
-            feed.add(title=page.title,
-                     content_type="html",
-                     author=page.modifier,
-                     url='%s%s' % (host, page.absolute_url),
-                     updated=page.updated_at)
-        return Representation(feed.to_string(), 'text/xml; charset=utf-8')
+        content = render_atom(self.req, 'Changes', 'sp.changes', pages)
+        return Representation(content, 'text/xml; charset=utf-8')
 
 
 class UserPreferencesResource(Resource):
@@ -570,25 +548,17 @@ def set_response_body(res, resbody, head):
         res.write(resbody)
 
 
-def render_posts_atom(req, title, pages):
-    host = req.host_url
+def render_atom(req, title, path, pages, include_content=False, use_published_date=False):
     config = WikiPage.get_config()
-    if title is None:
-        feed_title = '%s: posts' % config['service']['title']
-        url = "%s/sp.posts?_type=atom" % host
-    else:
-        feed_title = title
-        url = "%s/%s?_type=atom" % (WikiPage.title_to_path(title), host)
-
-    feed = AtomFeed(title=feed_title,
-                    feed_url=url,
-                    url="%s/" % host,
-                    author=config['admin']['email'])
+    host = req.host_url
+    title = '%s: %s' % (config['service']['title'], title)
+    url = "%s/%s?_type=atom" % (host, path)
+    feed = AtomFeed(title=title, feed_url=url, url="%s/" % host, author=config['admin']['email'])
     for page in pages:
         feed.add(title=page.title,
                  content_type="html",
-                 content=page.rendered_body,
+                 content=(page.rendered_body if include_content else ""),
                  author=page.modifier,
                  url='%s%s' % (host, page.absolute_url),
-                 updated=page.published_at)
+                 updated=(page.published_at if use_published_date else page.updated_at))
     return feed.to_string()
