@@ -9,6 +9,8 @@ url_re = r'(' \
          r'|' \
          r'(?P<vimeo>https?\://vimeo\.com/(?P<vimeo_vid>\d+))' \
          r'|' \
+         r'(?P<ted>https?\://www\.ted\.com/(?P<ted_vid>talks/.+\.html))' \
+         r'|' \
          r'(?P<plainurl>((?P<itemprop>[^\s\:]+)\:\:)?(?P<url>\w+://' \
          r'[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\-\_\=\+\[\]\\\:\;\"\'\,\.\'' \
          r'\?/]' \
@@ -41,6 +43,8 @@ class UrlPattern(Pattern):
             return UrlPattern._create_video(m, 'youtube', 640, 390, 'http://www.youtube.com/embed/%s')
         elif m.group('vimeo'):
             return UrlPattern._create_video(m, 'vimeo', 500, 281, 'http://player.vimeo.com/video/%s')
+        elif m.group('ted'):
+            return UrlPattern._create_video(m, 'ted', 560, 315, 'http://embed.ted.com/%s')
         else:
             # m.group('email'):
             url = m.group('email')

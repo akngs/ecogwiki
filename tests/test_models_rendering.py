@@ -81,6 +81,7 @@ class WikilinkTest(RenderingTestCase):
             u'a@x.kr에',
             u'http://www.youtube.com/watch?v=w5gmK-ZXIMQ',
             u'http://vimeo.com/1747316',
+            u'http://www.ted.com/talks/krista.html',
         ]
         htmls = [
             u'<p><a class="plainurl" href="http://x.co">http://x.co</a></p>',
@@ -93,6 +94,7 @@ class WikilinkTest(RenderingTestCase):
             u'<p><a class="email" href="mailto:a@x.kr">a@x.kr</a>에</p>',
             u'<p>\n</p><div class="video youtube">\n<iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe>\n</div>\n',
             u'<p>\n</p><div class="video vimeo">\n<iframe allowfullscreen="true" frameborder="0" height="281" src="http://player.vimeo.com/video/1747316" width="500"></iframe>\n</div>\n',
+            u'<p>\n</p><div class="video ted">\n<iframe allowfullscreen="true" frameborder="0" height="315" src="http://embed.ted.com/talks/krista.html" width="560"></iframe>\n</div>\n',
         ]
 
         for markdown, html in zip(markdowns, htmls):
