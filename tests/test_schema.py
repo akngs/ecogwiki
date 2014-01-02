@@ -238,6 +238,11 @@ class TypeConversionTest(unittest.TestCase):
         data = schema.SchemaConverter.convert(u'Person', {u'jobTitle': u'Visualization engineer'})
         self.assertEqual(u'Visualization engineer', data['jobTitle'].value)
 
+    def test_name_text(self):
+        data = schema.SchemaConverter.convert(u'Person', {u'name': u'AK'})
+        self.assertEqual(True, data['name'].is_wikilink())
+        self.assertEqual(u'<a class="wikipage" href="/AK">AK</a>', data['name'].render())
+
     def test_integer(self):
         data = schema.SchemaConverter.convert(u'SoftwareApplication', {u'fileSize': u'12345'})
         self.assertEqual(12345, data['fileSize'].value)

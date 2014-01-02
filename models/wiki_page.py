@@ -514,6 +514,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             {'%s/relatedTo' % self.itemtype: [path[0] for path in self.paths[:-1]]},
             md_wikilink.parse_wikilinks(self.itemtype, WikiPage.remove_metadata(self.body)),
         ]
+
         # links in structured data
         for name, value in self.data.items():
             if type(value) is list:
@@ -521,7 +522,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
             else:
                 dicts.append(self._schema_item_to_links(name, value))
 
-        return merge_dicts(dicts, force_list=True)
+        # merge
+        merged = merge_dicts(dicts, force_list=True)
+
+        # exclude links to this page
+        return dict((k, v) for k, v in merged.items()
+                    if not((type(v) == list and self.title in v) or self.title == v))
 
     def add_inlinks(self, titles, rel):
         WikiPage._add_inout_links(self.inlinks, titles, rel)
