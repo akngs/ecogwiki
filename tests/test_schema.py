@@ -67,6 +67,74 @@ class CustomTypeAndPropertyTest(AppEngineTestCase):
         self.assertEqual(self.person['properties'], self.politician['properties'])
         self.assertEqual([u'politicalParty'], self.politician['specific_properties'])
 
+
+class EnumerationTest(AppEngineTestCase):
+    def setUp(self):
+        super(EnumerationTest, self).setUp()
+        schema.SCHEMA_TO_LOAD.append({
+            "types": {
+                "Student": {
+                    "ancestors": ["Thing", "Person"],
+                    "id": "Student",
+                    "label": "Student",
+                    "specific_properties": ["academicSeason"],
+                    "subtypes": [],
+                    "supertypes": ["Person"],
+                    "url": "http://www.ecogwiki.com/sp.schema/types/Student",
+                }
+            },
+            "properties": {
+                "academicSeason": {
+                    "label": "Academic Season",
+                    "domains": ["Student"],
+                    "ranges": ["Text"],
+                    "enum": ["1-1", "1-2", "2-1", "2-2"]
+                }
+            },
+        })
+
+    def tearDown(self):
+        schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
+        super(EnumerationTest, self).tearDown()
+
+    def test_enum(self):
+        data = schema.SchemaConverter.convert(u'Student', {u'academicSeason': u'1-1'})['academicSeason']
+        self.assertEqual(schema.TextProperty, type(data))
+        self.assertEqual(u'1-1', data.render())
+
+        data = schema.SchemaConverter.convert(u'Student', {u'academicSeason': u'1-3'})['academicSeason']
+        self.assertEqual(schema.InvalidProperty, type(data))
+
+
+class CustomCardinalityTest(AppEngineTestCase):
+    def setUp(self):
+        super(CustomCardinalityTest, self).setUp()
+        schema.SCHEMA_TO_LOAD.append({
+            "properties": {
+                "url": {
+                    "cardinality": [1, 1]
+                }
+            },
+            "types": {
+                "Person": {
+                    "cardinalities": {
+                        "url": [0, 1]
+                    }
+                }
+            }
+        })
+
+    def tearDown(self):
+        schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
+        super(CustomCardinalityTest, self).tearDown()
+
+    def test_props_gt_cardinality(self):
+        data = schema.SchemaConverter.convert(u'Person', {'url': ['http://x.com', 'http://y.com']})
+        self.assertEqual('http://x.com', data['url'].value)
+
+    def test_props_lt_cardinality(self):
+        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Thing', {})
+
     def test_default_cardinality(self):
         self.assertEqual([0, 0], schema.get_cardinality('Person', 'children'))
 
@@ -296,23 +364,6 @@ class TypeConversionTest(unittest.TestCase):
         self.assertEqual(2, len(data['author']))
         self.assertEqual(u'AK', data['author'][0].value)
         self.assertEqual(u'CK', data['author'][1].value)
-
-
-class TypeConversionWithCardinalityTest(AppEngineTestCase):
-    def setUp(self):
-        super(TypeConversionWithCardinalityTest, self).setUp()
-        schema.SCHEMA_TO_LOAD.append('schema-custom.json.sample')
-
-    def tearDown(self):
-        schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
-        super(TypeConversionWithCardinalityTest, self).tearDown()
-
-    def test_props_gt_cardinality(self):
-        data = schema.SchemaConverter.convert(u'Person', {'url': ['http://x.com', 'http://y.com']})
-        self.assertEqual('http://x.com', data['url'].value)
-
-    def test_props_lt_cardinality(self):
-        self.assertRaises(ValueError, schema.SchemaConverter.convert, u'Thing', {})
 
 
 class ConversionPriorityTest(unittest.TestCase):

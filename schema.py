@@ -40,7 +40,7 @@ def get_schema_set():
 def get_legacy_spellings():
     schema_set = get_schema_set()
     props = schema_set['properties']
-    return {pname for pname, pdata in props.items() if pdata['comment'].find('(legacy spelling;') != -1}
+    return {pname for pname, pdata in props.items() if 'comment' in pdata and pdata['comment'].find('(legacy spelling;') != -1}
 
 
 def get_schema(itemtype):
@@ -186,7 +186,7 @@ def _merge_schema_set(addon, schema_set):
     return schema_set
 
 
-def to_html(o, key=None):
+def to_html(o):
     obj_type = type(o)
     if isinstance(o, dict):
         return render_dict(o)
@@ -272,7 +272,11 @@ class SchemaConverter(object):
         if pname == 'schema':
             return TextProperty(itemtype, 'Text', pname, pvalue)
 
-        ranges = get_property(pname)['ranges']
+        prop = get_property(pname)
+        if 'enum' in prop and pvalue not in prop['enum']:
+            return InvalidProperty(itemtype, 'Invalid', pname, pvalue)
+
+        ranges = prop['ranges']
         types = [(SchemaConverter.type_by_name(ptype), ptype) for ptype in ranges]
         types = [(type_obj, ptype, PRIORITY[type_obj]) for type_obj, ptype in types]
         sorted_types = sorted(types, key=operator.itemgetter(2))
