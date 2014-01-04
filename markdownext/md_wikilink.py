@@ -64,19 +64,20 @@ def _render_match(m):
         year_a.set('href', _build_url(year[1]))
         year_a.set('class', 'wikipage')
 
-        hyphen = etree.SubElement(a, 'span')
-        hyphen.text = '-'
+        if m.group('m') or m.group('d'):
+            hyphen = etree.SubElement(a, 'span')
+            hyphen.text = '-'
 
-        # handle month and date
-        if len(links) > 1:
-            date = links[1]
-            rest_a = etree.SubElement(a, 'a')
-            rest_a.text = date[0]
-            rest_a.set('href', _build_url(date[1]))
-            rest_a.set('class', 'wikipage')
-        else:
-            unknown_date = etree.SubElement(a, 'span')
-            unknown_date.text = '??-??'
+            # handle month and date
+            if len(links) > 1:
+                date = links[1]
+                rest_a = etree.SubElement(a, 'a')
+                rest_a.text = date[0]
+                rest_a.set('href', _build_url(date[1]))
+                rest_a.set('class', 'wikipage')
+            else:
+                unknown_date = etree.SubElement(a, 'span')
+                unknown_date.text = '??-??'
 
         # handle BCE
         if year[2]:

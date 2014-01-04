@@ -250,12 +250,13 @@ class TypeConversionTest(unittest.TestCase):
         self.assertEqual(schema.InvalidProperty, type(data))
 
     def test_year_only_date(self):
-        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979'})
+        data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979 BCE'})
         self.assertEqual(1979, data['birthDate'].year)
-        self.assertFalse(data['birthDate'].bce)
+        self.assertTrue(data['birthDate'].bce)
         self.assertIsNone(data['birthDate'].month)
         self.assertIsNone(data['birthDate'].day)
         self.assertTrue(data['birthDate'].is_year_only())
+        self.assertEqual(u'<time datetime="1979 BCE"><a class="wikipage" href="/1979_BCE">1979</a><span> BCE</span></time>', data['birthDate'].render())
 
     def test_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'300-05-15 BCE'})
@@ -265,34 +266,40 @@ class TypeConversionTest(unittest.TestCase):
         self.assertEqual(5, data['birthDate'].month)
         self.assertEqual(15, data['birthDate'].day)
         self.assertFalse(data['birthDate'].is_year_only())
+        self.assertEqual(u'<time datetime="300-05-15 BCE"><a class="wikipage" href="/300_BCE">300</a><span>-</span><a class="wikipage" href="/May_15">05-15</a><span> BCE</span></time>', data['birthDate'].render())
 
     def test_partial_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979'})['birthDate']
         self.assertEqual(1979, data.year)
         self.assertTrue(data.is_year_only())
+        self.assertEqual(u'<time datetime="1979"><a class="wikipage" href="/1979">1979</a></time>', data.render())
 
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-03-??'})['birthDate']
         self.assertEqual(1979, data.year)
         self.assertEqual(3, data.month)
         self.assertEqual(1, data.day)
         self.assertFalse(data.is_year_only())
+        self.assertEqual(u'<time datetime="1979-03-??"><a class="wikipage" href="/1979">1979</a><span>-</span><a class="wikipage" href="/March">03-??</a></time>', data.render())
 
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-??-??'})['birthDate']
         self.assertEqual(1979, data.year)
-        self.assertTrue(data.is_year_only())
+        self.assertEqual(u'<time datetime="1979-??-??"><a class="wikipage" href="/1979">1979</a><span>-</span><span>??-??</span></time>', data.render())
 
     def test_invalid_date(self):
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'Ten years ago'})['birthDate']
         self.assertEqual(schema.InvalidProperty, type(data))
         self.assertEqual(u'Ten years ago', data.pvalue)
+        self.assertEqual(u'<span class="error">Ten years ago</span>', data.render())
 
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-13-05'})['birthDate']
         self.assertEqual(schema.InvalidProperty, type(data))
         self.assertEqual(u'1979-13-05', data.pvalue)
+        self.assertEqual(u'<span class="error">1979-13-05</span>', data.render())
 
         data = schema.SchemaConverter.convert(u'Person', {u'birthDate': u'1979-05-40'})['birthDate']
         self.assertEqual(schema.InvalidProperty, type(data))
         self.assertEqual(u'1979-05-40', data.pvalue)
+        self.assertEqual(u'<span class="error">1979-05-40</span>', data.render())
 
     def test_boolean(self):
         for l in [u'1', u'true', u'TRUE', u'yes', u'YES']:
