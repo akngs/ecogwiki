@@ -128,23 +128,16 @@ class SpecialPageHandler(webapp2.RequestHandler):
             deferred.defer(WikiPage.rebuild_all_data_index, 0)
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             self.response.write('Done! (queued)')
-        elif path == u'fix_comment':
-            self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
-            index = int(self.request.GET.get('index', '0'))
-            pages = WikiPage.query().fetch(100, offset=index * 100)
-            for page in pages:
-                page.comment = ''
-                page.put()
-        elif path == u'gcstest':
-            import cloudstorage as gcs
-            f = gcs.open(
-                '/ecogwiki/test.txt', 'w',
-                content_type='text/plain',
-                retry_params=gcs.RetryParams(backoff_factor=1.1),
-                options={'x-goog-acl': 'public-read'},
-            )
-            f.write('Hello')
-            f.close()
-            self.response.write('Done')
+        # elif path == u'gcstest':
+        #     import cloudstorage as gcs
+        #     f = gcs.open(
+        #         '/ecogwiki/test.txt', 'w',
+        #         content_type='text/plain',
+        #         retry_params=gcs.RetryParams(backoff_factor=1.1),
+        #         options={'x-goog-acl': 'public-read'},
+        #     )
+        #     f.write('Hello')
+        #     f.close()
+        #     self.response.write('Done')
         else:
             self.abort(404)
