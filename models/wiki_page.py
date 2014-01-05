@@ -128,14 +128,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
             raise RuntimeError('Only admin can delete pages.')
 
         self.update_content('', self.revision, user=user, dont_create_rev=True, dont_defer=True)
+        self._update_inlinks({}, {'relatedTo': [p[0] for p in self.paths[:-1]]})
         self.related_links = {}
         self.modifier = None
         self.updated_at = None
         self.revision = 0
         self.put()
 
-        keys = [r.key for r in self.revisions]
-        ndb.delete_multi(keys)
+        ndb.delete_multi(r.key for r in self.revisions)
 
         caching.del_titles()
 
@@ -339,7 +339,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         updates = []
         for rel, titles in added_outlinks.items():
             for title in titles:
-                page = WikiPage.get_by_title(title)
+                page = WikiPage.get_by_title(title, follow_redirect=True)
                 page.add_inlink(self.title, rel)
                 updates.append(page)
 
@@ -355,14 +355,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
         for rel, titles in removed_outlinks.items():
             for title in titles:
                 page = WikiPage.get_by_title(title, follow_redirect=True)
-                try:
-                    page.del_inlink(self.title, rel)
-                    if len(page.inlinks) == 0 and page.revision == 0 and page.key:
-                        deletes.append(page.key)
-                    else:
-                        updates.append(page)
-                except ValueError:
-                    pass
+                page.del_inlink(self.title, rel)
+                if len(page.inlinks) == 0 and page.revision == 0 and page.key:
+                    deletes.append(page.key)
+                else:
+                    updates.append(page)
 
         if updates:
             ndb.put_multi(updates)

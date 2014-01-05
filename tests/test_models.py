@@ -756,7 +756,9 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.update_page(u'Hello [[A]]', u'C')
 
         self.login('a@x.com', 'a', is_admin=True)
-        self.pagea.delete(users.get_current_user())
+        WikiPage.get_by_title(u'A').delete(users.get_current_user())
+
+        self.pagea = WikiPage.get_by_title(u'A')
         self.pagec = WikiPage.get_by_title(u'C')
 
         self.assertEquals(1, len(self.pagea.inlinks))
@@ -769,7 +771,7 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.update_page(u'Hello [[A]]', u'C')
 
         self.login('a@x.com', 'a', is_admin=True)
-        self.pageb.delete(users.get_current_user())
+        WikiPage.get_by_title(u'B').delete(users.get_current_user())
 
         self.pagea = WikiPage.get_by_title(u'A')
         self.pageb = WikiPage.get_by_title(u'B')
@@ -813,14 +815,14 @@ class WikiPageHierarchyTest(AppEngineTestCase):
         self.assertEqual([u'GEB', u'GEB/Chapter 1', u'There'], page.outlinks['Article/relatedTo'])
         self.assertEqual({u'Article/relatedTo': [u'GEB/Chapter 1/Memo']}, WikiPage.get_by_title(u'GEB').inlinks)
 
-    # def test_delete(self):
-    #     self.login('ak@gmail.com', 'ak', is_admin=True)
-    #
-    #     memo = self.update_page(u'Hello', u'GEB/Chapter 1/Memo')
-    #     memo.delete(self.get_cur_user())
-    #
-    #     self.assertEqual({}, WikiPage.get_by_title(u'GEB').inlinks)
-    #     self.assertEqual({}, WikiPage.get_by_title(u'GEB/Chapter 1').inlinks)
+    def test_delete(self):
+        self.login('ak@gmail.com', 'ak', is_admin=True)
+
+        memo = self.update_page(u'Hello', u'GEB/Chapter 1/Memo')
+        memo.delete(self.get_cur_user())
+
+        self.assertEqual({}, WikiPage.get_by_title(u'GEB').inlinks)
+        self.assertEqual({}, WikiPage.get_by_title(u'GEB/Chapter 1').inlinks)
 
 
 class WikiPageBugsTest(AppEngineTestCase):
