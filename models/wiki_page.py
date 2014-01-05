@@ -272,66 +272,48 @@ class WikiPage(ndb.Model, PageOperationMixin):
             deferred.defer(self.update_links, old_redir, new_redir)
             deferred.defer(SchemaDataIndex.update_index, self.title, old_data, new_data)
 
+    def _update_redirected_links(self, new_redir, old_redir):
+        """Change in/out links of self and related pages according to new redirect metadata"""
+        if old_redir == new_redir:
+            return
+
+        source = WikiPage.get_by_title(old_redir, follow_redirect=True) if old_redir else self
+        if len(source.inlinks) == 0:
+            return
+
+        target = WikiPage.get_by_title(new_redir, follow_redirect=True) if new_redir else self
+
+        updates = [source, target]
+        for rel, titles in source.inlinks.items():
+            for t in titles:
+                page = WikiPage.get_by_title(t)
+                page.del_outlink(source.title, rel)
+                page.add_outlink(target.title, rel)
+                updates.append(page)
+
+            target.add_inlinks(source.inlinks[rel], rel)
+            del source.inlinks[rel]
+
+        ndb.put_multi(updates)
+        for page in updates:
+            caching.del_rendered_body(page.title)
+            caching.del_hashbangs(page.title)
+
     def update_links(self, old_redir, new_redir):
         """Updates outlinks of this page and inlinks of target pages"""
         # 1. process "redirect" metadata
-        if old_redir != new_redir:
-            if old_redir is not None:
-                source = WikiPage.get_by_title(old_redir, follow_redirect=True)
-            else:
-                source = self
+        self._update_redirected_links(new_redir, old_redir)
 
-            if new_redir is not None:
-                target = WikiPage.get_by_title(new_redir, follow_redirect=True)
-            else:
-                target = self
-
-            updates = []
-            for rel, titles in source.inlinks.items():
-                for t in titles:
-                    page = WikiPage.get_by_title(t)
-                    page.del_outlink(source.title, rel)
-                    page.add_outlink(target.title, rel)
-                    updates.append(page)
-                    caching.del_rendered_body(page.title)
-                    caching.del_hashbangs(page.title)
-
-                target.add_inlinks(source.inlinks[rel], rel)
-                del source.inlinks[rel]
-            ndb.put_multi(updates)
-
-            source.put()
-            caching.del_rendered_body(source.title)
-            caching.del_hashbangs(source.title)
-            target.put()
-            caching.del_rendered_body(target.title)
-            caching.del_hashbangs(target.title)
-
-        # 2. update in/out links
-        cur_outlinks = self.outlinks or {}
+        # 2. update inlinks
+        cur_outlinks = self.outlinks
         new_outlinks = {}
         for rel, titles in self._parse_outlinks().items():
             new_outlinks[rel] = list({WikiPage.get_by_title(t, follow_redirect=True).title for t in titles})
 
         if self.acl_read:
-            # delete all inlinks of target pages if there's read restriction
-            updates = []
-            deletes = []
-            for rel, titles in cur_outlinks.items():
-                for title in titles:
-                    page = WikiPage.get_by_title(title)
-                    try:
-                        page.del_inlink(title)
-                        if len(page.inlinks) == 0 and page.revision == 0 and page.key:
-                            deletes.append(page.key)
-                        else:
-                            updates.append(page)
-                        caching.del_rendered_body(page.title)
-                        caching.del_hashbangs(page.title)
-                    except ValueError:
-                        pass
-            ndb.put_multi(updates)
-            ndb.delete_multi(deletes)
+            # delete all inlinks of target pages if the source page has a read restriction
+            added_outlinks = {}
+            removed_outlinks = cur_outlinks
         else:
             # update all inlinks of target pages
             added_outlinks = {}
@@ -345,38 +327,50 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 if rel in new_outlinks:
                     removed_outlinks[rel] = set(removed_outlinks[rel]).difference(new_outlinks[rel])
 
-            updates = []
-            for rel, titles in added_outlinks.items():
-                for title in titles:
-                    page = WikiPage.get_by_title(title)
-                    page.add_inlink(self.title, rel)
-                    updates.append(page)
-                    caching.del_rendered_body(page.title)
-                    caching.del_hashbangs(page.title)
-            ndb.put_multi(updates)
+        self._update_inlinks(added_outlinks, removed_outlinks)
 
-            updates = []
-            deletes = []
-            for rel, titles in removed_outlinks.items():
-                for title in titles:
-                    page = WikiPage.get_by_title(title, follow_redirect=True)
-                    try:
-                        page.del_inlink(self.title, rel)
-                        if len(page.inlinks) == 0 and page.revision == 0 and page.key:
-                            deletes.append(page.key)
-                        else:
-                            updates.append(page)
-                        caching.del_rendered_body(page.title)
-                        caching.del_hashbangs(page.title)
-                    except ValueError:
-                        pass
-            ndb.put_multi(updates)
-            ndb.delete_multi(deletes)
-
-        # update outlinks of this page
+        # 3. update outlinks of this page
         [new_outlinks[rel].sort() for rel in new_outlinks.keys()]
         self.outlinks = new_outlinks
         self.put()
+
+    def _update_inlinks(self, added_outlinks, removed_outlinks):
+        # handle added links
+        updates = []
+        for rel, titles in added_outlinks.items():
+            for title in titles:
+                page = WikiPage.get_by_title(title)
+                page.add_inlink(self.title, rel)
+                updates.append(page)
+
+        if updates:
+            ndb.put_multi(updates)
+            for page in updates:
+                caching.del_rendered_body(page.title)
+                caching.del_hashbangs(page.title)
+
+        # handle removed links
+        updates = []
+        deletes = []
+        for rel, titles in removed_outlinks.items():
+            for title in titles:
+                page = WikiPage.get_by_title(title, follow_redirect=True)
+                try:
+                    page.del_inlink(self.title, rel)
+                    if len(page.inlinks) == 0 and page.revision == 0 and page.key:
+                        deletes.append(page.key)
+                    else:
+                        updates.append(page)
+                except ValueError:
+                    pass
+
+        if updates:
+            ndb.put_multi(updates)
+        if deletes:
+            ndb.delete_multi(deletes)
+        for page in updates + deletes:
+            caching.del_rendered_body(page.title)
+            caching.del_hashbangs(page.title)
 
     def _update_pub_state(self, new_md, old_md):
         pub_old = u'pub' in old_md

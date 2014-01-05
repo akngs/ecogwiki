@@ -102,14 +102,14 @@ class PageUpdateTest(AppEngineTestCase):
         revs = list(page.revisions)
         self.assertEqual(2, len(revs))
 
-    def test_schema_validation(self):
-        self.assertRaises(ValueError, self.update_page, u'.schema UnknownSchema')
-
 
 class PageValidationTest(AppEngineTestCase):
     def setUp(self):
         super(PageValidationTest, self).setUp()
         self.login('ak', 'ak')
+
+    def test_schema(self):
+        self.assertRaises(ValueError, self.update_page, u'.schema UnknownSchema')
 
     def test_duplicated_headings(self):
         self.assertRaises(ValueError, self.update_page, u'# A\n# A')
@@ -708,7 +708,7 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.pagea = WikiPage.get_by_title(u'A')
         self.pageb = WikiPage.get_by_title(u'B')
 
-    def test_should_be_deleted(self):
+    def test_deleted(self):
         self.login('a@x.com', 'a', is_admin=True)
         self.pagea.delete(users.get_current_user())
 
@@ -751,6 +751,37 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.pagea.update_content(u'Hello', 0, user=self.get_cur_user())
         self.assertEquals(1, self.pagea.revision)
 
+    def test_delete_and_redirection_1(self):
+        self.update_page(u'.redirect C', u'B')
+        self.update_page(u'Hello [[A]]', u'C')
+
+        self.login('a@x.com', 'a', is_admin=True)
+        self.pagea.delete(users.get_current_user())
+        self.pagec = WikiPage.get_by_title(u'C')
+
+        self.assertEquals(1, len(self.pagea.inlinks))
+        self.assertEquals(0, len(self.pagea.outlinks))
+        self.assertEquals(0, len(self.pagec.inlinks))
+        self.assertEquals(1, len(self.pagec.outlinks))
+
+    def test_delete_and_redirection_2(self):
+        self.update_page(u'.redirect C', u'B')
+        self.update_page(u'Hello [[A]]', u'C')
+
+        self.login('a@x.com', 'a', is_admin=True)
+        self.pageb.delete(users.get_current_user())
+
+        self.pagea = WikiPage.get_by_title(u'A')
+        self.pageb = WikiPage.get_by_title(u'B')
+        self.pagec = WikiPage.get_by_title(u'C')
+
+        self.assertEquals(1, len(self.pagea.inlinks))
+        self.assertEquals(1, len(self.pagea.outlinks))
+        self.assertEquals(1, len(self.pageb.inlinks))
+        self.assertEquals(0, len(self.pageb.outlinks))
+        self.assertEquals(0, len(self.pagec.inlinks))
+        self.assertEquals(1, len(self.pagec.outlinks))
+
 
 class WikiPageHierarchyTest(AppEngineTestCase):
     def setUp(self):
@@ -781,6 +812,15 @@ class WikiPageHierarchyTest(AppEngineTestCase):
         page = self.update_page(u'Hello [[There]]', u'GEB/Chapter 1/Memo')
         self.assertEqual([u'GEB', u'GEB/Chapter 1', u'There'], page.outlinks['Article/relatedTo'])
         self.assertEqual({u'Article/relatedTo': [u'GEB/Chapter 1/Memo']}, WikiPage.get_by_title(u'GEB').inlinks)
+
+    # def test_delete(self):
+    #     self.login('ak@gmail.com', 'ak', is_admin=True)
+    #
+    #     memo = self.update_page(u'Hello', u'GEB/Chapter 1/Memo')
+    #     memo.delete(self.get_cur_user())
+    #
+    #     self.assertEqual({}, WikiPage.get_by_title(u'GEB').inlinks)
+    #     self.assertEqual({}, WikiPage.get_by_title(u'GEB/Chapter 1').inlinks)
 
 
 class WikiPageBugsTest(AppEngineTestCase):
