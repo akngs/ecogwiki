@@ -6,7 +6,7 @@ from google.appengine.api import users
 from search import parse_wikiquery as p
 
 
-class WikiqueryParserTest(unittest.TestCase):
+class ParserTest(unittest.TestCase):
     def test_simplist_expression(self):
         self.assertEqual([['name', 'A'], ['name']], p('name:"A" > name'))
         self.assertEqual([['name', 'A'], ['name']], p('name:"A"'))
@@ -26,7 +26,7 @@ class WikiqueryParserTest(unittest.TestCase):
         self.assertEqual([['name', 'A'], ['name', 'author']], p('name:"A" > name, author'))
 
 
-#class WikiqueryNormalizerTest(unittest.TestCase):
+#class NormalizerTest(unittest.TestCase):
 #    def test_ordering(self):
 #        self.assertEqual(p('"A" * "B"'), p('"B" * "A"'))
 #        self.assertEqual(p('"A" * ("B" + "C")'), p('("C" + "B") * "A"'))
@@ -63,9 +63,9 @@ class WikiqueryParserTest(unittest.TestCase):
 #        self.assertEqual(p('"A" * "C"'), p('"A" * "C" * ("A" + "B" + "C" + "D")'))
 
 
-class WikiqueryEvaluationTest(AppEngineTestCase):
+class EvaluationTest(AppEngineTestCase):
     def setUp(self):
-        super(WikiqueryEvaluationTest, self).setUp()
+        super(EvaluationTest, self).setUp()
         self.login('ak@gmail.com', 'ak')
 
         self.update_page(u'.schema Book\n[[author::Daniel Dennett]] and [[author::Douglas Hofstadter]]\n[[datePublished::1982]]', u'The Mind\'s I')
@@ -112,9 +112,9 @@ class WikiqueryEvaluationTest(AppEngineTestCase):
         self.assertEqual(u'GEB', result[1]['name'].pvalue)
 
 
-class WikiqueryAclEvaluationTest(AppEngineTestCase):
+class AclEvaluationTest(AppEngineTestCase):
     def setUp(self):
-        super(WikiqueryAclEvaluationTest, self).setUp()
+        super(AclEvaluationTest, self).setUp()
         self.login('a@x.com', 'ak')
         self.update_page(u'.schema Book\n.read all\nHello', u'A')
         self.update_page(u'.schema Book\n.read a@x.com\nThere', u'B')
