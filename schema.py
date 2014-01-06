@@ -204,7 +204,7 @@ def render_dict(o):
     html = ['<dl class="wq wq-dict">']
     for key, value in o.items():
         html.append('<dt class="wq-key-%s">%s</dt>' % (key, key))
-        html.append('<dd class="wq-value-%s">%s</dd>' % (key, to_html(value, key)))
+        html.append('<dd class="wq-value-%s">%s</dd>' % (key, to_html(value)))
     html.append('</dl>')
 
     return '\n'.join(html)
