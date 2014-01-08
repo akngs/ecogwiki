@@ -9,17 +9,21 @@
 7.   Done
 
 
-# How to run tests
+# How to use
 
-Execute following command on project home:
+See [Ecogwiki Help page](http://www.ecogwiki.com/Help)
+
+
+# Development
+
+Install development dependencies:
+
+    pip install requirements.txt
+
+Run tests:
 
     python run_tests.py <APP_ENGINE_SDK_PATH> <TEST_PACKAGE_PATH>
 
 Example:
 
-    python run_tests.py /usr/local/Cellar/google-app-engine/1.8.1/share/google-app-engine ./tests
-
-
-# How to use
-
-See [Ecogwiki Help page](http://www.ecogwiki.com/Help)
+    python run_tests.py /usr/local/Cellar/google-app-engine/1.8.8/share/google-app-engine ./tests
