@@ -50,12 +50,12 @@
 </div>
 {% endif %}
 
-<form method="POST" action="{{ page.absolute_url }}?_method=PUT" class="editform">
-    <ul class="editor-tab">
-        <li class="tab active plain" data-name="plain"><a href="#plain">Plain</a></li>
-    </ul>
-    <ul class="editor-content">
-        <li class="content active plain" data-name="plain">
+<ul class="editor-tab">
+    <li class="tab active plain" data-name="plain"><a href="#plain">Plain editor</a></li>
+</ul>
+<ul class="editor-content">
+    <li class="content active plain" data-name="plain">
+        <form method="POST" action="{{ page.absolute_url }}?_method=PUT" class="editform">
             <input type="hidden" name="revision" value="{{ page.revision }}">
             <input type="hidden" name="preview" value="0">
 
@@ -64,20 +64,20 @@
             {% else %}
             <textarea name="body" placeholder="Body" autofocus="autofocus">{{ page.body }}</textarea>
             {% endif %}
-        </li>
-    </ul>
+            <input name="comment" placeholder="Comment" class="comment" value="">
 
-    <input name="comment" placeholder="Comment" class="comment" value="">
+            <div class="actions">
+                <input type="submit" value="Save" class="btn btn-primary">
+                <input type="button" value="Preview" class="btn btn-preview">
 
-    <div class="actions">
-        <input type="submit" value="Save" class="btn btn-primary">
-        <input type="button" value="Preview" class="btn btn-preview">
+                {% if users.is_current_user_admin() %}
+                <input type="button" value="Delete" class="btn btn-delete">
+                {% endif %}
+            </div>
+        </form>
+    </li>
+</ul>
 
-        {% if users.is_current_user_admin() %}
-        <input type="button" value="Delete" class="btn btn-delete">
-        {% endif %}
-    </div>
-</form>
 
 <form method="POST" action="{{ page.absolute_url }}?_method=DELETE" class="deleteform">
     <input type="submit" />
@@ -87,84 +87,8 @@
     <textarea name="body" placeholder="Body" autofocus="autofocus"></textarea>
     <input type="submit" />
 </form>
+
 {% endblock %}
 {% block before_body_close %}
-    <script>
-    $(function() {
-        /* Delete */
-        $('.btn-delete').on('click', function() {
-            if(!window.confirm('Are you sure?')) return false;
-
-            $.post($('.deleteform').attr('action'), {}, function() {
-                window.location = window.location.pathname;
-            });
-
-            return false;
-        });
-
-        /* Preview */
-        $('.btn-preview').on('click', function() {
-            $('.preview').show();
-
-            var $form = $('.editform');
-            $form.find('input[name="preview"]').val('1');
-            editor.update_form_values();
-            var formdata = $form.serialize();
-            $form.find('input[name="preview"]').val(0);
-
-            $.post('?_method=PUT', formdata, function(data) {
-                var html = $('<div>').append(jQuery.parseHTML(data)).find('.wrap').html();
-                $('.preview .body').html(html);
-            });
-        });
-    });
-    </script>
-    {% if is_mobile %}
-    <script>
-        // Resize editor to remove nested scrollbar
-        var editor = {};
-        $(function() {
-            var $editor = $('.editform textarea');
-            if ($editor.length === 0) return;
-
-            function resize_editor() {
-                // It doesn't work when there's large amount of reduction in text
-                $editor.height($editor.height() - 50);
-                $editor.height($editor.prop('scrollHeight'));
-            }
-
-            $(resize_editor);
-            $(window).resize(resize_editor);
-            $(window).on('orientationchange', resize_editor);
-            $editor.on('input propertychange', resize_editor);
-
-            editor.update_form_values = function() {};
-        });
-    </script>
-    {% else %}
-    <script>
-        // Enable CodeMirror editor
-        var editor;
-        $(function() {
-            editor = CodeMirror.fromTextArea(document.querySelector('textarea'), {
-                indentUnit: 4,
-                indentWithTabs: false,
-                lineWrapping: true,
-                lineNumbers: true,
-                autofocus: true,
-                mode: 'markdown',
-                viewportMargin: Infinity
-            });
-            editor.addKeyMap({
-                'Cmd-Enter': function() {$('input.comment').focus();},
-                'Ctrl-Enter': function() {$('input.comment').focus();}
-            });
-
-            editor.update_form_values = function() {
-                $('.editform').find('textarea[name="body"]').val(editor.getValue());
-            };
-        })
-    </script>
-    {% endif %}
     <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
 {% endblock %}
