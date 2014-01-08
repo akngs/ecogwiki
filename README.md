@@ -16,6 +16,8 @@ See [Ecogwiki Help page](http://www.ecogwiki.com/Help)
 
 # Development
 
+## Python
+
 Install development dependencies:
 
     pip install requirements.txt
@@ -27,3 +29,15 @@ Run tests:
 Example:
 
     python run_tests.py /usr/local/Cellar/google-app-engine/1.8.8/share/google-app-engine ./tests
+
+
+## Javascript
+
+Install development dependencies:
+
+   sudo npm -g install karma
+   sudo npm install
+
+Run tests:
+
+   karma start
