@@ -1,0 +1,5 @@
+html5lib==0.999
+lxml==3.2.5
+six==1.5.2
+unittest2==0.5.1
+wsgiref==0.1.2
