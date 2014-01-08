@@ -540,10 +540,16 @@ article .body blockquote {
     border-left: 3px solid #CCC;
 }
 
-article .body ol,
-article .body ul,
+article .body > ol,
+article .body > ul,
 article .body > dl {
     margin: 1em 0;
+}
+
+article .body ol,
+article .body ul,
+article .body dl {
+    margin: 0 0 1em 0;
 }
 
 article .body li > p:first-child {
