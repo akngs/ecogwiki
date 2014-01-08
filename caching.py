@@ -87,6 +87,9 @@ def set_config(value):
 
 
 def set_rendered_body(title, value):
+    if not value:
+        return
+
     _set_cache('model\trendered_body\t%s' % title, value)
 
 
