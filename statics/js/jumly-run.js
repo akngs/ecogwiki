@@ -1,4 +1,6 @@
-$(function() {
+var jumlyRun = (function($) {
+    "use strict";
+
     $('pre > code').each(function() {
         if(this.innerHTML.indexOf('#!uml\n') === 0) {
             var $parent = $(this.parentNode);

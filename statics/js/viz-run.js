@@ -1,4 +1,6 @@
-$(function() {
+var vizRun = (function($) {
+    "use strict";
+
     // process inline elements
     $('code').each(function() {
         if(this.parentNode.nodeName.toLowerCase() === 'pre') return;

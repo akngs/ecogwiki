@@ -1,5 +1,6 @@
-$(function() {
-    // converts plain markdown markup into reveal.js recognizible one
+/* converts plain HTML into reveal.js recognizible one */
+var revealRun = (function($) {
+    "use strict";
 
     // find top level elements
     var $tops = $('article .body > *');

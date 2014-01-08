@@ -1,0 +1,17 @@
+{
+  "name": "ecogwiki",
+  "description": "Ecogwiki",
+  "homepage": "http://www.ecogwiki.com/",
+  "author": {
+    "name": "Alan Kang",
+    "email": "jania902@gmail.com"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "karma-opera-launcher": "*",
+    "karma-safari-launcher": "*",
+    "karma-ios-launcher": "*"
+  },
+  "version": "0.0.1"
+}

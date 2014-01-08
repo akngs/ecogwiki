@@ -261,19 +261,22 @@ window.fbAsyncInit = function() {
     <!-- Reveal.js for Presentation { -->
     <script src="/statics/js/head.js?ver={{ app.version }}" type="text/javascript"></script>
     <script src="/statics/js/reveal.js?ver={{ app.version }}" type="text/javascript"></script>
-    <script src="/statics/js/reveal-converter.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script src="/statics/js/reveal-run.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script type="text/javascript">revealRun($);</script>
     <!-- } Reveal.js for Presentation -->
     {% endif %}
 
     {% if ('dot' in page.hashbangs) or ('dot/s' in page.hashbangs) %}
     <script src="/statics/js/viz.js?ver={{ app.version }}" type="text/javascript"></script>
     <script src="/statics/js/viz-run.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script type="text/javascript">vizRun($);</script>
     {% endif %}
 
     {% if ('uml' in page.hashbangs) %}
     <script src="/statics/js/coffee-script.js?ver={{ app.version }}" type="text/javascript"></script>
     <script src="/statics/js/jumly.min.js?ver={{ app.version }}" type="text/javascript"></script>
     <script src="/statics/js/jumly-run.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script type="text/javascript">jumlyRun($);</script>
     {% endif %}
 
     {% if ('mathjax' in page.hashbangs) %}
@@ -288,6 +291,7 @@ window.fbAsyncInit = function() {
     {% if (page.hashbangs|has_supported_language) %}
     <script src="/statics/js/highlight.pack.js?ver={{ app.version }}" type="text/javascript"></script>
     <script src="/statics/js/highlight-run.js?ver={{ app.version }}" type="text/javascript"></script>
+    <script type="text/javascript">highlightRun($);</script>
     {% endif %}
 
     {% if page.revision == 0 %}

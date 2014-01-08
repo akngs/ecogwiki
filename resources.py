@@ -209,7 +209,7 @@ class PageResource(PageLikeResource):
                 self.res.headers['Content-Type'] = 'application/json; charset=utf-8'
                 self.res.write(json.dumps({'revision': page.revision}))
         except ConflictError as e:
-            html = template(self.req, 'wikipage.form.html', {'page': page, 'conflict': e})
+            html = template(self.req, 'wikipage.edit.html', {'page': page, 'conflict': e})
             self.res.status = 409
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
             set_response_body(self.res, html, False)
@@ -241,7 +241,7 @@ class PageResource(PageLikeResource):
     def represent_html_edit(self, page):
         if page.revision == 0 and self.req.GET.get('body'):
             page.body = self.req.GET.get('body')
-        return TemplateRepresentation({'page': page}, self.req, 'wikipage.form.html')
+        return TemplateRepresentation({'page': page}, self.req, 'wikipage.edit.html')
 
 
 class RevisionResource(PageLikeResource):

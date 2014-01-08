@@ -1,0 +1,95 @@
+{% extends "templates/base.html" %}
+{% block title %}Edit "{{ page.title }}"{% endblock %}
+{% block head %}
+    {% if not is_mobile %}
+    <link rel="stylesheet" href="/statics/css/codemirror.css?ver={{ app.version }}">
+    <style>
+    .CodeMirror {
+        border: 1px solid #eee;
+        height: auto;
+        line-height: 1.5em;
+        font-size: 13px;
+    }
+    .CodeMirror-scroll {
+        overflow-y: hidden;
+        overflow-x: auto;
+
+        /* Fixes first line rendering problem in Chrome,
+           removing CSS code for hiding scrollbars (uses auto-resizing)
+        margin-bottom: 0px;
+        padding-bottom: 0px;
+        margin-right: 0px;
+        padding-right: 0px;
+         */
+    }
+    .CodeMirror pre {
+        font-family: NanumGothicCoding, "Courier New", Courier, monospace;
+    }
+    .CodeMirror-sizer {
+        position: relative;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+    }
+    </style>
+    <script type="text/javascript" src="/statics/js/codemirror/codemirror.js?ver={{ app.version }}"></script>
+    <script type="text/javascript" src="/statics/js/codemirror/markdown.js?ver={{ app.version }}"></script>
+    {% endif %}
+    <link rel="stylesheet" href="/statics/css/editor.css?ver={{ app.version }}">
+{% endblock %}
+{% block body %}
+<header>
+    <h1>{{ page.title }}</h1>
+</header>
+
+<article class="preview"><div class="body"></div></article>
+
+{% if conflict %}
+<div class="message">
+    <div class="close">x</div>
+    <p>Conflictions occurred with the other user's concurrent editing. Please resolve conflictions and save again.</p>
+</div>
+{% endif %}
+
+<ul class="editor-tab">
+    <li class="tab active plain" data-name="plain"><a href="#plain">Plain editor</a></li>
+</ul>
+<ul class="editor-content">
+    <li class="content active plain" data-name="plain">
+        <form method="POST" action="{{ page.absolute_url }}?_method=PUT" class="editform">
+            <input type="hidden" name="revision" value="{{ page.revision }}">
+            <input type="hidden" name="preview" value="0">
+
+            {% if conflict %}
+            <textarea name="body" placeholder="Body" autofocus="autofocus">{{ conflict.merged }}</textarea>
+            {% else %}
+            <textarea name="body" placeholder="Body" autofocus="autofocus">{{ page.body }}</textarea>
+            {% endif %}
+            <input name="comment" placeholder="Comment" class="comment" value="">
+
+            <div class="actions">
+                <input type="submit" value="Save" class="btn btn-primary">
+                <input type="button" value="Preview" class="btn btn-preview">
+
+                {% if users.is_current_user_admin() %}
+                <input type="button" value="Delete" class="btn btn-delete">
+                {% endif %}
+            </div>
+        </form>
+    </li>
+</ul>
+
+
+<form method="POST" action="{{ page.absolute_url }}?_method=DELETE" class="deleteform">
+    <input type="submit" />
+</form>
+
+<form method="POST" action="{{ page.absolute_url }}" class="appendform">
+    <textarea name="body" placeholder="Body" autofocus="autofocus"></textarea>
+    <input type="submit" />
+</form>
+
+{% endblock %}
+{% block before_body_close %}
+    <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
+    <script type="text/javascript">editorRun($);</script>
+{% endblock %}
