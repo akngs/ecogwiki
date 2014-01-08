@@ -1,7 +1,7 @@
-$(function() {
+var editorRun = (function($) {
     "use strict";
 
-    window.editor = {
+    var editor = {
         updateFormValues: function() {}
     };
 
@@ -28,7 +28,7 @@ $(function() {
                 'Ctrl-Enter': function() {$('input.comment').focus();}
             });
 
-            window.editor.updateFormValues = function() {
+            editor.updateFormValues = function() {
                 $('.editform').find('textarea[name="body"]').val(cm.getValue());
             };
         } else {
@@ -90,7 +90,7 @@ $(function() {
 
             var $form = $('.editform');
             $form.find('input[name="preview"]').val('1');
-            editor['updateFormvalues']();
+            editor.updateFormValues();
             var formdata = $form.serialize();
             $form.find('input[name="preview"]').val(0);
 

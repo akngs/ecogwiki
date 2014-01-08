@@ -5,4 +5,5 @@
 app.yaml
 appengine_config.py
 schema-custom.json
-
+npm-debug.log
+node_modules
