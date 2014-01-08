@@ -850,11 +850,18 @@ class WikiPage(ndb.Model, PageOperationMixin):
     @staticmethod
     def _del_inout_link(links, title, rel=None):
         if rel in links:
-            links[rel].remove(title)
+            try:
+                links[rel].remove(title)
+            except KeyError:
+                pass
+
             if len(links[rel]) == 0:
                 del links[rel]
         else:
             for rel, titles in links.items():
-                titles.remove(title)
+                try:
+                    titles.remove(title)
+                except KeyError:
+                    pass
                 if len(titles) == 0:
                     del links[rel]
