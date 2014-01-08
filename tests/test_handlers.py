@@ -267,6 +267,9 @@ class HTML5ValidationTest(AppEngineTestCase):
             self._validate('/sp.randomly_update_related_pages', 'text')
             self._validate('/sp.randomly_update_related_pages?recent=1', 'text')
 
+            self._validate('/sp.schema/types', 'html')
+            self._validate('/sp.schema/types?_type=json', 'json')
+
         self.login('user@example.com', 'ak')
         validate()
         self._validate('/sp.preferences', 'html')

@@ -41,6 +41,12 @@ class SchemaTest(AppEngineTestCase):
         isbn = schema.get_datatype('ISBN')
         self.assertEqual(['DataType'], isbn['ancestors'])
 
+    def test_get_itemtypes(self):
+        itemtypes = schema.get_itemtypes()
+        self.assertEqual(list, type(itemtypes))
+        self.assertEqual('APIReference', itemtypes[0])
+        self.assertEqual('Zoo', itemtypes[-1])
+
 
 class CustomTypeAndPropertyTest(AppEngineTestCase):
     def setUp(self):

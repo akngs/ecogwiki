@@ -68,6 +68,16 @@ def get_schema(itemtype):
     return schema
 
 
+def get_itemtypes():
+    itemtypes = caching.get_schema_itemtypes()
+    if itemtypes is not None:
+        return itemtypes
+
+    itemtypes = sorted(get_schema_set()['types'].keys())
+    caching.set_schema_itemtypes(itemtypes)
+    return itemtypes
+
+
 def get_datatype(type_name):
     datatype = caching.get_schema_datatype(type_name)
     if datatype is not None:

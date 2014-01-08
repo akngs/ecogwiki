@@ -70,6 +70,10 @@ def set_schema(key, value):
     _set_cache('schema\t%s' % key, value)
 
 
+def set_schema_itemtypes(value):
+    _set_cache('schema\titemtypes', value)
+
+
 def set_schema_property(prop_name, prop):
     _set_cache('schema\tprop\t%s' % prop_name, prop)
 
@@ -120,6 +124,10 @@ def get_schema_set():
 
 def get_schema(key):
     return _get_cache('schema\t%s' % key)
+
+
+def get_schema_itemtypes():
+    return _get_cache('schema\titemtypes')
 
 
 def get_schema_property(prop_name):
