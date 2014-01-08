@@ -34,6 +34,7 @@
     <script type="text/javascript" src="/statics/js/codemirror/codemirror.js?ver={{ app.version }}"></script>
     <script type="text/javascript" src="/statics/js/codemirror/markdown.js?ver={{ app.version }}"></script>
     {% endif %}
+    <link rel="stylesheet" href="/statics/css/editor.css?ver={{ app.version }}">
 {% endblock %}
 {% block body %}
 <header>
@@ -50,14 +51,22 @@
 {% endif %}
 
 <form method="POST" action="{{ page.absolute_url }}?_method=PUT" class="editform">
-    <input type="hidden" name="revision" value="{{ page.revision }}">
-    <input type="hidden" name="preview" value="0">
+    <ul class="editor-tab">
+        <li class="tab active plain" data-name="plain"><a href="#plain">Plain</a></li>
+    </ul>
+    <ul class="editor-content">
+        <li class="content active plain" data-name="plain">
+            <input type="hidden" name="revision" value="{{ page.revision }}">
+            <input type="hidden" name="preview" value="0">
 
-    {% if conflict %}
-    <textarea name="body" placeholder="Body" autofocus="autofocus">{{ conflict.merged }}</textarea>
-    {% else %}
-    <textarea name="body" placeholder="Body" autofocus="autofocus">{{ page.body }}</textarea>
-    {% endif %}
+            {% if conflict %}
+            <textarea name="body" placeholder="Body" autofocus="autofocus">{{ conflict.merged }}</textarea>
+            {% else %}
+            <textarea name="body" placeholder="Body" autofocus="autofocus">{{ page.body }}</textarea>
+            {% endif %}
+        </li>
+    </ul>
+
     <input name="comment" placeholder="Comment" class="comment" value="">
 
     <div class="actions">
@@ -78,7 +87,6 @@
     <textarea name="body" placeholder="Body" autofocus="autofocus"></textarea>
     <input type="submit" />
 </form>
-
 {% endblock %}
 {% block before_body_close %}
     <script>
@@ -99,12 +107,8 @@
             $('.preview').show();
 
             var $form = $('.editform');
-
             $form.find('input[name="preview"]').val('1');
-            if(window.editor) {
-                // code mirror?
-                $form.find('textarea[name="body"]').val(window.editor.getValue());
-            }
+            editor.update_form_values();
             var formdata = $form.serialize();
             $form.find('input[name="preview"]').val(0);
 
@@ -118,6 +122,7 @@
     {% if is_mobile %}
     <script>
         // Resize editor to remove nested scrollbar
+        var editor = {};
         $(function() {
             var $editor = $('.editform textarea');
             if ($editor.length === 0) return;
@@ -132,13 +137,14 @@
             $(window).resize(resize_editor);
             $(window).on('orientationchange', resize_editor);
             $editor.on('input propertychange', resize_editor);
+
+            editor.update_form_values = function() {};
         });
     </script>
     {% else %}
     <script>
         // Enable CodeMirror editor
-        var editor = null;
-
+        var editor;
         $(function() {
             editor = CodeMirror.fromTextArea(document.querySelector('textarea'), {
                 indentUnit: 4,
@@ -153,7 +159,12 @@
                 'Cmd-Enter': function() {$('input.comment').focus();},
                 'Ctrl-Enter': function() {$('input.comment').focus();}
             });
+
+            editor.update_form_values = function() {
+                $('.editform').find('textarea[name="body"]').val(editor.getValue());
+            };
         })
     </script>
     {% endif %}
+    <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
 {% endblock %}
