@@ -35,9 +35,9 @@ Example:
 
 Install development dependencies:
 
-   sudo npm -g install karma
-   sudo npm install
+    sudo npm -g install karma
+    sudo npm install
 
 Run tests:
 
-   karma start
+    karma start
