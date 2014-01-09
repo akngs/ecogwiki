@@ -1,4 +1,6 @@
 $(function() {
+    "use strict";
+
     // Render score graph
     (function() {
         $('span.score').each(function() {
