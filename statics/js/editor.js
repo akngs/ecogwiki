@@ -1,14 +1,56 @@
 var editor = (function($) {
     "use strict";
 
-    var editor = {
-        updateFormValues: function() {}
-    };
+    var editor = {};
 
-    function main() {
+    editor.main = function() {
         initPlainEditor();
         initStructuredEditor();
         registerEventHandlers();
+    };
+
+    editor.updateFormValues = function() {};
+
+    editor.parseBody = function(body) {
+        var bodyAndMd = this.extractMetadata(body, ['schema']);
+
+        var result = {
+            'itemtype': bodyAndMd['metadata']['schema'] || 'Article',
+            'properties': [],
+            'body': bodyAndMd['body']
+        }
+        return result;
+    };
+
+    editor.extractMetadata = function(body, keys) {
+        var metadata = {};
+
+        var lines = body.split('\n');
+        for(var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            if(line.indexOf('.') !== 0) break;
+            for(var j = 0; j < keys.length; j++) {
+                if(line.indexOf('.' + keys[j]) === 0) {
+                    // save metadata
+                    var sep = line.indexOf(' ');
+                    if(sep === -1) {
+                        metadata[line.substring(1)] = true;
+                    } else {
+                        metadata[line.substring(1, sep)] = line.substring(sep + 1).trim();
+                    }
+
+                    // remove this line
+                    lines.splice(i, 1);
+                    i--;
+                    break;
+                }
+            }
+        }
+
+        return {
+            'body': lines.join('\n').trim(),
+            'metadata': metadata
+        };
     }
 
     function initPlainEditor() {
@@ -101,7 +143,5 @@ var editor = (function($) {
         });
     }
 
-    return {
-        'main': main
-    };
+    return editor;
 })($);
