@@ -1,4 +1,4 @@
-var editorRun = (function($) {
+var editor = (function($) {
     "use strict";
 
     var editor = {
@@ -101,5 +101,7 @@ var editorRun = (function($) {
         });
     }
 
-    main();
-});
+    return {
+        'main': main
+    };
+})($);
