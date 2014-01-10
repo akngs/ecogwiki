@@ -47,6 +47,11 @@ class SchemaTest(AppEngineTestCase):
         self.assertEqual('APIReference', itemtypes[0])
         self.assertEqual('Zoo', itemtypes[-1])
 
+    def test_properties_should_contain_all_specific_properties(self):
+        for t in schema.get_itemtypes():
+            item = schema.get_schema(t)
+            self.assertEqual(set(), set(item['specific_properties']).difference(item['properties']))
+
 
 class CustomTypeAndPropertyTest(AppEngineTestCase):
     def setUp(self):
@@ -70,8 +75,10 @@ class CustomTypeAndPropertyTest(AppEngineTestCase):
         self.assertEqual(u'Political Party', schema.humane_property('Politician', 'politicalParty'))
 
     def test_property_inheritance(self):
-        self.assertEqual(self.person['properties'], self.politician['properties'])
-        self.assertEqual([u'politicalParty'], self.politician['specific_properties'])
+        person = set(schema.get_schema('Person')['properties'])
+        politician = set(schema.get_schema('Politician')['properties'])
+        self.assertEqual(set(), person.difference(politician))
+        self.assertEqual({u'politicalParty'}, politician.difference(person))
 
 
 class EnumerationTest(AppEngineTestCase):
