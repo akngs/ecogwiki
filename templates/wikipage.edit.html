@@ -90,6 +90,7 @@
 
 {% endblock %}
 {% block before_body_close %}
+    <script type="text/javascript" src="/statics/js/js-yaml.min.js?ver={{ app.version }}"></script>
     <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
     <script type="text/javascript">editorRun($);</script>
 {% endblock %}
