@@ -12,45 +12,52 @@ var editor = (function($) {
     editor.updateFormValues = function() {};
 
     editor.parseBody = function(body) {
-        var bodyAndMd = this.extractMetadata(body, ['schema']);
+        // parse yaml/schema block
+        var dataAndBody = this.extractYaml(body);
+        var data = dataAndBody['data'];
+        var bodyWithoutYamlBlock = dataAndBody['body'];
 
-        var result = {
-            'itemtype': bodyAndMd['metadata']['schema'] || 'Article',
-            'properties': [],
-            'body': bodyAndMd['body']
-        }
-        return result;
-    };
-
-    editor.extractMetadata = function(body, keys) {
-        var metadata = {};
-
-        var lines = body.split('\n');
+        // extract out schema metadata
+        var schema = 'Article';
+        var lines = bodyWithoutYamlBlock.split('\n');
         for(var i = 0; i < lines.length; i++) {
             var line = lines[i];
-            if(line.indexOf('.') !== 0) break;
-            for(var j = 0; j < keys.length; j++) {
-                if(line.indexOf('.' + keys[j]) === 0) {
-                    // save metadata
-                    var sep = line.indexOf(' ');
-                    if(sep === -1) {
-                        metadata[line.substring(1)] = true;
-                    } else {
-                        metadata[line.substring(1, sep)] = line.substring(sep + 1).trim();
-                    }
+            if(line.indexOf('.schema ') !== 0) break;
 
-                    // remove this line
-                    lines.splice(i, 1);
-                    i--;
-                    break;
-                }
+            // save metadata
+            var sep = line.indexOf(' ');
+            if(sep === -1) {
+                schema = 'Article';
+            } else {
+                schema = line.substring(sep + 1).trim();
             }
+
+            // remove this line
+            lines.splice(i, 1);
+            i--;
         }
 
         return {
             'body': lines.join('\n').trim(),
-            'metadata': metadata
+            'itemtype': schema,
+            'data': data
         };
+    }
+
+    editor.extractYaml = function(body) {
+        var p_yaml = /(?:\s{4}|\t)#!yaml\/schema[\n\r]+(((?:\s{4}|\t).+[\n\r]+?)+)/;
+        var m = body.match(p_yaml);
+        if(m) {
+            return {
+                'data': jsyaml.load((m[0])) || {},
+                'body': body.replace(p_yaml, '')
+            };
+        } else {
+            return {
+                'data': {},
+                'body': body
+            };
+        }
     }
 
     function initPlainEditor() {
