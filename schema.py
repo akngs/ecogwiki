@@ -44,28 +44,40 @@ def get_legacy_spellings():
 
 
 def get_schema(itemtype):
-    schema = caching.get_schema(itemtype)
-    if schema is not None:
-        return schema
+    item = caching.get_schema(itemtype)
+    if item is not None:
+        return item
 
-    schema = get_schema_set()['types'][itemtype]
-    if 'plural_label' not in schema:
-        if schema['label'][-2:] in ['ay', 'ey', 'iy', 'oy', 'uy', 'wy']:
-            schema['plural_label'] = u'%ss' % schema['label']
-        elif schema['label'].endswith('y'):
-            schema['plural_label'] = u'%sies' % schema['label'][:-1]
-        elif schema['label'].endswith('s') or schema['label'].endswith('o'):
-            schema['plural_label'] = u'%ses' % schema['label']
+    item = get_schema_set()['types'][itemtype]
+    if 'plural_label' not in item:
+        if item['label'][-2:] in ['ay', 'ey', 'iy', 'oy', 'uy', 'wy']:
+            item['plural_label'] = u'%ss' % item['label']
+        elif item['label'].endswith('y'):
+            item['plural_label'] = u'%sies' % item['label'][:-1]
+        elif item['label'].endswith('s') or item['label'].endswith('o'):
+            item['plural_label'] = u'%ses' % item['label']
         else:
-            schema['plural_label'] = u'%ss' % schema['label']
+            item['plural_label'] = u'%ss' % item['label']
+
+    # inherit properties of supertypes
+    if 'properties' not in item:
+        item['properties'] = []
+
+    for stype in item['supertypes']:
+        item['properties'] += get_schema(stype)['properties']
+    item['properties'] = list(set(item['properties']))
 
     # remove legacy spellings
     legacy_spellings = get_legacy_spellings()
-    schema['properties'] = list(set(schema['properties']).difference(legacy_spellings))
-    schema['specific_properties'] = list(set(schema['specific_properties']).difference(legacy_spellings))
+    props = set(item['properties']).difference(legacy_spellings)
+    sprops = set(item['specific_properties']).difference(legacy_spellings)
 
-    caching.set_schema(itemtype, schema)
-    return schema
+    # merge specific_properties into properties
+    item['properties'] = sorted(list(props.union(sprops)))
+    item['specific_properties'] = sorted(list(sprops))
+
+    caching.set_schema(itemtype, item)
+    return item
 
 
 def get_itemtypes():
@@ -185,11 +197,6 @@ def _merge_schema_set(addon, schema_set):
                 # modify supertype-subtype relationships
                 for supertype in v['supertypes']:
                     types[supertype]['subtypes'].append(k)
-
-                    # inherit properties of supertypes
-                    if 'properties' not in v:
-                        v['properties'] = []
-                    v['properties'] += types[supertype]['properties']
 
             types[k].update(v)
 
