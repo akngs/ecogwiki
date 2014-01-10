@@ -50,15 +50,10 @@ class Client(object):
       lambda x : x is not [])
 
   def get(self, *args, **kwargs):
-    prev_cache = None
-    for cache in self._caches:
-        value = cache.get(*args, **kwargs)
-        if value is not None:
-            if prev_cache is not None:
-                prev_cache.set(args[0], value)
-            return value
-        prev_cache = cache
-    return None
+    # TODO(dewitt): Consider returning an aggregate get that spans tiers
+    return self._until(
+      (cache.get(*args, **kwargs) for cache in self._caches),
+      lambda x : x is not [])
 
   def get_multi(self, *args, **kwargs):
     # TODO(dewitt): Consider returning an aggregate get that spans tiers
