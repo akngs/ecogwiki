@@ -60,6 +60,33 @@ var editor = (function($) {
         }
     }
 
+    editor.generateBody = function(data) {
+        var lines = []
+
+        if(data['itemtype'] != 'Article') {
+            lines.push('.schema ' + data['itemtype']);
+        }
+
+        if(!$.isEmptyObject(data['data'])) {
+            var dump = jsyaml.dump(data['data']).trim().split('\n');
+
+            if(lines[lines.length -1] !== '') {
+                lines.push('');
+            }
+
+            lines.push('    #!yaml/schema');
+            for(var i = 0; i < dump.length; i++) {
+                lines.push('    ' + dump[i]);
+            }
+        }
+        if(lines[lines.length -1] !== '' || lines[lines.length -1] === '.') {
+            lines.push('');
+        }
+        lines.push(data['body']);
+
+        return lines.join('\n');
+    }
+
     function initPlainEditor() {
         if(window['CodeMirror']) {
             // Enable CodeMirror editor

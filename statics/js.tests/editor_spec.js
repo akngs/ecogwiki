@@ -40,3 +40,58 @@ describe('Editor.parseBody', function() {
         });
     });
 });
+
+describe('Editor.generateBody', function() {
+    it('should generate empty string with default data', function() {
+        var data = {
+            'itemtype': 'Article',
+            'data': {},
+            'body': ''
+        }
+        expect(editor.generateBody(data)).toEqual('');
+    });
+
+    it('should generate simple text', function() {
+        var data = {
+            'itemtype': 'Article',
+            'data': {},
+            'body': 'Hello\nthere?'
+        };
+        expect(editor.generateBody(data)).toEqual('Hello\nthere?');
+    });
+
+    it('should generate schema metadata', function() {
+        var data = {
+            'itemtype': 'Book',
+            'data': {},
+            'body': 'Hello\nthere?'
+        };
+        expect(editor.generateBody(data)).toEqual('.schema Book\n\nHello\nthere?');
+    });
+
+    it('should generate yaml block', function() {
+        var data = {
+            'itemtype': 'Book',
+            'data': {'author': 'AK'},
+            'body': 'Hello\nthere?'
+        };
+        expect(editor.generateBody(data)).toEqual('.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?');
+    });
+});
+
+
+describe('Editor parse/generate roundtrip', function() {
+    it('should work two-way', function() {
+        var bodies = [
+            '',
+            'Hello\nthere?',
+            '.schema Book\n\nHello\nthere?',
+            '.schema Book\n.pub\n\nHello\nthere?',
+            '.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?'
+        ];
+        for(var i = 0; i < bodies.length; i++) {
+            var body = bodies[i];
+            expect(editor.generateBody(editor.parseBody(body))).toEqual(body);
+        }
+    });
+});
