@@ -82,6 +82,7 @@ class WikilinkTest(RenderingTestCase):
             u'http://www.youtube.com/watch?v=w5gmK-ZXIMQ',
             u'http://vimeo.com/1747316',
             u'http://www.ted.com/talks/krista.html',
+            u'http://prezi.com/sltlibmijbsv/copy-of-zoom-with-prezi/#',
         ]
         htmls = [
             u'<p><a class="plainurl" href="http://x.co">http://x.co</a></p>',
@@ -95,6 +96,7 @@ class WikilinkTest(RenderingTestCase):
             u'<p>\n</p><div class="video youtube">\n<iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe>\n</div>\n',
             u'<p>\n</p><div class="video vimeo">\n<iframe allowfullscreen="true" frameborder="0" height="281" src="http://player.vimeo.com/video/1747316" width="500"></iframe>\n</div>\n',
             u'<p>\n</p><div class="video ted">\n<iframe allowfullscreen="true" frameborder="0" height="315" src="http://embed.ted.com/talks/krista.html" width="560"></iframe>\n</div>\n',
+            u'<p>\n</p><div class="video prezi">\n<iframe allowfullscreen="true" frameborder="0" height="400" src="http://prezi.com/embed/sltlibmijbsv/?bgcolor=ffffff&amp;lock_to_path=0&amp;autoplay=0&amp;autohide_ctrls=0&amp;features=undefined&amp;disabled_features=undefined" width="550"></iframe>\n</div>\n',
         ]
 
         for markdown, html in zip(markdowns, htmls):

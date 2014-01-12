@@ -771,6 +771,9 @@ article .body .noli {
     article .body .video.ted {
         position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
     }
+    article .body .video.prezi {
+        position: relative; padding-bottom: 72.72%; height: 0; overflow: hidden;
+    }
     article .body .video iframe,
     article .body .video object,
     article .body .video embed {

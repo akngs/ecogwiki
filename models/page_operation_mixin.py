@@ -265,6 +265,7 @@ class PageOperationMixin(object):
                 'www.youtube.com',
                 'player.vimeo.com',
                 'embed.ted.com',
+                'prezi.com',
             )
             cleaner.forms = False
             rendered = cleaner.clean_html(rendered)

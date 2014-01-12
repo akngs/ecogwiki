@@ -5,11 +5,13 @@ from markdown.util import etree
 
 
 url_re = r'(' \
-         r'(?P<youtube>https?\://www\.youtube\.com/watch\?v=(?P<youtube_vid>[^?]+))' \
+         r'^(?P<youtube>https?\://www\.youtube\.com/watch\?v=(?P<youtube_vid>[^?]+))$' \
          r'|' \
-         r'(?P<vimeo>https?\://vimeo\.com/(?P<vimeo_vid>\d+))' \
+         r'^(?P<vimeo>https?\://vimeo\.com/(?P<vimeo_vid>\d+))$' \
          r'|' \
-         r'(?P<ted>https?\://www\.ted\.com/(?P<ted_vid>talks/.+\.html))' \
+         r'^(?P<ted>https?\://www\.ted\.com/(?P<ted_vid>talks/.+\.html))$' \
+         r'|' \
+         r'^(?P<prezi>https?\://prezi\.com/(?P<prezi_vid>.+?)/.+?/#)$' \
          r'|' \
          r'(?P<plainurl>((?P<itemprop>[^\s\:]+)\:\:)?(?P<url>\w+://' \
          r'[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\-\_\=\+\[\]\\\:\;\"\'\,\.\'' \
@@ -45,6 +47,8 @@ class UrlPattern(Pattern):
             return UrlPattern._create_video(m, 'vimeo', 500, 281, 'http://player.vimeo.com/video/%s')
         elif m.group('ted'):
             return UrlPattern._create_video(m, 'ted', 560, 315, 'http://embed.ted.com/%s')
+        elif m.group('prezi'):
+            return UrlPattern._create_video(m, 'prezi', 550, 400, 'http://prezi.com/embed/%s/?bgcolor=ffffff&lock_to_path=0&autoplay=0&autohide_ctrls=0&features=undefined&disabled_features=undefined')
         else:
             # m.group('email'):
             url = m.group('email')
