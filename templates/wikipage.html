@@ -151,7 +151,7 @@ window.fbAsyncInit = function() {
 		{% if redirected_from %}
         <div class="message">
             <div class="close">x</div>
-			<p>Redirected from <a href="{{ redirected_from|to_rel_path }}">{{ redirected_from }}</a></p>
+			<p>Redirected from <a href="{{ redirected_from|to_rel_path }}?view=edit">{{ redirected_from }}</a></p>
         </div>
 		{% endif %}
 
