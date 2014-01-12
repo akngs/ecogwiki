@@ -47,16 +47,18 @@ class Resource(object):
 
 
 class RedirectResource(Resource):
-    def __init__(self, req, res, location):
+    def __init__(self, req, res, location, redirect_from=None):
         super(RedirectResource, self).__init__(req, res)
         self._location = location
+        self.redirect_from = redirect_from
 
     def get(self, head):
         self.res.location = self._location
         if len(self.req.query):
             self.res.location += '?%s' % self.req.query
+        if self.redirect_from:
+            self.res.set_cookie('ecogwiki_redirect_from', self.redirect_from, max_age=60)
         self.res.status = 303
-
 
 class PageLikeResource(Resource):
     def __init__(self, req, res, path):
@@ -72,9 +74,12 @@ class PageLikeResource(Resource):
         if page.metadata.get('redirect', None) is not None:
             return Representation(None, None)
         else:
+            redirected_from = self.req.cookies.get('ecogwiki_redirect_from')
+            self.res.delete_cookie('ecogwiki_redirect_from')
             content = {
                 'page': page,
                 'message': self.res.headers.get('X-Message', None),
+                'redirected_from': redirected_from,
             }
             if page.metadata.get('schema', None) == 'Blog':
                 content['posts'] = page.get_posts(20)
@@ -133,9 +138,8 @@ class PageResource(PageLikeResource):
         if get_restype(self.req, 'html') == 'html' and self.req.GET.get('view', self.default_view) == 'default':
             redirect = page.metadata.get('redirect', None)
             if redirect is not None:
-                self.res.location = '/' + WikiPage.title_to_path(redirect)
-                self.res.status = 303
-                return
+                path = WikiPage.title_to_path(redirect)
+                return RedirectResource(self.req, self.res, path, redirect_from=page.title).get(head)
 
         representation = self.get_representation(page)
         representation.respond(self.res, head)
