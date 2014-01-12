@@ -267,6 +267,7 @@ class PageOperationMixin(object):
                 'embed.ted.com',
                 'prezi.com',
                 'www.google.com',
+                'www.slideshare.net',
             )
             cleaner.forms = False
             rendered = cleaner.clean_html(rendered)

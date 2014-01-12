@@ -88,7 +88,12 @@ class EmbedTest(RenderingTestCase):
     def test_google_calendar(self):
         self.assertRenderedText(
             u'<iframe src="https://www.google.com/calendar/embed?src=en.south_korea%23holiday%40group.v.calendar.google.com&ctz=Asia/Seoul" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>',
-            u'<div class="video gcal"><iframe allowfullscreen="true" frameborder="0" height="600" scrolling="no" src="https://www.google.com/calendar/embed?src=en.south_korea%23holiday%40group.v.calendar.google.com&amp;ctz=Asia/Seoul" width="800"></iframe></div>')
+            u'<div class="video gcal"><iframe allowfullscreen="true" frameborder="0" height="600" scrolling="no" src="http://www.google.com/calendar/embed?src=en.south_korea%23holiday%40group.v.calendar.google.com&amp;ctz=Asia/Seoul" width="800"></iframe></div>')
+
+    def test_slideshare(self):
+        self.assertRenderedText(
+            u'<iframe src="http://www.slideshare.net/slideshow/embed_code/29840080" width="425" height="355" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC;border-width:1px 1px 0;margin-bottom:5px" allowfullscreen> </iframe> <div style="margin-bottom:5px"> <strong> <a href="https://www.slideshare.net/TerryJohnson9/top-10-benefits-of-using-slideshareslide-share" title="Top 10 Benefits of Using SlideShare" target="_blank">Top 10 Benefits of Using SlideShare</a> </strong> from <strong><a href="http://www.slideshare.net/TerryJohnson9" target="_blank">BZ9 :: Proven Marketing Solutions Since 2003</a></strong> </div>',
+            u'<div class="video slideshare"><iframe allowfullscreen="true" frameborder="0" height="355" scrolling="no" src="http://www.slideshare.net/slideshow/embed_code/29840080" width="425"></iframe></div>')
 
 
 class WikilinkTest(RenderingTestCase):
