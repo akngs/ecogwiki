@@ -48,42 +48,47 @@ class EmbedTest(RenderingTestCase):
     def test_youtube(self):
         self.assertRenderedText(
             u'http://www.youtube.com/watch?v=w5gmK-ZXIMQ',
-            u'<div class="video youtube"><iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe></div>')
+            u'<div class="video youtube"><iframe allowfullscreen="true" frameborder="0" height="390" scrolling="no" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe></div>')
 
     def test_youtube2(self):
         self.assertRenderedText(
             u'<iframe width="640" height="390" src="//www.youtube.com/embed/w5gmK-ZXIMQ" frameborder="0" allowfullscreen></iframe>',
-            u'<div class="video youtube2"><iframe allowfullscreen="true" frameborder="0" height="390" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe></div>')
+            u'<div class="video youtube2"><iframe allowfullscreen="true" frameborder="0" height="390" scrolling="no" src="http://www.youtube.com/embed/w5gmK-ZXIMQ" width="640"></iframe></div>')
 
     def test_vimeo(self):
         self.assertRenderedText(
             u'http://vimeo.com/1747316',
-            u'<div class="video vimeo"><iframe allowfullscreen="true" frameborder="0" height="281" src="http://player.vimeo.com/video/1747316" width="500"></iframe></div>')
+            u'<div class="video vimeo"><iframe allowfullscreen="true" frameborder="0" height="281" scrolling="no" src="http://player.vimeo.com/video/1747316" width="500"></iframe></div>')
 
     def test_vimeo2(self):
         self.assertRenderedText(
             u'<iframe src="//player.vimeo.com/video/1747316" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>',
-            u'<div class="video vimeo2"><iframe allowfullscreen="true" frameborder="0" height="281" src="http://player.vimeo.com/video/1747316" width="500"></iframe></div>')
+            u'<div class="video vimeo2"><iframe allowfullscreen="true" frameborder="0" height="281" scrolling="no" src="http://player.vimeo.com/video/1747316" width="500"></iframe></div>')
 
     def test_ted(self):
         self.assertRenderedText(
             u'http://www.ted.com/talks/krista.html',
-            u'<div class="video ted"><iframe allowfullscreen="true" frameborder="0" height="315" src="http://embed.ted.com/talks/krista.html" width="560"></iframe></div>')
+            u'<div class="video ted"><iframe allowfullscreen="true" frameborder="0" height="315" scrolling="no" src="http://embed.ted.com/talks/krista.html" width="560"></iframe></div>')
 
     def test_ted2(self):
         self.assertRenderedText(
             u'<iframe src="http://embed.ted.com/talks/krista.html" width="560" height="315" frameborder="0" scrolling="no" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>',
-            u'<div class="video ted2"><iframe allowfullscreen="true" frameborder="0" height="315" src="http://embed.ted.com/talks/krista.html" width="560"></iframe></div>')
+            u'<div class="video ted2"><iframe allowfullscreen="true" frameborder="0" height="315" scrolling="no" src="http://embed.ted.com/talks/krista.html" width="560"></iframe></div>')
 
     def test_prezi(self):
         self.assertRenderedText(
             u'http://prezi.com/sltlibmijbsv/copy-of-zoom-with-prezi/#',
-            u'<div class="video prezi"><iframe allowfullscreen="true" frameborder="0" height="400" src="http://prezi.com/embed/sltlibmijbsv/?bgcolor=ffffff&amp;lock_to_path=0&amp;autoplay=0&amp;autohide_ctrls=0&amp;features=undefined&amp;disabled_features=undefined" width="550"></iframe></div>')
+            u'<div class="video prezi"><iframe allowfullscreen="true" frameborder="0" height="400" scrolling="no" src="http://prezi.com/embed/sltlibmijbsv/?bgcolor=ffffff&amp;lock_to_path=0&amp;autoplay=0&amp;autohide_ctrls=0&amp;features=undefined&amp;disabled_features=undefined" width="550"></iframe></div>')
 
     def test_prezi2(self):
         self.assertRenderedText(
             u'<iframe src="http://prezi.com/embed/sltlibmijbsv/?bgcolor=ffffff&amp;lock_to_path=0&amp;autoplay=0&amp;autohide_ctrls=0&amp;features=undefined&amp;disabled_features=undefined" width="550" height="400" frameBorder="0"></iframe>',
-            u'<div class="video prezi2"><iframe allowfullscreen="true" frameborder="0" height="400" src="http://prezi.com/embed/sltlibmijbsv/?bgcolor=ffffff&amp;lock_to_path=0&amp;autoplay=0&amp;autohide_ctrls=0&amp;features=undefined&amp;disabled_features=undefined" width="550"></iframe></div>')
+            u'<div class="video prezi2"><iframe allowfullscreen="true" frameborder="0" height="400" scrolling="no" src="http://prezi.com/embed/sltlibmijbsv/?bgcolor=ffffff&amp;lock_to_path=0&amp;autoplay=0&amp;autohide_ctrls=0&amp;features=undefined&amp;disabled_features=undefined" width="550"></iframe></div>')
+
+    def test_google_calendar(self):
+        self.assertRenderedText(
+            u'<iframe src="https://www.google.com/calendar/embed?src=en.south_korea%23holiday%40group.v.calendar.google.com&ctz=Asia/Seoul" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>',
+            u'<div class="video gcal"><iframe allowfullscreen="true" frameborder="0" height="600" scrolling="no" src="https://www.google.com/calendar/embed?src=en.south_korea%23holiday%40group.v.calendar.google.com&amp;ctz=Asia/Seoul" width="800"></iframe></div>')
 
 
 class WikilinkTest(RenderingTestCase):

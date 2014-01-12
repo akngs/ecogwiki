@@ -778,6 +778,9 @@ article .body .noli {
     article .body .video.prezi2 {
         position: relative; padding-bottom: 72.72%; height: 0; overflow: hidden;
     }
+    article .body .video.gcal {
+        position: relative; padding-bottom: 75.00%; height: 0; overflow: hidden;
+    }
     article .body .video iframe,
     article .body .video object,
     article .body .video embed {

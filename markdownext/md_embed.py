@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from markdown import Extension
+from markdown.util import etree
 from collections import OrderedDict
 from markdown.preprocessors import Preprocessor
 
@@ -22,13 +23,16 @@ p = re.compile(
     r'^(?P<prezi>https?\://prezi\.com/(?P<prezi_vid>.+?)/.+?/#)$'
     r'|'
     r'^(?P<prezi2><iframe.*?src="https?\://prezi\.com/embed/(?P<prezi2_vid>.+?)/.+?".*?></iframe>)$'
+    r'|'
+    r'^(?P<gcal><iframe.*?src="https?\://www\.google\.com/calendar/embed\?(?P<gcal_vid>.+?)".*?></iframe>)$'
     r')'
 )
+
 
 class EmbedPrepreprocessor(Preprocessor):
     def run(self, lines):
         for i, line in enumerate(lines):
-            m = p.search(line)
+            m = p.search(line.strip())
             if m:
                 lines[i] = self.process(m)
         return lines
@@ -50,13 +54,26 @@ class EmbedPrepreprocessor(Preprocessor):
             return self._create_video(m, 'prezi', 550, 400, 'http://prezi.com/embed/%s/?bgcolor=ffffff&lock_to_path=0&autoplay=0&autohide_ctrls=0&features=undefined&disabled_features=undefined')
         elif m.group('prezi2'):
             return self._create_video(m, 'prezi2', 550, 400, 'http://prezi.com/embed/%s/?bgcolor=ffffff&lock_to_path=0&autoplay=0&autohide_ctrls=0&features=undefined&disabled_features=undefined')
+        elif m.group('gcal'):
+            return self._create_video(m, 'gcal', 800, 600, 'https://www.google.com/calendar/embed?%s')
         else:
             raise ValueError('Should not reach here')
 
     def _create_video(self, m, vtype, width, height, url):
         vid = m.group('%s_vid' % vtype)
         url = url % vid
-        return u'<div class="video %s"><iframe allowfullscreen="true" frameborder="0" height="%d" src="%s" width="%d"></iframe></div>' % (vtype, height, url, width)
+
+        div = etree.Element('div')
+        div.set('class', 'video %s' % vtype)
+        iframe = etree.SubElement(div, 'iframe')
+        iframe.set('allowfullscreen', 'true')
+        iframe.set('frameborder', '0')
+        iframe.set('width', str(width))
+        iframe.set('height', str(height))
+        iframe.set('scrolling', 'no')
+        iframe.set('src', url)
+
+        return etree.tostring(div)
 
 
 class EmbedExtension(Extension):
