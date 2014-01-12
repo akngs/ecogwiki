@@ -154,10 +154,21 @@ class PageResource(PageLikeResource):
         new_body = self.req.POST['body']
         comment = self.req.POST.get('comment', '')
 
+        view    = self.req.GET.get('view', self.default_view)
+        restype = get_restype(self.req, 'html')
+
+        # POST to edit form, not content
+        if restype == 'html' and view == 'edit':
+            if page.revision == 0:
+                page.body = new_body
+            representation = self.get_representation(page)
+            representation.respond(self.res, head=False)
+            return
+
+        # POST to content
         try:
             page.update_content(page.body + new_body, page.revision, comment, self.user)
             quoted_path = urllib2.quote(self.path.replace(' ', '_'))
-            restype = get_restype(self.req, 'html')
             if restype == 'html':
                 self.res.location = str('/' + quoted_path)
             else:
