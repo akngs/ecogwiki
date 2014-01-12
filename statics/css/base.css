@@ -762,14 +762,27 @@ article .body .noli {
 
     /* Responsive YouTube video from http://invalid.kr/res-video-youtube/ */
     /* { */
-    article .body .video.youtube {
+    article .body .video.youtube,
+    article .body .video.youtube2 {
         position: relative; padding-bottom: 60.93%; height: 0; overflow: hidden;
     }
-    article .body .video.vimeo {
+    article .body .video.vimeo,
+    article .body .video.vimeo2 {
         position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
     }
-    article .body .video.ted {
+    article .body .video.ted,
+    article .body .video.ted2 {
         position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+    }
+    article .body .video.prezi,
+    article .body .video.prezi2 {
+        position: relative; padding-bottom: 72.72%; height: 0; overflow: hidden;
+    }
+    article .body .video.gcal {
+        position: relative; padding-bottom: 75.00%; height: 0; overflow: hidden;
+    }
+    article .body .video.slideshare {
+        position: relative; padding-bottom: 83.52%; height: 0; overflow: hidden;
     }
     article .body .video iframe,
     article .body .video object,

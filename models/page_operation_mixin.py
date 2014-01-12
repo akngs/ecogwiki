@@ -265,6 +265,9 @@ class PageOperationMixin(object):
                 'www.youtube.com',
                 'player.vimeo.com',
                 'embed.ted.com',
+                'prezi.com',
+                'www.google.com',
+                'www.slideshare.net',
             )
             cleaner.forms = False
             rendered = cleaner.clean_html(rendered)
@@ -423,5 +426,4 @@ class PageOperationMixin(object):
 
         # add structured data block
         rendered = rendered_data + rendered
-
         return cls.sanitize_html(rendered)
