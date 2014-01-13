@@ -111,6 +111,8 @@ $(function() {
                 return false;
             } else if(74 === keyCode) {
                 // J for down
+                $caret_targets = $('.caret-target');
+
                 if($caret_targets.length) {
                     caret_index++;
                     if(caret_index >= $caret_targets.length) caret_index = 0;
@@ -119,6 +121,8 @@ $(function() {
                 return false;
             } else if(75 === keyCode) {
                 // K for up
+                $caret_targets = $('.caret-target');
+
                 if($caret_targets.length) {
                     caret_index--;
                     if(caret_index < 0) caret_index = $caret_targets.length - 1;
@@ -203,6 +207,32 @@ $(function() {
     (function() {
         $(document).on('click', '.message .close', function() {
             $(this.parentNode).hide();
+        });
+    })();
+
+    // Pagination
+    (function() {
+        $('.next-page').on('click', function(e) {
+            e.preventDefault();
+            if($(this).hasClass('loading')) return;
+
+            var url = $(this).attr('href');
+            var $container = $('<table></table>');
+            var $target = $('.pagelist tbody');
+
+            $(this).addClass('loading');
+            $container.load(url + '&view=bodyonly .wrap', function() {
+                var $this = $(this);
+                var $rows = $this.find('tr.page');
+                if($rows.length) {
+                    $rows.each(function() {$target.append(this);});
+                    $('.next-page')
+                        .attr('href', $this.find('.next-page').attr('href'))
+                        .removeClass('loading');
+                } else {
+                    $('.next-page').remove();
+                }
+            });
         });
     })();
 

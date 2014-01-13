@@ -1,9 +1,6 @@
-{% extends "templates/base.html" %}
-{% block title %}Changes{% endblock %}
-{% block head %}
-    <link rel="alternate" type="application/atom+xml" href="/sp.changes?_type=atom" title="{{ config.service.title }} changes">
-{% endblock %}
-{% block body %}
+<!DOCTYPE html><html lang="ko">
+<head><meta charset="utf-8"><title>Posts</title></head>
+<body><div class="wrap">
 <header>
     <h1>
         Changes
@@ -39,10 +36,11 @@
     </tbody>
 </table>
 
-{% if pages %}
+    {% if pages %}
 <div>
     <a href="/sp.changes?page={{ next_page }}&count={{ count }}" class="next-page">Load next page...</a>
 </div>
 {% endif %}
 
-{% endblock %}
+</div></body>
+</html>
