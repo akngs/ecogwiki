@@ -27,17 +27,16 @@ class UrlPattern(Pattern):
         if m.group('plainurl'):
             url = m.group('url')
             a = etree.Element('a')
-            a.text = url
+            a.text = url.replace('_', '&#95;')
             a.set('href', url)
             a.set('class', 'plainurl')
             if m.group('itemprop'):
                 a.set('itemprop', m.group('itemprop'))
             return a
         else:
-            # m.group('email'):
             url = m.group('email')
             a = etree.Element('a')
-            a.text = url
+            a.text = url.replace('_', '&#95;')
             a.set('href', 'mailto:%s' % url)
             a.set('class', 'email')
             return a
