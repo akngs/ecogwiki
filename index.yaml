@@ -69,13 +69,3 @@ indexes:
 # manually, move them above the marker line.  The index.yaml file is
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
-
-- kind: WikiPage
-  ancestor: yes
-  properties:
-  - name: acl_read
-  - name: acl_write
-  - name: comment
-  - name: modifier
-  - name: title
-  - name: updated_at
