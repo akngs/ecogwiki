@@ -6,8 +6,8 @@ html {
 html,
 body {
     width: 100%;
-    margin: 0 0 1.5em;
-    padding: 0;
+    margin: 0;
+    padding: 0 0 1.5em;
     color: #444;
     line-height: 1.5em;
     font-size: 14px;
@@ -925,15 +925,13 @@ article .body .inlinegraph > svg {
 /* } Inline graph */
 
 
-/* Loading indicator  */
-
-.loading-indicator{
+/* Loading indicator { */
+.loading-indicator {
     position:relative;
     width:16px;
     height:20px
 }
-
-.blockG{
+.blockG {
     position:absolute;
     background-color:#FFFFFF;
     width:3px;
@@ -969,8 +967,7 @@ article .body .inlinegraph > svg {
     animation-iteration-count:infinite;
     animation-direction:linear;
 }
-
-#rotateG_01{
+#rotateG_01 {
     left:0;
     top:7px;
     -moz-animation-delay:0.20999999999999996s;
@@ -984,8 +981,7 @@ article .body .inlinegraph > svg {
     animation-delay:0.20999999999999996s;
     transform:rotate(-90deg);
 }
-
-#rotateG_02{
+#rotateG_02 {
     left:2px;
     top:3px;
     -moz-animation-delay:0.27999999999999997s;
@@ -999,8 +995,7 @@ article .body .inlinegraph > svg {
     animation-delay:0.27999999999999997s;
     transform:rotate(-45deg);
 }
-
-#rotateG_03{
+#rotateG_03 {
     left:7px;
     top:1px;
     -moz-animation-delay:0.35s;
@@ -1014,8 +1009,7 @@ article .body .inlinegraph > svg {
     animation-delay:0.35s;
     transform:rotate(0deg);
 }
-
-#rotateG_04{
+#rotateG_04 {
     right:2px;
     top:3px;
     -moz-animation-delay:0.41999999999999993s;
@@ -1029,8 +1023,7 @@ article .body .inlinegraph > svg {
     animation-delay:0.41999999999999993s;
     transform:rotate(45deg);
 }
-
-#rotateG_05{
+#rotateG_05 {
     right:0;
     top:7px;
     -moz-animation-delay:0.48999999999999994s;
@@ -1044,8 +1037,7 @@ article .body .inlinegraph > svg {
     animation-delay:0.48999999999999994s;
     transform:rotate(90deg);
 }
-
-#rotateG_06{
+#rotateG_06 {
     right:2px;
     bottom:2px;
     -moz-animation-delay:0.5599999999999999s;
@@ -1059,8 +1051,7 @@ article .body .inlinegraph > svg {
     animation-delay:0.5599999999999999s;
     transform:rotate(135deg);
 }
-
-#rotateG_07{
+#rotateG_07 {
     bottom:0;
     left:7px;
     -moz-animation-delay:0.63s;
@@ -1074,8 +1065,7 @@ article .body .inlinegraph > svg {
     animation-delay:0.63s;
     transform:rotate(180deg);
 }
-
-#rotateG_08{
+#rotateG_08 {
     left:2px;
     bottom:2px;
     -moz-animation-delay:0.7s;
@@ -1089,55 +1079,24 @@ article .body .inlinegraph > svg {
     animation-delay:0.7s;
     transform:rotate(-135deg);
 }
-
-@-moz-keyframes fadeG{
-    0%{
-        background-color:#000000
-    }
-
-    100%{
-        background-color:#FFFFFF
-    }
+@-moz-keyframes fadeG {
+    0% {background-color:#000000;}
+    100% {background-color:#FFFFFF;}
 }
-
-@-webkit-keyframes fadeG{
-    0%{
-        background-color:#000000
-    }
-
-    100%{
-        background-color:#FFFFFF
-    }
+@-webkit-keyframes fadeG {
+    0% {background-color:#000000;}
+    100% {background-color:#FFFFFF;}
 }
-
-@-ms-keyframes fadeG{
-    0%{
-        background-color:#000000
-    }
-
-    100%{
-        background-color:#FFFFFF
-    }
+@-ms-keyframes fadeG {
+    0% {background-color:#000000;}
+    100% {background-color:#FFFFFF;}
 }
-
-@-o-keyframes fadeG{
-    0%{
-        background-color:#000000
-    }
-
-    100%{
-        background-color:#FFFFFF
-    }
+@-o-keyframes fadeG {
+    0% {background-color:#000000;}
+    100% {background-color:#FFFFFF;}
 }
-
-@keyframes fadeG{
-    0%{
-        background-color:#000000
-    }
-
-    100%{
-        background-color:#FFFFFF
-    }
+@keyframes fadeG {
+    0% {background-color:#000000;}
+    100% {background-color:#FFFFFF;}
 }
-
-
+/* } Loading indicator */

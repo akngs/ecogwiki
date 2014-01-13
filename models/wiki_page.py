@@ -388,7 +388,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if self.published_at is not None and self.published_to == title:
             return
 
-        posts = WikiPage.get_posts_of(title, page=0, count=1)
+        posts = WikiPage.get_posts_of(title, index=0, count=1)
 
         if len(posts) > 0:
             latest = posts[0]
@@ -489,8 +489,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # done
         self.related_links = related_links
 
-    def get_posts(self, page=0, count=50):
-        return WikiPage.get_posts_of(self.title, page, count)
+    def get_posts(self, index=0, count=50):
+        return WikiPage.get_posts_of(self.title, index, count)
 
     def _schema_item_to_links(self, name, value):
         if isinstance(value, schema.Property) and value.is_wikilink():
@@ -658,14 +658,14 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return titles
 
     @classmethod
-    def get_posts_of(cls, title, page=0, count=50):
+    def get_posts_of(cls, title, index=0, count=50):
         q = cls.query(ancestor=cls._key())
         q = q.filter(cls.published_to == title)
         q = q.filter(cls.published_at != None)
-        return list(q.order(-cls.published_at).fetch(offset=page * count, limit=count))
+        return list(q.order(-cls.published_at).fetch(offset=index * count, limit=count))
 
     @classmethod
-    def get_changes(cls, user, page=0, count=50):
+    def get_changes(cls, user, index=0, count=50):
         q = WikiPage.query(ancestor=WikiPage._key())
         q = q.filter(WikiPage.updated_at != None)
 
@@ -678,7 +678,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
             WikiPage.acl_read,
         ]
         q = q.order(-WikiPage.updated_at)
-        pages = q.fetch(projection=prjs, limit=count, offset=page * count)
+        pages = q.fetch(projection=prjs, limit=count, offset=index * count)
         default_permission = WikiPage.get_default_permission()
         return [page for page in pages if page.can_read(user, default_permission)]
 

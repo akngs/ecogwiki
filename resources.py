@@ -85,7 +85,7 @@ class PageLikeResource(Resource):
                 'redirected_from': redirected_from,
             }
             if page.metadata.get('schema', None) == 'Blog':
-                content['posts'] = page.get_posts(page=0, count=50)
+                content['posts'] = page.get_posts(count=50)
             return TemplateRepresentation(content, self.req, 'wikipage.html')
 
     def represent_html_bodyonly(self, page):
@@ -97,7 +97,7 @@ class PageLikeResource(Resource):
 
     def represent_atom_default(self, page):
         content = render_atom(self.req, page.title, WikiPage.title_to_path(page.title),
-                              page.get_posts(page=0, count=20), include_content=True, use_published_date=True)
+                              page.get_posts(count=20), include_content=True, use_published_date=True)
         return Representation(content, 'text/xml; charset=utf-8')
 
     def represent_txt_default(self, page):
@@ -293,12 +293,17 @@ class RevisionListResource(Resource):
         self.path = path
 
     def load(self):
+        index = int(self.req.GET.get('index', '0'))
+        count = min(50, int(self.req.GET.get('count', '50')))
         page = WikiPage.get_by_path(self.path)
         revisions = [
-            r for r in page.revisions.order(-WikiPageRevision.created_at)
+            r for r in page.revisions.order(-WikiPageRevision.created_at).fetch(offset=index * count, limit=count)
             if r.can_read(self.user)
         ]
         return {
+            'cur_index': index,
+            'next_index': index + 1,
+            'count': count,
             'page': page,
             'revisions': revisions,
         }
@@ -316,6 +321,9 @@ class RevisionListResource(Resource):
             for rev in content['revisions']
         ]
         return JsonRepresentation(content)
+
+    def represent_html_bodyonly(self, data):
+        return TemplateRepresentation(data, self.req, 'history_bodyonly.html')
 
 
 class RelatedPagesResource(Resource):
@@ -448,13 +456,13 @@ class TitleIndexResource(Resource):
 
 class PostListResource(Resource):
     def load(self):
-        page = int(self.req.GET.get('page', '0'))
+        index = int(self.req.GET.get('index', '0'))
         count = min(50, int(self.req.GET.get('count', '50')))
         return {
-            'cur_page': page,
-            'next_page': page + 1,
+            'cur_index': index,
+            'next_index': index + 1,
             'count': count,
-            'pages': WikiPage.get_posts_of(None, page, count),
+            'pages': WikiPage.get_posts_of(None, index, count),
         }
 
     def represent_html_default(self, data):
@@ -470,13 +478,13 @@ class PostListResource(Resource):
 
 class ChangeListResource(Resource):
     def load(self):
-        page = int(self.req.GET.get('page', '0'))
+        index = int(self.req.GET.get('index', '0'))
         count = min(50, int(self.req.GET.get('count', '50')))
         return {
-            'cur_page': page,
-            'next_page': page + 1,
+            'cur_index': index,
+            'next_index': index + 1,
             'count': count,
-            'pages': WikiPage.get_changes(self.user, page, count),
+            'pages': WikiPage.get_changes(self.user, index, count),
         }
 
     def represent_html_default(self, data):

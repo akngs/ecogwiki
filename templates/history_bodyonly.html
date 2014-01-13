@@ -1,9 +1,6 @@
-{% extends "templates/base.html" %}
-{% block title %}Revision History of "{{ page.title }}"{% endblock %}
-{% block head %}
-    <link rel="alternate" type="application/atom+xml" href="/sp.posts?_type=atom" title="{{ config.service.title }} posts">
-{% endblock %}
-{% block body %}
+<!DOCTYPE html><html lang="ko">
+<head><meta charset="utf-8"><title>Posts</title></head>
+<body><div class="wrap">
 <header>
     <h1>
         Revision History of "{{ page.title }}"
@@ -40,8 +37,8 @@
 {% if revisions %}
 <div>
     <a href="?rev=list&amp;index={{ next_index }}&amp;count={{ count }}" class="next-page">Load next page...</a>
-    <div class="loading-indicator" style="display: none;"><div class="blockG" id="rotateG_01"></div><div class="blockG" id="rotateG_02"></div><div class="blockG" id="rotateG_03"></div><div class="blockG" id="rotateG_04"></div><div class="blockG" id="rotateG_05"></div><div class="blockG" id="rotateG_06"></div><div class="blockG" id="rotateG_07"></div><div class="blockG" id="rotateG_08"></div></div>
 </div>
 {% endif %}
 
-{% endblock %}
+</div></body>
+</html>
