@@ -96,3 +96,77 @@ describe('Editor parse/generate roundtrip', function() {
         }
     });
 });
+
+
+describe('Editor.generateForm', function() {
+    var person = {
+        "supertypes": ["Thing"],
+        "properties": {
+            "birthDate": {
+                "type": {
+                    "reversed_label": "%s Born",
+                    "label": "Birth Date",
+                    "comment": "Date of birth.",
+                    "domains": ["Person"],
+                    "ranges": ["Date"],
+                    "comment_plain": "Date of birth.",
+                    "id": "birthDate"
+                },
+                "cardinality": [0, 0]
+            },
+            "email": {
+                "type": {
+                    "reversed_label": "[%s] Email",
+                    "label": "Email",
+                    "comment": "Email address.",
+                    "domains": ["Person", "ContactPoint", "Organization"],
+                    "ranges": ["Text"],
+                    "comment_plain": "Email address.",
+                    "id": "email"
+                },
+                "cardinality": [1, 0]
+            },
+            "gender": {
+                "type": {
+                    "reversed_label": "[%s] Gender",
+                    "label": "Gender",
+                    "comment": "Gender of the person.",
+                    "domains": ["Person"],
+                    "ranges": ["Text"],
+                    "comment_plain": "Gender of the person.",
+                    "id": "gender"
+                },
+                "cardinality": [1, 1]
+            },
+            "parent": {
+                "type": {
+                    "reversed_label": "Children (%s)",
+                    "label": "Parent",
+                    "comment": "A parent of this person.",
+                    "domains": ["Person"],
+                    "ranges": ["Person"],
+                    "comment_plain": "A parent of this person.",
+                    "id": "parent"
+                },
+                "cardinality": [0, 0]
+            }
+        },
+        "comment": "",
+        "subtypes": ["Politician"],
+        "url": "http://schema.org/Person",
+        "label": "Person",
+        "ancestors": ["Thing"],
+        "comment_plain": "",
+        "id": "Person",
+        "plural_label": "People"
+    };
+
+    it('should generate form from schema', function() {
+        expect(editor.generateForm(person)).toEqual(
+            '<label for="prop_email">Email</label>\n' +
+            '<input type="text" id="prop_email" name="prop_email" value="">\n' +
+            '<label for="prop_gender">Gender</label>\n' +
+            '<input type="text" id="prop_gender" name="prop_gender" value="">'
+        );
+    });
+});

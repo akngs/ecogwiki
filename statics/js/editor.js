@@ -104,7 +104,19 @@ var editor = (function($) {
         });
 
         return lines.join('\n');
-    }
+    };
+
+    editor.generateForm = function(schema) {
+        var result = [];
+        var props = schema['properties'];
+        for(var prop in props) {
+            if(props[prop]['cardinality'][0] > 0) {
+                result.push('<label for="prop_' + prop + '">' + props[prop]['type']['label'] + '</label>')
+                result.push('<input type="text" id="prop_' + prop + '" name="prop_' + prop + '" value="">');
+            }
+        }
+        return result.join('\n');
+    };
 
     function initPlainEditor() {
         if(window['CodeMirror']) {
