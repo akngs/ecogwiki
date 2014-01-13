@@ -1,8 +1,6 @@
-{% extends "templates/base.html" %}
-{% block title %}Changes{% endblock %}
-{% block head %}
-    <link rel="alternate" type="application/atom+xml" href="/sp.changes?_type=atom" title="{{ config.service.title }} changes">
-{% endblock %}
+<!DOCTYPE html><html lang="ko">
+<head><meta charset="utf-8"><title>Posts</title></head>
+<body><div class="wrap">
 {% block body %}
 <header>
     <h1>
@@ -17,7 +15,7 @@
     </tr></thead>
     <tbody>
         {% for page in pages %}
-        <tr>
+        <tr class="page">
             <td class="updated"><time datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|sdt }}</time></td>
             <td class="page">
                 <span class="modifier">{{ page.modifier|userpage }}</span>
@@ -38,11 +36,6 @@
         {% endfor %}
     </tbody>
 </table>
-
-{% if pages %}
-<div>
-    <a href="#" class="next-page">Load next page...</a>
-</div>
-{% endif %}
-
 {% endblock %}
+</div></body>
+</html>

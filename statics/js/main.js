@@ -204,6 +204,30 @@ $(function() {
         });
     })();
 
+    // Pagination
+    (function() {
+        var pagem = location.href.match(/page=(\d+)/);
+        var page = pagem ? pagem[1] : 0;
+        var countm = location.href.match(/count=(\d+)/);
+        var count = countm ? countm[1] : 50;
+
+        $('.next-page').on('click', function(e) {
+            page++;
+
+            var $container = $('<table></table>');
+            var $target = $('.pagelist.posts tbody');
+            $container.load('/sp.posts?page=' + page + '&count=' + count + '&view=bodyonly table tbody', function() {
+                var $trs = $(this).find('tr.page');
+                if($trs.length) {
+                    $trs.each(function() {$target.append(this);});
+                } else {
+                    $('.next-page').remove();
+                }
+            });
+            e.preventDefault();
+        });
+    })();
+
     // Track outbound links
     (function() {
         var host = window.location.host;
