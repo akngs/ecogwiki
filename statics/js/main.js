@@ -208,18 +208,34 @@ $(function() {
         });
     })();
 
+    
+    var loadingIndicator = '<div class="loading-indicator">' +
+        '<div class="blockG" id="rotateG_01"></div>' +
+        '<div class="blockG" id="rotateG_02"></div>' +
+        '<div class="blockG" id="rotateG_03"></div>' +
+        '<div class="blockG" id="rotateG_04"></div>' +
+        '<div class="blockG" id="rotateG_05"></div>' +
+        '<div class="blockG" id="rotateG_06"></div>' +
+        '<div class="blockG" id="rotateG_07"></div>' +
+        '<div class="blockG" id="rotateG_08"></div>' + '</div>';
+
     // Pagination
     (function() {
         $('.next-page').on('click', function(e) {
             e.preventDefault();
             if($(this).hasClass('loading')) return;
 
+            
             var url = $(this).attr('href');
             var $container = $('<table></table>');
             var $target = $('.pagelist tbody');
 
             $(this).addClass('loading');
+            $('.next-page').hide();
+            $('.next-page').after(loadingIndicator);
             $container.load(url + '&view=bodyonly .wrap', function() {
+                $('.loading-indicator').remove()
+                $('.next-page').show();
                 var $this = $(this);
                 var $rows = $this.find('tr.page');
                 if($rows.length) {
