@@ -1,16 +1,40 @@
 # -*- coding: utf-8 -*-
+import threading
 from google.appengine.api import memcache
-from cache import memory
-from cache import layered
 
 
-c = layered.Client([memory.Client(default_time=60 * 10), memcache.Client()])
+c = memcache.Client()
 
 
+prc = None
 max_recent_users = 20
 
 
+class PerRequestCache(threading.local):
+    def get(self, key):
+        if key in self.__dict__:
+            return self.__dict__[key]
+        else:
+            return None
+
+    def set(self, key, value):
+        self.__dict__[key] = value
+
+    def flush_all(self):
+        self.__dict__.clear()
+
+
+def create_prc():
+    global prc
+    prc = PerRequestCache()
+
+
+if prc is None:
+    create_prc()
+
+
 def flush_all():
+    prc.flush_all()
     c.flush_all()
 
 
@@ -187,20 +211,24 @@ def del_hashbangs(title):
 
 def _set_cache(key, value, exp_sec=0):
     try:
+        prc.set(key, value)
         c.set(key, value, exp_sec)
     except:
         pass
 
 
 def _get_cache(key):
-    try:
-        return c.get(key)
-    except:
-        return None
+    if prc.get(key) is None:
+        try:
+            prc.set(key, c.get(key))
+        except:
+            pass
+    return prc.get(key)
 
 
 def _del_cache(key):
     try:
+        prc.set(key, None)
         c.delete(key)
     except:
         pass
