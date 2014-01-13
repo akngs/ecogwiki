@@ -9,6 +9,8 @@ from models import get_cur_user, is_admin_user, WikiPage
 
 class AppEngineTestCase(unittest.TestCase):
     def setUp(self):
+        caching.create_prc()
+
         self.testbed = testbed.Testbed()
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()

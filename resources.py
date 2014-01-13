@@ -3,6 +3,7 @@ import json
 import urllib2
 import search
 import schema
+import caching
 import operator
 from pyatom import AtomFeed
 from itertools import groupby
@@ -14,6 +15,7 @@ from representations import Representation, EmptyRepresentation, JsonRepresentat
 
 class Resource(object):
     def __init__(self, req, res, default_restype='html', default_view='default'):
+        caching.create_prc()
         self.user = get_cur_user()
         self.req = req
         self.res = res
