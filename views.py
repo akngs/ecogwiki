@@ -120,6 +120,7 @@ class SpecialPageHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
             self.response.write('Done!')
         elif path == u'randomly_update_related_pages':
+            caching.create_prc()
             recent = self.request.GET.get('recent', '0')
             titles = WikiPage.randomly_update_related_links(50, recent == '1')
             self.response.headers['Content-Type'] = 'text/plain; charset=utf-8'
