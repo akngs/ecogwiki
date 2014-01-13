@@ -52,6 +52,13 @@ class SchemaTest(AppEngineTestCase):
             item = schema.get_schema(t)
             self.assertEqual(set(), set(item['specific_properties']).difference(item['properties']))
 
+    def test_self_contained_schema(self):
+        s = schema.get_schema('Person', True)
+        url = s['properties']['url']
+        self.assertEqual(dict, type(url))
+        self.assertEqual([0, 0], url['cardinality'])
+        self.assertEqual(['URL'], url['type']['ranges'])
+
 
 class CustomTypeAndPropertyTest(AppEngineTestCase):
     def setUp(self):

@@ -61,28 +61,47 @@ var editor = (function($) {
     }
 
     editor.generateBody = function(data) {
-        var lines = []
+        var lines = [];
 
+        // .schema
         if(data['itemtype'] != 'Article') {
             lines.push('.schema ' + data['itemtype']);
         }
+        // other metadatas
+        var bodylines = data['body'].split('\n');
+        while(bodylines[0].indexOf('.') == 0) {
+            lines.push(bodylines.splice(0, 1));
+        }
 
+        // empty line
+        if(lines.length > 0) {
+            lines.push('');
+        }
+
+        // yaml/schema block
         if(!$.isEmptyObject(data['data'])) {
             var dump = jsyaml.dump(data['data']).trim().split('\n');
 
-            if(lines[lines.length -1] !== '') {
-                lines.push('');
-            }
-
             lines.push('    #!yaml/schema');
-            for(var i = 0; i < dump.length; i++) {
-                lines.push('    ' + dump[i]);
-            }
+            dump.forEach(function(i) {
+                lines.push('    ' + i);
+            });
         }
-        if(lines[lines.length -1] !== '' || lines[lines.length -1] === '.') {
+
+        // empty line
+        if(lines.length > 0 && lines[lines.length - 1] !== '') {
             lines.push('');
         }
-        lines.push(data['body']);
+
+        // remove starting empty lines in body
+        while(bodylines[0] === '') {
+            bodylines.splice(0, 1);
+        }
+
+        // rest
+        bodylines.forEach(function(i) {
+            lines.push(i);
+        });
 
         return lines.join('\n');
     }

@@ -87,7 +87,8 @@ describe('Editor parse/generate roundtrip', function() {
             'Hello\nthere?',
             '.schema Book\n\nHello\nthere?',
             '.schema Book\n.pub\n\nHello\nthere?',
-            '.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?'
+            '.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?',
+            '.schema Book\n.pub\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?'
         ];
         for(var i = 0; i < bodies.length; i++) {
             var body = bodies[i];
