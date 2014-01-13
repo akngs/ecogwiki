@@ -45,6 +45,8 @@ class SimpleExtensionsTest(RenderingTestCase):
 
     def test_underline_in_email(self):
         self.assertRenderedText(u'_akmail_@gmail.com', u'<p><a class="email" href="mailto:_akmail_@gmail.com">_akmail_@gmail.com</a></p>')
+        self.assertRenderedText(u'http://x.com/_a_', u'<p><a class="plainurl" href="http://x.com/_a_">http://x.com/_a_</a></p>')
+        self.assertRenderedText(u'![Image](http://x.com/_a_)', u'<p class="img-container"><img alt="Image" src="http://x.com/_a_"></p>')
 
 
 class EmbedTest(RenderingTestCase):
