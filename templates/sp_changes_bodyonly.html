@@ -1,7 +1,6 @@
 <!DOCTYPE html><html lang="ko">
 <head><meta charset="utf-8"><title>Posts</title></head>
 <body><div class="wrap">
-{% block body %}
 <header>
     <h1>
         Changes
@@ -36,6 +35,12 @@
         {% endfor %}
     </tbody>
 </table>
-{% endblock %}
+
+    {% if pages %}
+<div>
+    <a href="/sp.changes?page={{ next_page }}&count={{ count }}" class="next-page">Load next page...</a>
+</div>
+{% endif %}
+
 </div></body>
 </html>

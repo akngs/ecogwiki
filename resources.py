@@ -450,34 +450,44 @@ class PostListResource(Resource):
     def load(self):
         page = int(self.req.GET.get('page', '0'))
         count = min(50, int(self.req.GET.get('count', '50')))
-        return WikiPage.get_posts_of(None, page, count)
+        return {
+            'cur_page': page,
+            'next_page': page + 1,
+            'count': count,
+            'pages': WikiPage.get_posts_of(None, page, count),
+        }
 
-    def represent_html_default(self, posts):
-        return TemplateRepresentation({'pages': posts}, self.req, 'sp_posts.html')
+    def represent_html_default(self, data):
+        return TemplateRepresentation(data, self.req, 'sp_posts.html')
 
-    def represent_atom_default(self, posts):
-        content = render_atom(self.req, 'Posts', 'sp.posts', posts)
+    def represent_atom_default(self, data):
+        content = render_atom(self.req, 'Posts', 'sp.posts', data['pages'])
         return Representation(content, 'text/xml; charset=utf-8')
 
-    def represent_html_bodyonly(self, posts):
-        return TemplateRepresentation({'pages': posts}, self.req, 'sp_posts_bodyonly.html')
+    def represent_html_bodyonly(self, data):
+        return TemplateRepresentation(data, self.req, 'sp_posts_bodyonly.html')
 
 
 class ChangeListResource(Resource):
     def load(self):
         page = int(self.req.GET.get('page', '0'))
         count = min(50, int(self.req.GET.get('count', '50')))
-        return WikiPage.get_changes(self.user, page, count)
+        return {
+            'cur_page': page,
+            'next_page': page + 1,
+            'count': count,
+            'pages': WikiPage.get_changes(self.user, page, count),
+        }
 
-    def represent_html_default(self, pages):
-        return TemplateRepresentation({'pages': pages}, self.req, 'sp_changes.html')
+    def represent_html_default(self, data):
+        return TemplateRepresentation(data, self.req, 'sp_changes.html')
 
-    def represent_atom_default(self, pages):
-        content = render_atom(self.req, 'Changes', 'sp.changes', pages)
+    def represent_atom_default(self, data):
+        content = render_atom(self.req, 'Changes', 'sp.changes', data['pages'])
         return Representation(content, 'text/xml; charset=utf-8')
 
-    def represent_html_bodyonly(self, posts):
-        return TemplateRepresentation({'pages': posts}, self.req, 'sp_changes_bodyonly.html')
+    def represent_html_bodyonly(self, data):
+        return TemplateRepresentation(data, self.req, 'sp_changes_bodyonly.html')
 
 
 class UserPreferencesResource(Resource):

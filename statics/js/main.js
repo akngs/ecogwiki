@@ -109,6 +109,8 @@ $(function() {
                 return false;
             } else if(74 === keyCode) {
                 // J for down
+                $caret_targets = $('.caret-target');
+
                 if($caret_targets.length) {
                     caret_index++;
                     if(caret_index >= $caret_targets.length) caret_index = 0;
@@ -117,6 +119,8 @@ $(function() {
                 return false;
             } else if(75 === keyCode) {
                 // K for up
+                $caret_targets = $('.caret-target');
+
                 if($caret_targets.length) {
                     caret_index--;
                     if(caret_index < 0) caret_index = $caret_targets.length - 1;
@@ -206,25 +210,27 @@ $(function() {
 
     // Pagination
     (function() {
-        var pagem = location.href.match(/page=(\d+)/);
-        var page = pagem ? pagem[1] : 0;
-        var countm = location.href.match(/count=(\d+)/);
-        var count = countm ? countm[1] : 50;
-
         $('.next-page').on('click', function(e) {
-            page++;
+            e.preventDefault();
+            if($(this).hasClass('loading')) return;
 
+            var url = $(this).attr('href');
             var $container = $('<table></table>');
-            var $target = $('.pagelist.posts tbody');
-            $container.load('/sp.posts?page=' + page + '&count=' + count + '&view=bodyonly table tbody', function() {
-                var $trs = $(this).find('tr.page');
-                if($trs.length) {
-                    $trs.each(function() {$target.append(this);});
+            var $target = $('.pagelist tbody');
+
+            $(this).addClass('loading');
+            $container.load(url + '&view=bodyonly .wrap', function() {
+                var $this = $(this);
+                var $rows = $this.find('tr.page');
+                if($rows.length) {
+                    $rows.each(function() {$target.append(this);});
+                    $('.next-page')
+                        .attr('href', $this.find('.next-page').attr('href'))
+                        .removeClass('loading');
                 } else {
                     $('.next-page').remove();
                 }
             });
-            e.preventDefault();
         });
     })();
 

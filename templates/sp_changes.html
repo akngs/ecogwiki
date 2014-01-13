@@ -17,7 +17,7 @@
     </tr></thead>
     <tbody>
         {% for page in pages %}
-        <tr>
+        <tr class="page">
             <td class="updated"><time datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|sdt }}</time></td>
             <td class="page">
                 <span class="modifier">{{ page.modifier|userpage }}</span>
@@ -41,7 +41,7 @@
 
 {% if pages %}
 <div>
-    <a href="#" class="next-page">Load next page...</a>
+    <a href="/sp.changes?page={{ next_page }}&count={{ count }}" class="next-page">Load next page...</a>
 </div>
 {% endif %}
 
