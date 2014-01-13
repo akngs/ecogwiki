@@ -145,4 +145,5 @@ md = markdown.Markdown(
         AttrListExtension(),
     ],
     safe_mode=False,
+    smart_emphasis=False,
 )

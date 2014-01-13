@@ -72,7 +72,7 @@ class PageHandlerTest(AppEngineTestCase):
         self.assertEqual([u'BBS', u'Post C', u'Post B', u'Post A', u'A', u'Home'], link_texts)
 
     def test_get_sp_changes_with_paging(self):
-        self.browser.get('/sp.changes?page=1&count=2')
+        self.browser.get('/sp.changes?index=1&count=2')
         links = self.browser.query('.//table//a')
         link_texts = [link.text for link in links]
         self.assertEqual([u'Post B', u'Post A'], link_texts)
@@ -90,7 +90,7 @@ class PageHandlerTest(AppEngineTestCase):
         self.assertEqual([u'Post B', u'Post A'], link_texts)
 
     def test_get_sp_posts_with_paging(self):
-        self.browser.get('/sp.posts?page=1&count=1')
+        self.browser.get('/sp.posts?index=1&count=1')
         links = self.browser.query('.//table//a')
         link_texts = [link.text for link in links]
         self.assertEqual([u'Post A'], link_texts)
