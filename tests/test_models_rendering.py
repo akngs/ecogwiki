@@ -43,6 +43,9 @@ class SimpleExtensionsTest(RenderingTestCase):
     def test_html_sanitization(self):
         self.assertRenderedText(u'Hey<script>alert(1)</script>you', u'<p>Heyyou</p>')
 
+    def test_underline_in_email(self):
+        self.assertRenderedText(u'_akmail_@gmail.com', u'<p><a class="email" href="mailto:_akmail_@gmail.com">_akmail_@gmail.com</a></p>')
+
 
 class EmbedTest(RenderingTestCase):
     def test_youtube(self):
