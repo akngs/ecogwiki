@@ -388,7 +388,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if self.published_at is not None and self.published_to == title:
             return
 
-        posts = WikiPage.get_posts_of(title, 1)
+        posts = WikiPage.get_posts_of(title, page=0, count=1)
 
         if len(posts) > 0:
             latest = posts[0]
@@ -489,8 +489,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # done
         self.related_links = related_links
 
-    def get_posts(self, limit):
-        return WikiPage.get_posts_of(self.title, limit)
+    def get_posts(self, page=0, count=50):
+        return WikiPage.get_posts_of(self.title, page, count)
 
     def _schema_item_to_links(self, name, value):
         if isinstance(value, schema.Property) and value.is_wikilink():
@@ -585,7 +585,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
     @classmethod
     def randomly_update_related_links(cls, iteration, recent=False):
         if recent:
-            titles = [p.title for p in WikiPage.get_changes(None, limit=iteration)]
+            titles = [p.title for p in WikiPage.get_changes(None, count=iteration)]
         else:
             titles = WikiPage.get_titles()
 
@@ -658,20 +658,16 @@ class WikiPage(ndb.Model, PageOperationMixin):
         return titles
 
     @classmethod
-    def get_posts_of(cls, title, limit):
+    def get_posts_of(cls, title, page=0, count=50):
         q = cls.query(ancestor=cls._key())
         q = q.filter(cls.published_to == title)
         q = q.filter(cls.published_at != None)
-        return list(q.order(-cls.published_at).fetch(limit=limit))
+        return list(q.order(-cls.published_at).fetch(offset=page * count, limit=count))
 
     @classmethod
-    def get_changes(cls, user, limit=7):
+    def get_changes(cls, user, page=0, count=50):
         q = WikiPage.query(ancestor=WikiPage._key())
         q = q.filter(WikiPage.updated_at != None)
-
-        if limit != 0:
-            date_from = datetime.now() - timedelta(days=limit)
-            q = q.filter(WikiPage.updated_at >= date_from)
 
         prjs = [
             WikiPage.title,
@@ -681,8 +677,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             WikiPage.acl_write,
             WikiPage.acl_read,
         ]
-        pages = q.order(-WikiPage.updated_at).fetch(projection=prjs)
-
+        q = q.order(-WikiPage.updated_at)
+        pages = q.fetch(projection=prjs, limit=count, offset=page * count)
         default_permission = WikiPage.get_default_permission()
         return [page for page in pages if page.can_read(user, default_permission)]
 

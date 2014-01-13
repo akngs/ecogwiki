@@ -62,6 +62,7 @@ class RedirectResource(Resource):
             self.res.set_cookie('ecogwiki_redirect_from', self.redirect_from, max_age=60)
         self.res.status = 303
 
+
 class PageLikeResource(Resource):
     def __init__(self, req, res, path):
         super(PageLikeResource, self).__init__(req, res)
@@ -84,7 +85,7 @@ class PageLikeResource(Resource):
                 'redirected_from': redirected_from,
             }
             if page.metadata.get('schema', None) == 'Blog':
-                content['posts'] = page.get_posts(20)
+                content['posts'] = page.get_posts(page=0, count=50)
             return TemplateRepresentation(content, self.req, 'wikipage.html')
 
     def represent_html_bodyonly(self, page):
@@ -96,7 +97,7 @@ class PageLikeResource(Resource):
 
     def represent_atom_default(self, page):
         content = render_atom(self.req, page.title, WikiPage.title_to_path(page.title),
-                              page.get_posts(20), include_content=True, use_published_date=True)
+                              page.get_posts(page=0, count=20), include_content=True, use_published_date=True)
         return Representation(content, 'text/xml; charset=utf-8')
 
     def represent_txt_default(self, page):
@@ -447,7 +448,9 @@ class TitleIndexResource(Resource):
 
 class PostListResource(Resource):
     def load(self):
-        return WikiPage.get_posts_of(None, 20)
+        page = int(self.req.GET.get('page', '0'))
+        count = min(50, int(self.req.GET.get('count', '50')))
+        return WikiPage.get_posts_of(None, page, count)
 
     def represent_html_default(self, posts):
         return TemplateRepresentation({'pages': posts}, self.req, 'sp_posts.html')
@@ -456,10 +459,15 @@ class PostListResource(Resource):
         content = render_atom(self.req, 'Posts', 'sp.posts', posts)
         return Representation(content, 'text/xml; charset=utf-8')
 
+    def represent_html_bodyonly(self, posts):
+        return TemplateRepresentation({'pages': posts}, self.req, 'sp_posts_bodyonly.html')
+
 
 class ChangeListResource(Resource):
     def load(self):
-        return WikiPage.get_changes(self.user)
+        page = int(self.req.GET.get('page', '0'))
+        count = min(50, int(self.req.GET.get('count', '50')))
+        return WikiPage.get_changes(self.user, page, count)
 
     def represent_html_default(self, pages):
         return TemplateRepresentation({'pages': pages}, self.req, 'sp_changes.html')
@@ -467,6 +475,9 @@ class ChangeListResource(Resource):
     def represent_atom_default(self, pages):
         content = render_atom(self.req, 'Changes', 'sp.changes', pages)
         return Representation(content, 'text/xml; charset=utf-8')
+
+    def represent_html_bodyonly(self, posts):
+        return TemplateRepresentation({'pages': posts}, self.req, 'sp_changes_bodyonly.html')
 
 
 class UserPreferencesResource(Resource):

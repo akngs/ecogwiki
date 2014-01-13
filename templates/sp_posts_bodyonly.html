@@ -1,8 +1,6 @@
-{% extends "templates/base.html" %}
-{% block title %}Posts{% endblock %}
-{% block head %}
-    <link rel="alternate" type="application/atom+xml" href="/sp.posts?_type=atom" title="{{ config.service.title }} posts">
-{% endblock %}
+<!DOCTYPE html><html lang="ko">
+<head><meta charset="utf-8"><title>Posts</title></head>
+<body><div class="wrap">
 {% block body %}
 <header>
     <h1>
@@ -31,12 +29,6 @@
         {% endfor %}
     </tbody>
 </table>
-
-{% if pages %}
-<div>
-    <a href="#" class="next-page">Load next page...</a>
-</div>
-{% endif %}
-
 {% endblock %}
-
+</div></body>
+</html>
