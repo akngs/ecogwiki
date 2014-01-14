@@ -211,7 +211,7 @@ def to_html(o):
         return render_list(o)
     elif isinstance(o, Property):
         return o.render()
-    return str(o)
+    return unicode(o)
 
 
 def render_dict(o):
