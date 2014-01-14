@@ -19,7 +19,7 @@
             <h2 id="index{{ key }}">{{ key }}</h2>
         </td></tr>
         {% for page in pages %}
-        <tr>
+        <tr class="page {{ page.modifier_type }}">
             <td class="updated"><time datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|sdt }}</time></td>
             <td class="page">
                 <a href="{{ page.absolute_url }}">{{ page.title }}</a>

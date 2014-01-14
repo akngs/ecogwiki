@@ -12,7 +12,7 @@ from lxml.html.clean import Cleaner
 
 from models import md, is_admin_user
 from models import TocGenerator
-from models.utils import merge_dicts, pairs_to_dict
+from models.utils import merge_dicts, pairs_to_dict, get_cur_user
 
 
 class PageOperationMixin(object):
@@ -137,6 +137,19 @@ class PageOperationMixin(object):
     @property
     def hashbangs(self):
         return PageOperationMixin.extract_hashbangs(self.rendered_body)
+
+    @property
+    def modifier_type(self):
+        if self.modifier is None:
+            return 'anonymous'
+
+        cur_user = get_cur_user()
+        if cur_user is None:
+            return 'other'
+        elif cur_user.email() == self.modifier.email():
+            return 'self'
+        else:
+            return 'other'
 
     def can_read(self, user, default_acl=None, acl_r=None, acl_w=None):
         default_acl = default_acl or main.DEFAULT_CONFIG['service']['default_permissions']

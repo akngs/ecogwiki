@@ -18,7 +18,7 @@
     </tr></thead>
     <tbody>
         {% for page in pages %}
-        <tr class="page">
+        <tr class="page {{ page.modifier_type }}">
             <td class="published"><time datetime="{{ page.published_at|isodt }}">{{ page.published_at|sdt }}</time></td>
             <td class="page">
                 <a class="caret-target" href="{{ page.absolute_url }}">{{ page.title }}</a>

@@ -688,6 +688,16 @@ class PageOperationMixinTest(AppEngineTestCase):
         self.assertEqual(u'http://schema.org/Article', self.page.itemtype_url)
         self.assertEqual(u'http://schema.org/Article', self.revision.itemtype_url)
 
+    def test_modifier_type(self):
+        self.login('ak@gmail.com', 'ak')
+        self.assertEqual(u'self', self.page.modifier_type)
+
+        self.login('other@gmail.com', 'other')
+        self.assertEqual(u'other', self.page.modifier_type)
+
+        self.page.modifier = None
+        self.assertEqual(u'anonymous', self.page.modifier_type)
+
 
 class UserPreferencesTest(AppEngineTestCase):
     def setUp(self):

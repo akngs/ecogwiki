@@ -308,18 +308,30 @@ header .edit_menu {
 /* System page tables { */
 table.pagelist {
   width: 100%;
+  border-color: #CCC;
   border-collapse: collapse;
-  border-spacing: 0;
-  border-color: gray; }
+  margin: 2em 0; }
 
 table.pagelist th, td {
-  padding: 16px 4px;
+  padding: 16px 6px;
   text-align: left;
   vertical-align: text-top;
   border-top: 1px solid #dddddd; }
 
 table.pagelist .modifier-info {
   font-size: 0.75em; }
+
+table.pagelist .page {
+  border-left: 2px solid transparent; }
+
+table.pagelist .page.anonymous {
+  border-left-color: transparent; }
+
+table.pagelist .page.other {
+  border-left-color: #DDD; }
+
+table.pagelist .page.self {
+  border-left-color: #74c476; }
 
 /* } System page tables */
 /* Wiki sp.changes { */
