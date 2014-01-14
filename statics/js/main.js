@@ -87,7 +87,7 @@ $(function() {
             var keyCode = e.keyCode;
             var key = String.fromCharCode(keyCode);
 
-            var $focused = $(':focus');
+            var $focused = $('input:focus');
             if ($focused.length) {
                 if(27 === keyCode) {
                     $focused.blur();
