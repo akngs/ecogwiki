@@ -5,7 +5,7 @@ from models import PageOperationMixin
 
 class RenderingTestCase(unittest.TestCase):
     def assertRenderedText(self, markdown, html):
-        self.assertEqual(html, PageOperationMixin.render_body(markdown))
+        self.assertEqual(html, PageOperationMixin.render_body(u'Hello', markdown))
 
 
 class SimpleExtensionsTest(RenderingTestCase):
