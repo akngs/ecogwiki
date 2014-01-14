@@ -13,7 +13,7 @@ class PartialUpdateTest(AppEngineTestCase):
         super(PartialUpdateTest, self).setUp()
         self.login('ak@gmail.com', 'ak')
 
-    def test_check_checkbox(self):
+    def test_checkbox(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'[ ] Item A\n[x] Item B', 0, user=self.get_cur_user())
         page.update_content(u'1', 1, partial='checkbox[0]', user=self.get_cur_user())

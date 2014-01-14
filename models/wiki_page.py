@@ -11,9 +11,9 @@ import operator
 from bzrlib.merge3 import Merge3
 from collections import OrderedDict
 from google.appengine.ext import ndb
-from datetime import datetime, timedelta
+from datetime import datetime
 from google.appengine.ext import deferred
-from markdownext import md_wikilink, md_checkbox
+from markdownext import md_wikilink, md_partials
 
 from models import PageOperationMixin, ConflictError, WikiPageRevision, TocGenerator, SchemaDataIndex
 from models import is_admin_user, md
@@ -144,6 +144,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             return self._update_content_all(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
         elif partial.startswith('checkbox'):
             return self._update_content_checkbox(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, partial)
+        elif partial.startswith('log'):
+            return self._update_content_log(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, partial)
         else:
             raise ValueError('Invalid partial expression: %s' % partial)
 
@@ -157,7 +159,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 return m.group(0)
             return u'[x]' if content == u'1' else u'[ ]'
 
-        new_body = re.sub(md_checkbox.RE_CHECKBOX, replacer, self.body)
+        new_body = re.sub(md_partials.RE_PARTIALS, replacer, self.body)
 
         return self._update_content_all(new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
 

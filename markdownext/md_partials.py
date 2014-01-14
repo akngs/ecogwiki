@@ -4,16 +4,16 @@ from markdown.inlinepatterns import Pattern
 from markdown.util import etree
 
 
-RE_CHECKBOX = ur'\[(?P<check>\s|x)\]'
+RE_PARTIALS = ur'\[(?P<check>\s|x)\]'
 
 
-class CheckboxExtension(Extension):
+class PartialsExtension(Extension):
     def extendMarkdown(self, md, md_globals):
-        pattern = Checkbox(RE_CHECKBOX)
-        md.inlinePatterns.add('checkbox', pattern, "<wikilink")
+        pattern = Partials(RE_PARTIALS)
+        md.inlinePatterns.add('partials', pattern, "<wikilink")
 
 
-class Checkbox(Pattern):
+class Partials(Pattern):
     def handleMatch(self, m):
         el = etree.Element('input')
         el.set('type', 'checkbox')
