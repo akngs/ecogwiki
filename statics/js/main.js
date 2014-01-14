@@ -89,9 +89,10 @@ $(function() {
             var keyCode = e.keyCode;
             var key = String.fromCharCode(keyCode);
 
-            if ($('#searchbox').is(':focus')) {
+            var $focused = $(':focus');
+            if ($focused.length) {
                 if(27 === keyCode) {
-                    $('#searchbox').blur();
+                    $focused.blur();
                     return false;
                 } else {
                     return true;
@@ -177,28 +178,51 @@ $(function() {
         });
     })();
 
-    // Checkbox
+    // Partials
     (function() {
-        var selector = 'article input[type="checkbox"]';
-
+        // checkbox
+        var checkbox_selector = 'article input[type="checkbox"].partial';
         if($('#edit').length === 0) {
-            $(selector).prop('disabled', true);
+            $(checkbox_selector).prop('disabled', true);
             return;
         }
-
-        $(document).on('change', selector, function() {
+        $(document).on('change', checkbox_selector, function() {
             var $this = $(this);
-            var checked = $(this).is(':checked') ? '1' : '0';
+            var body = $(this).is(':checked') ? '1' : '0';
             var revision = parseInt($('.revision').text());
-            var index = $this.index(selector);
+            var index = $this.index(checkbox_selector);
 
-            $(selector).prop('disabled', true);
-            $.post('?_method=PUT&partial=checkbox[' + index + ']', {'body': checked, 'revision': revision}, function(data) {
+            $(checkbox_selector).prop('disabled', true);
+            $.post('?_method=PUT&partial=checkbox[' + index + ']', {'body': body, 'revision': revision}, function(data) {
                 $('.revision').text(data['revision']);
             }).fail(function() {
                 alert('Failed to update content. Please refresh the page.');
             }).done(function() {
-                $(selector).prop('disabled', false);
+                $(checkbox_selector).prop('disabled', false);
+            });
+        });
+
+        // log
+        var log_selector = 'article form.partial.log';
+        if($('#edit').length === 0) {
+            $(log_selector + ' input').prop('disabled', true);
+            return;
+        }
+        $(document).on('submit', log_selector, function(e) {
+            e.preventDefault();
+
+            var $this = $(this);
+            var value = $(this).find('input[type="text"]').val();
+            var revision = parseInt($('.revision').text());
+            var index = $this.index(log_selector);
+
+            $(log_selector + ' input').prop('disabled', true);
+            $.post('?_method=PUT&partial=log[' + index + ']', {'body': value, 'revision': revision}, function() {
+                location.reload();
+            }).fail(function() {
+                alert('Failed to update content. Please refresh the page.');
+            }).done(function() {
+                $(log_selector + ' input').prop('disabled', false);
             });
         });
     })();

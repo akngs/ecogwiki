@@ -23,9 +23,13 @@ class SimpleExtensionsTest(RenderingTestCase):
     def test_strikethrough(self):
         self.assertRenderedText(u'Hello ~~AK~~?', u'<p>Hello <strike>AK</strike>?</p>')
 
-    def test_checkbox(self):
+    def test_partial_checkbox(self):
         self.assertRenderedText(u'[ ] Hello [x] There',
-                                u'<p><input type="checkbox"> Hello <input checked type="checkbox"> There</p>')
+                                u'<p><input class="partial checkbox" type="checkbox"> Hello <input checked class="partial checkbox" type="checkbox"> There</p>')
+
+    def test_partial_log(self):
+        self.assertRenderedText(u'*   [__]',
+                                u'<ul>\n<li>\n<form class="partial log"><input type="text"><input type="submit" value="Update"></form>\n</li>\n</ul>')
 
     def test_mathjax(self):
         self.assertRenderedText(u'Hello \\([[blah]]\\) There', u'<p>Hello \\([[blah]]\\) There</p>')

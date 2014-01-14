@@ -13,7 +13,7 @@ class PartialUpdateTest(AppEngineTestCase):
         super(PartialUpdateTest, self).setUp()
         self.login('ak@gmail.com', 'ak')
 
-    def test_check_checkbox(self):
+    def test_checkbox(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'[ ] Item A\n[x] Item B', 0, user=self.get_cur_user())
         page.update_content(u'1', 1, partial='checkbox[0]', user=self.get_cur_user())
@@ -24,6 +24,13 @@ class PartialUpdateTest(AppEngineTestCase):
         page.update_content(u'0', 1, partial='checkbox[1]', user=self.get_cur_user())
         self.assertEqual(u'[x] Item A\n[ ] Item B', page.body)
         self.assertEqual(3, page.revision)
+
+    def test_log(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'*   [__]', 0, user=self.get_cur_user())
+        page.update_content(u'Hello', 1, partial='log[0]', user=self.get_cur_user())
+
+        self.assertEqual(u'*   Hello\n*   [__]', page.body)
 
     def test_should_preserve_metadata_after_update(self):
         page = WikiPage.get_by_title(u'Hello')
