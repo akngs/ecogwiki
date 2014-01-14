@@ -17,7 +17,7 @@
     {% endblock %}
     <link rel="search" type="application/opensearchdescription+xml" title="{{ config.service.title }}" href="/sp.opensearch">
 
-    <link rel="stylesheet" href="/statics/css/normalize.css?ver={{ app.version }}">
+    <link rel="stylesheet" href="/statics/css/vendor/normalize.css?ver={{ app.version }}">
     {% for css in config.service.css_list %}
     <link rel="stylesheet" href="{{ css }}?ver={{ app.version }}">
     {% endfor %}
