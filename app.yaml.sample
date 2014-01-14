@@ -34,3 +34,14 @@ admin_console:
   pages:
   - name: Appstats
     url: /stats
+
+skip_files:
+- ^(.*/)?#.*#$
+- ^(.*/)?.*~$
+- ^(.*/)?.*\.py[co]$
+- ^(.*/)?.*/RCS/.*$
+- ^(.*/)?\..*$
+- ^(.*/)?.*\.s[ca]ss$
+- ^node_modules/.*$
+- ^statics/js/js\.tests/.*$
+- ^tests/.*$

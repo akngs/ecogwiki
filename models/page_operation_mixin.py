@@ -12,7 +12,7 @@ from lxml.html.clean import Cleaner
 
 from models import md, is_admin_user
 from models import TocGenerator
-from models.utils import merge_dicts, pairs_to_dict
+from models.utils import merge_dicts, pairs_to_dict, get_cur_user
 
 
 class PageOperationMixin(object):
@@ -55,7 +55,7 @@ class PageOperationMixin(object):
 
     @property
     def rendered_body(self):
-        return PageOperationMixin.render_body(self.body, self.rendered_data, self.inlinks, self.related_links_by_score, self.older_title, self.newer_title)
+        return PageOperationMixin.render_body(self.title, self.body, self.rendered_data, self.inlinks, self.related_links_by_score, self.older_title, self.newer_title)
 
     @property
     def paths(self):
@@ -137,6 +137,19 @@ class PageOperationMixin(object):
     @property
     def hashbangs(self):
         return PageOperationMixin.extract_hashbangs(self.rendered_body)
+
+    @property
+    def modifier_type(self):
+        if self.modifier is None:
+            return 'anonymous'
+
+        cur_user = get_cur_user()
+        if cur_user is None:
+            return 'other'
+        elif cur_user.email() == self.modifier.email():
+            return 'self'
+        else:
+            return 'other'
 
     def can_read(self, user, default_acl=None, acl_r=None, acl_w=None):
         default_acl = default_acl or main.DEFAULT_CONFIG['service']['default_permissions']
@@ -377,7 +390,7 @@ class PageOperationMixin(object):
         return matches
 
     @classmethod
-    def render_body(cls, body, rendered_data='', inlinks={}, related_links_by_score={}, older_title=None, newer_title=None):
+    def render_body(cls, title, body, rendered_data='', inlinks={}, related_links_by_score={}, older_title=None, newer_title=None):
         # body
         body_parts = [cls.remove_metadata(body)]
 
@@ -391,16 +404,17 @@ class PageOperationMixin(object):
                 links = list(set(links))
                 links.sort()
 
-                lines += [u'* [[%s]]' % title for title in links]
+                lines += [u'* [[%s]]' % t for t in links]
             body_parts.append(u'\n'.join(lines))
 
         # related links
         related_links = related_links_by_score
         if len(related_links) > 0:
             lines = [u'# Suggested Pages']
-            lines += [u'* {{.score::%.3f}} [[%s]]\n{.noli}' % (score, title)
-                      for title, score in related_links.items()[:10]]
+            lines += [u'* {{.score::%.3f}} [[%s]]\n{.noli}' % (score, t)
+                      for t, score in related_links.items()[:10]]
             body_parts.append(u'\n'.join(lines))
+            body_parts.append(u'* [More suggestions...](/+%s)\n{.more-suggestions}' % (cls.title_to_path(title)))
 
         # other posts
         if older_title or newer_title:

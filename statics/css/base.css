@@ -243,14 +243,16 @@ header .info {
   border-top: 1px solid #aaaaaa;
   list-style-type: none; }
 
-header .info .updated_at,
-header .info .published_at,
-header .info .modifier {
+header .info > .updated_at,
+header .info > .published_at,
+header .info > .modifier {
   display: block;
   font-family: NanumGothicCoding, "Courier New", Courier, monospace;
-  line-height: 1.5em;
   margin: 0;
   padding: 0; }
+
+header .info > .modifier {
+  margin-top: 0.5em; }
 
 header .edit_menu {
   position: absolute;
@@ -306,15 +308,30 @@ header .edit_menu {
 /* System page tables { */
 table.pagelist {
   width: 100%;
+  border-color: #CCC;
   border-collapse: collapse;
-  border-spacing: 0;
-  border-color: gray; }
+  margin: 2em 0; }
 
 table.pagelist th, td {
-  padding: 16px 4px;
+  padding: 16px 6px;
   text-align: left;
   vertical-align: text-top;
   border-top: 1px solid #dddddd; }
+
+table.pagelist .modifier-info {
+  font-size: 0.75em; }
+
+table.pagelist .page {
+  border-left: 2px solid transparent; }
+
+table.pagelist .page.anonymous {
+  border-left-color: transparent; }
+
+table.pagelist .page.other {
+  border-left-color: #DDD; }
+
+table.pagelist .page.self {
+  border-left-color: #74c476; }
 
 /* } System page tables */
 /* Wiki sp.changes { */
@@ -324,9 +341,6 @@ table.changes th {
 
 table.changes td.updated {
   width: 7em;
-  font-size: 0.75em; }
-
-table.changes .modifier {
   font-size: 0.75em; }
 
 table.changes .comment {
@@ -343,9 +357,6 @@ table.posts td.published {
   width: 7em;
   font-size: 0.75em; }
 
-table.posts .modifier {
-  font-size: 0.75em; }
-
 /* } Wiki sp.posts */
 /* Revision history { */
 table.revisions th {
@@ -354,9 +365,6 @@ table.revisions th {
 
 table.revisions td.modified {
   width: 7em;
-  font-size: 0.75em; }
-
-table.revisions .modifier {
   font-size: 0.75em; }
 
 table.revisions .comment {
@@ -373,7 +381,7 @@ article.preview {
 /* Content body { */
 article .body {
   padding: 0 0 1em 0;
-  margin: 0.5em 0;
+  margin: 1.5em 0 0.5em;
   overflow: hidden;
   line-height: 1.8em; }
 
@@ -630,9 +638,9 @@ article li .score {
   padding-right: 0.5em;
   color: #888; }
 
-article header h1 a.search-by-title,
-article header h1 a.search.pos {
-  font-size: 14px;
+article header h1 a.search-by-title {
+  color: #888;
+  font-size: 13px;
   font-weight: normal;
   margin-right: 0.5em; }
 
@@ -650,6 +658,12 @@ article a.matched-title {
 
 article .body .noli {
   list-style-type: none;
+  margin-left: -2em;
+  padding-left: 0; }
+
+article .body .more-suggestions {
+  list-style-type: none;
+  margin-top: 0.5em;
   margin-left: -2em;
   padding-left: 0; }
 

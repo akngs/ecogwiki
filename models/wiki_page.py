@@ -13,7 +13,7 @@ from collections import OrderedDict
 from google.appengine.ext import ndb
 from datetime import datetime
 from google.appengine.ext import deferred
-from markdownext import md_wikilink, md_partials
+from markdownext import md_wikilink
 
 from models import PageOperationMixin, ConflictError, WikiPageRevision, TocGenerator, SchemaDataIndex
 from models import is_admin_user, md
