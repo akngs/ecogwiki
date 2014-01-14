@@ -630,9 +630,9 @@ article li .score {
   padding-right: 0.5em;
   color: #888; }
 
-article header h1 a.search-by-title,
-article header h1 a.search.pos {
-  font-size: 14px;
+article header h1 a.search-by-title {
+  color: #888;
+  font-size: 13px;
   font-weight: normal;
   margin-right: 0.5em; }
 
