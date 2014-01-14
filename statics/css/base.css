@@ -653,6 +653,12 @@ article .body .noli {
   margin-left: -2em;
   padding-left: 0; }
 
+article .body .more-suggestions {
+  list-style-type: none;
+  margin-top: 0.5em;
+  margin-left: -2em;
+  padding-left: 0; }
+
 /* Responsive YouTube video from http://invalid.kr/res-video-youtube/ */
 /* { */
 article .body .video.youtube,

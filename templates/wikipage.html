@@ -95,7 +95,6 @@ window.fbAsyncInit = function() {
             {% endif %}
 
             <br>
-            <a href="{{ page.title|to_pluspath }}" rel="nofollow" class="search pos">Related pages</a>
             {% if page.revision > 0 %}
             <a href="/sp.search?q={{ page.title|to_rel_path }}" class="search-by-title">Similar titles</a>
             {% endif %}
