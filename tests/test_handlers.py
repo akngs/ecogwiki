@@ -507,7 +507,7 @@ class PageResourceTest(AppEngineTestCase):
         self.browser.get('/New page?rev=list&_type=json')
         self.assertEqual('application/json; charset=utf-8', self.browser.res.headers['content-type'])
 
-    def test_checkbox(self):
+    def test_checkbox_partial(self):
         self.login('ak@gmail.com', 'ak')
         self.update_page(u'[ ] Hello', u'New page')
 
@@ -517,6 +517,17 @@ class PageResourceTest(AppEngineTestCase):
 
         page = WikiPage.get_by_title(u'New page')
         self.assertEqual(u'[x] Hello', page.body)
+
+    def test_log_partial(self):
+        self.login('ak@gmail.com', 'ak')
+        self.update_page(u'*   [__]', u'New page')
+
+        self.browser.post('/New page?_method=PUT&partial=log[0]', 'body=Hello&revision=1')
+        self.assertEqual(200, self.browser.res.status_code)
+        self.assertEqual('{"revision": 2}', self.browser.res.body)
+
+        page = WikiPage.get_by_title(u'New page')
+        self.assertEqual(u'*   Hello\n*   [__]', page.body)
 
 
 class SearchResultResourceTest(AppEngineTestCase):

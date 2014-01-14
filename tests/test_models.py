@@ -25,6 +25,13 @@ class PartialUpdateTest(AppEngineTestCase):
         self.assertEqual(u'[x] Item A\n[ ] Item B', page.body)
         self.assertEqual(3, page.revision)
 
+    def test_log(self):
+        page = WikiPage.get_by_title(u'Hello')
+        page.update_content(u'*   [__]', 0, user=self.get_cur_user())
+        page.update_content(u'Hello', 1, partial='log[0]', user=self.get_cur_user())
+
+        self.assertEqual(u'*   Hello\n*   [__]', page.body)
+
     def test_should_preserve_metadata_after_update(self):
         page = WikiPage.get_by_title(u'Hello')
         page.update_content(u'.pub\n[ ] Item A', 0, user=self.get_cur_user())

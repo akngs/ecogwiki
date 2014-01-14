@@ -154,13 +154,31 @@ class WikiPage(ndb.Model, PageOperationMixin):
         index = int(re.match(ur'checkbox\[(\d+)]', exp).group(1))
 
         def replacer(m):
+            # skip until find matching index
             cur_index['value'] += 1
             if cur_index['value'] != index:
                 return m.group(0)
+
+            # replace
             return u'[x]' if content == u'1' else u'[ ]'
 
-        new_body = re.sub(md_partials.RE_PARTIALS, replacer, self.body)
+        new_body = re.sub(ur'\[(\s|x)]', replacer, self.body)
+        return self._update_content_all(new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
 
+    def _update_content_log(self, content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, exp):
+        cur_index = {'value': -1}
+        index = int(re.match(ur'log\[(\d+)]', exp).group(1))
+
+        def replacer(m):
+            # skip until find matching index
+            cur_index['value'] += 1
+            if cur_index['value'] != index:
+                return m.group(0)
+
+            # replace
+            return m.group(1) + content + m.group(3) + '\n' + m.group(0)
+
+        new_body = re.sub(ur'(.*)(\[__])(.*)', replacer, self.body)
         return self._update_content_all(new_body, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
 
     def _update_content_all(self, body, base_revision, comment, user, force_update, dont_create_rev, dont_defer):
