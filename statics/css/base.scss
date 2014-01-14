@@ -283,14 +283,16 @@ header .info {
     list-style-type: none;
 }
 
-header .info .updated_at,
-header .info .published_at,
-header .info .modifier {
+header .info > .updated_at,
+header .info > .published_at,
+header .info > .modifier {
     display: block;
     font-family: NanumGothicCoding, "Courier New", Courier, monospace;
-    line-height: 1.5em;
     margin: 0;
     padding: 0;
+}
+header .info > .modifier {
+    margin-top: 0.5em;
 }
 
 header .edit_menu {
@@ -441,7 +443,7 @@ article.preview {
 /* Content body { */
 article .body {
     padding: 0 0 1em 0;
-    margin: 0.5em 0;
+    margin: 1em 0 0.5em;
     overflow: hidden;
     line-height: 1.8em;
 }

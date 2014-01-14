@@ -6,7 +6,7 @@ import webapp2
 if 'lib' not in sys.path:
     sys.path[0:0] = ['lib']
 
-VERSION = '0.0.1_20140114_10'
+VERSION = '0.0.1_20140114_11'
 
 DEFAULT_CONFIG = {
     'navigation': [
