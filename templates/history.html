@@ -17,7 +17,7 @@
     </tr></thead>
     <tbody>
         {% for revision in revisions %}
-        <tr class="page {{ page.modifier_type }}">
+        <tr class="page {{ revision.modifier_type }}">
             <td class="modified"><time datetime="{{ revision.created_at|isodt }}">{{ revision.created_at|sdt }}</time></td>
             <td>
                 <span class="modifier">{{ revision.modifier|userpage }}</span>
