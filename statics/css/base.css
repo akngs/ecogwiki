@@ -318,6 +318,9 @@ table.pagelist th, td {
   vertical-align: text-top;
   border-top: 1px solid #dddddd; }
 
+table.pagelist .modifier-info {
+  font-size: 0.75em; }
+
 /* } System page tables */
 /* Wiki sp.changes { */
 table.changes th {
@@ -326,9 +329,6 @@ table.changes th {
 
 table.changes td.updated {
   width: 7em;
-  font-size: 0.75em; }
-
-table.changes .modifier {
   font-size: 0.75em; }
 
 table.changes .comment {
@@ -345,9 +345,6 @@ table.posts td.published {
   width: 7em;
   font-size: 0.75em; }
 
-table.posts .modifier {
-  font-size: 0.75em; }
-
 /* } Wiki sp.posts */
 /* Revision history { */
 table.revisions th {
@@ -356,9 +353,6 @@ table.revisions th {
 
 table.revisions td.modified {
   width: 7em;
-  font-size: 0.75em; }
-
-table.revisions .modifier {
   font-size: 0.75em; }
 
 table.revisions .comment {
@@ -375,7 +369,7 @@ article.preview {
 /* Content body { */
 article .body {
   padding: 0 0 1em 0;
-  margin: 1em 0 0.5em;
+  margin: 1.5em 0 0.5em;
   overflow: hidden;
   line-height: 1.8em; }
 

@@ -22,9 +22,9 @@
         <tr>
             <td class="updated"><time datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|sdt }}</time></td>
             <td class="page">
-                <span class="modifier">{{ page.modifier|userpage }}</span>
-                <br>
                 <a href="{{ page.absolute_url }}">{{ page.title }}</a>
+                <br>
+                <span class="modifier-info">by <span class="modifier">{{ page.modifier|userpage }}</span></span>
             </td>
         </tr>
         {% endfor %}

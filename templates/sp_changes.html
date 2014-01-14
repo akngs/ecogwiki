@@ -20,15 +20,15 @@
         <tr class="page">
             <td class="updated"><time datetime="{{ page.updated_at|isodt }}">{{ page.updated_at|sdt }}</time></td>
             <td class="page">
-                <span class="modifier">{{ page.modifier|userpage }}</span>
-                <br>
                 <a class="caret-target" href="{{ page.absolute_url }}">{{ page.title }}</a>
                 <br>
-                <span class="comment">
                 {% if page.comment %}
+                <span class="comment">
                 {{ page.comment }}
-                {% endif %}
                 </span>
+                <br>
+                {% endif %}
+                <span class="modifier-info">by <span class="modifier">{{ page.modifier|userpage }}</span></span>
             </td>
         </tr>
         {% else %}
