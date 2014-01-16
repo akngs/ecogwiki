@@ -560,6 +560,8 @@ class SchemaResource(Resource):
             return {'id': 'types', 'values': schema.get_itemtypes()}
         elif tokens[0] == 'types':
             return schema.get_schema(tokens[1])
+        elif tokens[0] == 'sctypes':
+            return schema.get_schema(tokens[1], self_contained=True)
         elif tokens[0] == 'properties':
             return schema.get_property(tokens[1])
         elif tokens[0] == 'datatypes':

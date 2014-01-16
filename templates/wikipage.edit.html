@@ -107,17 +107,18 @@
 
 {% endblock %}
 {% block before_body_close %}
+    <script type="text/javascript" src="/statics/js/js-yaml.min.js?ver={{ app.version }}"></script>
     <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
     <script type="text/javascript">editor.main();</script>
 
     {% if config.service.oauth2_web_client_id %}
     <script type="text/javascript" src="/statics/js/gdrive.js?ver={{ app.version }}"></script>
     <script type="text/javascript">
-        gdrive.main();
+    gdrive.main();
 
-        function _gapiLoaded() {
-            gdrive.gapiLoaded();
-        }
+    function _gapiLoaded() {
+        gdrive.gapiLoaded();
+    }
     </script>
     <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=_gapiLoaded"></script>
     {% endif %}

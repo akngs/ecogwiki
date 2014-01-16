@@ -31,6 +31,9 @@ External libraries:
 - jQuery (MIT License - https://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt)
   http://jquery.com/
 
+- js-yaml (MIT License)
+  https://github.com/nodeca/js-yaml
+
 - JUMLY (MIT License)
   http://jumly.herokuapp.com/
 

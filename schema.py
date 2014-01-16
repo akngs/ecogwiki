@@ -43,7 +43,28 @@ def get_legacy_spellings():
     return {pname for pname, pdata in props.items() if 'comment' in pdata and pdata['comment'].find('(legacy spelling;') != -1}
 
 
-def get_schema(itemtype):
+def get_sc_schema(itemtype):
+    schema = get_schema(itemtype).copy()
+
+    # extend properties to include cardinalities and type infos
+    props = {}
+    for p in schema['properties']:
+        props[p] = {
+            'cardinality': get_cardinality(itemtype, p),
+            'type': get_property(p)
+        }
+    schema['properties'] = props
+
+    # remove specific properties which are redundent
+    del schema['specific_properties']
+
+    return schema
+
+
+def get_schema(itemtype, self_contained=False):
+    if self_contained:
+        return get_sc_schema(itemtype)
+
     item = caching.get_schema(itemtype)
     if item is not None:
         return item
@@ -125,9 +146,8 @@ def get_cardinality(itemtype, prop_name):
 
 
 def get_cardinalities(itemtype):
-    item = get_schema(itemtype)
-    props = set(item['properties'] + item['specific_properties'])
-    return dict((pname, get_cardinality(itemtype, pname)) for pname in props)
+    return dict((pname, get_cardinality(itemtype, pname))
+                for pname in get_schema(itemtype)['properties'])
 
 
 def humane_item(itemtype, plural=False):
@@ -218,20 +238,20 @@ def render_dict(o):
     if len(o) == 1:
         return to_html(o.values()[0])
 
-    html = ['<dl class="wq wq-dict">']
+    html = [u'<dl class="wq wq-dict">']
     for key, value in o.items():
-        html.append('<dt class="wq-key-%s">%s</dt>' % (key, key))
-        html.append('<dd class="wq-value-%s">%s</dd>' % (key, to_html(value)))
-    html.append('</dl>')
+        html.append(u'<dt class="wq-key-%s">%s</dt>' % (key, key))
+        html.append(u'<dd class="wq-value-%s">%s</dd>' % (key, to_html(value)))
+    html.append(u'</dl>')
 
     return '\n'.join(html)
 
 
 def render_list(o):
     return '\n'.join(
-        ['<ul class="wq wq-list">'] +
-        ['<li>%s</li>' % to_html(value) for value in o] +
-        ['</ul>']
+        [u'<ul class="wq wq-list">'] +
+        [u'<li>%s</li>' % to_html(value) for value in o] +
+        [u'</ul>']
     )
 
 

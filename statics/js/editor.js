@@ -1,15 +1,122 @@
-var editorRun = (function($) {
+var editor = (function($) {
     "use strict";
 
-    var editor = {
-        updateFormValues: function() {}
-    };
+    var editor = {};
 
-    function main() {
+    editor.main = function() {
         initPlainEditor();
         initStructuredEditor();
         registerEventHandlers();
+    };
+
+    editor.updateFormValues = function() {};
+
+    editor.parseBody = function(body) {
+        // parse yaml/schema block
+        var dataAndBody = this.extractYaml(body);
+        var data = dataAndBody['data'];
+        var bodyWithoutYamlBlock = dataAndBody['body'];
+
+        // extract out schema metadata
+        var schema = 'Article';
+        var lines = bodyWithoutYamlBlock.split('\n');
+        for(var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            if(line.indexOf('.schema ') !== 0) break;
+
+            // save metadata
+            var sep = line.indexOf(' ');
+            if(sep === -1) {
+                schema = 'Article';
+            } else {
+                schema = line.substring(sep + 1).trim();
+            }
+
+            // remove this line
+            lines.splice(i, 1);
+            i--;
+        }
+
+        return {
+            'body': lines.join('\n').trim(),
+            'itemtype': schema,
+            'data': data
+        };
     }
+
+    editor.extractYaml = function(body) {
+        var p_yaml = /(?:\s{4}|\t)#!yaml\/schema[\n\r]+(((?:\s{4}|\t).+[\n\r]+?)+)/;
+        var m = body.match(p_yaml);
+        if(m) {
+            return {
+                'data': jsyaml.load((m[0])) || {},
+                'body': body.replace(p_yaml, '')
+            };
+        } else {
+            return {
+                'data': {},
+                'body': body
+            };
+        }
+    }
+
+    editor.generateBody = function(data) {
+        var lines = [];
+
+        // .schema
+        if(data['itemtype'] != 'Article') {
+            lines.push('.schema ' + data['itemtype']);
+        }
+        // other metadatas
+        var bodylines = data['body'].split('\n');
+        while(bodylines[0].indexOf('.') == 0) {
+            lines.push(bodylines.splice(0, 1));
+        }
+
+        // empty line
+        if(lines.length > 0) {
+            lines.push('');
+        }
+
+        // yaml/schema block
+        if(!$.isEmptyObject(data['data'])) {
+            var dump = jsyaml.dump(data['data']).trim().split('\n');
+
+            lines.push('    #!yaml/schema');
+            dump.forEach(function(i) {
+                lines.push('    ' + i);
+            });
+        }
+
+        // empty line
+        if(lines.length > 0 && lines[lines.length - 1] !== '') {
+            lines.push('');
+        }
+
+        // remove starting empty lines in body
+        while(bodylines[0] === '') {
+            bodylines.splice(0, 1);
+        }
+
+        // rest
+        bodylines.forEach(function(i) {
+            lines.push(i);
+        });
+
+        return lines.join('\n');
+    };
+
+    editor.generateForm = function(schema) {
+        var result = [];
+        var props = schema['properties'];
+        for(var prop in props) {
+            if(props[prop]['cardinality'][0] > 0) {
+                result.push('<label for="prop_' + prop + '">' + props[prop]['type']['label'] + '</label>')
+                result.push('<input type="text" id="prop_' + prop + '" name="prop_' + prop + '" value="">');
+            }
+        }
+        return result.join('\n');
+    };
 
     function initPlainEditor() {
         if(window['CodeMirror']) {
@@ -101,5 +208,5 @@ var editorRun = (function($) {
         });
     }
 
-    main();
-});
+    return editor;
+})($);
