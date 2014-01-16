@@ -53,32 +53,30 @@ var gdrive = (function($) {
             e.stopPropagation();
             e.preventDefault();
 
-            var files = e.originalEvent.dataTransfer.files;
-            uploadFiles(files, function() {
+            var file = e.originalEvent.dataTransfer.file[0];
+            uploadFile(file, function() {
                 console.log('Done');
             });
         });
 
         $('#file').on('change', function() {
-            var file = this.files[0];
-            uploadFiles(file, function() {
+            uploadFile(this.file, function() {
                 console.log('Done');
             });
         });
     }
 
-    function uploadFiles(files, callback) {
+    function uploadFile(file, callback) {
         var boundary = '-------314159265358979323846';
         var delimiter = '\r\n--' + boundary + '\r\n';
         var close_delim = '\r\n--' + boundary + '--';
 
-        var fileData = files[0];
         var reader = new FileReader();
-        reader.readAsBinaryString(fileData);
+        reader.readAsBinaryString(file);
         reader.onload = function(e) {
-            var contentType = fileData.type || 'application/octet-stream';
+            var contentType = file.type || 'application/octet-stream';
             var metadata = {
-                'title': (fileData.name || fileData.fileName),
+                'title': (file.name || file.fileName),
                 'mimeType': contentType
             };
             var base64Data = btoa(reader.result);
