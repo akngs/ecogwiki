@@ -868,6 +868,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if rel in links:
             try:
                 links[rel].remove(title)
+            except ValueError:
+                pass
             except KeyError:
                 pass
 
@@ -877,7 +879,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
             for rel, titles in links.items():
                 try:
                     titles.remove(title)
-                except KeyError:
+                except ValueError:
                     pass
+
                 if len(titles) == 0:
                     del links[rel]
