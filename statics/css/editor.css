@@ -54,3 +54,16 @@
 
 .editor-content .content.active {
   display: block; }
+
+#fileUploadLink {
+  display: block;
+  margin: 1em 0 0.5em;
+  padding: 0.5em 1em;
+  border-radius: 3px;
+  border: 1px solid #dddddd;
+  background-color: #f0f0f0;
+  text-align: center; }
+
+#fileUploadLink.dragover {
+  border-color: #B4C978;
+  background-color: #dce6c1; }

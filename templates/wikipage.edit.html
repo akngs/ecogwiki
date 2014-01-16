@@ -64,6 +64,17 @@
             {% else %}
             <textarea name="body" placeholder="Body" autofocus="autofocus">{{ page.body }}</textarea>
             {% endif %}
+
+            {% if config.service.oauth2_web_client_id %}
+            <a id="fileUploadLink" href="#">
+                {% if is_mobile %}
+                Click here to upload.
+                {% else %}
+                Click here or drop files here to upload.
+                {% endif %}
+            </a>
+            {% endif %}
+
             <input name="comment" placeholder="Comment" class="comment" value="">
 
             <div class="actions">
@@ -75,9 +86,15 @@
                 {% endif %}
             </div>
         </form>
+
+        {% if config.service.oauth2_web_client_id %}
+        <form id="uploadForm" style="display: none">
+            <input type="text" id="oauth2_web_client_id" value="{{ config.service.oauth2_web_client_id }}">
+            <input type="file" id="file" multiple>
+        </form>
+        {% endif %}
     </li>
 </ul>
-
 
 <form method="POST" action="{{ page.absolute_url }}?_method=DELETE" class="deleteform">
     <input type="submit" />
@@ -91,5 +108,17 @@
 {% endblock %}
 {% block before_body_close %}
     <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
-    <script type="text/javascript">editorRun($);</script>
+    <script type="text/javascript">editor.main();</script>
+
+    {% if config.service.oauth2_web_client_id %}
+    <script type="text/javascript" src="/statics/js/gdrive.js?ver={{ app.version }}"></script>
+    <script type="text/javascript">
+        gdrive.main();
+
+        function _gapiLoaded() {
+            gdrive.gapiLoaded();
+        }
+    </script>
+    <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=_gapiLoaded"></script>
+    {% endif %}
 {% endblock %}

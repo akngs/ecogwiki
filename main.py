@@ -31,6 +31,7 @@ DEFAULT_CONFIG = {
         'fb_app_id': '',
         'ga_profile_id': '',
         'ga_classic_profile_id': '',
+        'oauth2_web_client_id': '',
         'css_list': [
             '/statics/css/base.css',
         ],
