@@ -103,13 +103,13 @@ div.contents {
   height: 100%;
   background-color: #A6C5F3; }
 
-.message {
+.infobox.message {
   padding: 0.2em 1em;
   margin: 1em 0;
   background-color: #E9EDF5;
   border: 1px solid #ccccff; }
 
-.message .close {
+.infobox.message .close {
   position: relative;
   float: right;
   font-size: 20px;
@@ -120,7 +120,7 @@ div.contents {
   opacity: .3;
   cursor: pointer; }
 
-.error {
+.infobox.error {
   padding: 0.2em 1em;
   margin: 1em 0;
   background-color: #FFD2D3;
