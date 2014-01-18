@@ -1,5 +1,5 @@
 {% extends "templates/base.html" %}
-{% block html_class %}{% if 'pt' in page.metadata %}meta-pt{% endif %}{% endblock %}
+{% block html_class %}{% if 'pt' in page.metadata %}class="meta-pt"{% endif %}{% endblock %}
 {% block title %}{{ page.title }}{% endblock %}
 {% block head %}
     <link rel="canonical" href="http://{{ config.service.domain }}{{ page.absolute_url|e }}"/>
@@ -141,21 +141,21 @@ window.fbAsyncInit = function() {
     </header>
     <section class="body" {% if page.itemtype == 'Article' %}itemprop="articleBody"{% endif %}>
         {% if message %}
-        <div class="message">
+        <div class="infobox message">
             <div class="close">x</div>
             <p>{{ message }}</p>
         </div>
         {% endif %}
 
 		{% if redirected_from %}
-        <div class="message">
+        <div class="infobox message">
             <div class="close">x</div>
 			<p>Redirected from <a href="{{ redirected_from|to_rel_path }}?view=edit">{{ redirected_from }}</a></p>
         </div>
 		{% endif %}
 
         {% if page.is_old_revision %}
-        <div class="message">
+        <div class="infobox message">
             <p>You are seeing an old version of the page. Go to <a href="{{ page.absolute_latest_url|e }}">latest version</a></p>
         </div>
         {% endif %}
