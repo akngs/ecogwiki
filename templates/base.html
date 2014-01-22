@@ -106,9 +106,11 @@
     </li>
     <li>
         {% if user %}
+        <span class="user-email">{{ user.email() }}</span>
         <a href="/sp.preferences" class="preferences">Preferences</a>
         <a href="{{ users.create_logout_url(cur_url)|e }}">Logout</a>
         {% else %}
+        <span class="user-email"></span>
         <a href="{{ users.create_login_url(cur_url)|e }}">Login</a>
         {% endif %}
     </li>

@@ -192,6 +192,9 @@ div.contents {
 .top-bar li.search input[type="submit"] {
     display: none;
 }
+.top-bar .user-email {
+    display: none;
+}
 
 @media (max-width:320px) {
     .top-bar .preferences {
@@ -327,7 +330,7 @@ header .edit_menu {
 
 .editform input.comment {
     width: 100%;
-    margin: 10px 0;
+    margin: 2em 0 0.5em;
     box-sizing: border-box;
 }
 .editform .actions {
