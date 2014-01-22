@@ -6,7 +6,7 @@ import webapp2
 if 'lib' not in sys.path:
     sys.path[0:0] = ['lib']
 
-VERSION = '0.0.1_20140117_1'
+VERSION = '0.0.1_20140122_1'
 
 DEFAULT_CONFIG = {
     'navigation': [
@@ -31,7 +31,8 @@ DEFAULT_CONFIG = {
         'fb_app_id': '',
         'ga_profile_id': '',
         'ga_classic_profile_id': '',
-        'oauth2_web_client_id': '',
+        'google_oauth2_web_client_id': '',
+        'google_drive_folder': 'ecogwiki_public',
         'css_list': [
             '/statics/css/base.css',
         ],

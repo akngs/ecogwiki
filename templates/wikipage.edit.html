@@ -65,14 +65,8 @@
             <textarea name="body" placeholder="Body" autofocus="autofocus">{{ page.body }}</textarea>
             {% endif %}
 
-            {% if config.service.oauth2_web_client_id %}
-            <a id="fileUploadLink" href="#">
-                {% if is_mobile %}
-                Click here to upload.
-                {% else %}
-                Click here or drop files here to upload.
-                {% endif %}
-            </a>
+            {% if user and config.service.google_oauth2_web_client_id %}
+            <a id="fileUploadLink" href="#" class="disabled">Click here to upload.</a>
             {% endif %}
 
             <input name="comment" placeholder="Comment" class="comment" value="">
@@ -87,9 +81,10 @@
             </div>
         </form>
 
-        {% if config.service.oauth2_web_client_id %}
+        {% if user and config.service.google_oauth2_web_client_id %}
         <form id="uploadForm" style="display: none">
-            <input type="text" id="oauth2_web_client_id" value="{{ config.service.oauth2_web_client_id }}">
+            <input type="text" id="google_oauth2_web_client_id" value="{{ config.service.google_oauth2_web_client_id }}">
+            <input type="text" id="google_drive_folder" value="{{ config.service.google_drive_folder }}">
             <input type="file" id="file">
         </form>
         {% endif %}
@@ -111,13 +106,14 @@
     <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
     <script type="text/javascript">editor.main();</script>
 
-    {% if config.service.oauth2_web_client_id %}
+    {% if user and config.service.google_oauth2_web_client_id %}
     <script type="text/javascript" src="/statics/js/gdrive.js?ver={{ app.version }}"></script>
     <script type="text/javascript">
-    gdrive.main();
-
     function _gapiLoaded() {
-        gdrive.gapiLoaded();
+        gapi.client.load('drive', 'v2', function() {
+            gdrive.gapiLoaded();
+            gdrive.main(editor);
+        });
     }
     </script>
     <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=_gapiLoaded"></script>

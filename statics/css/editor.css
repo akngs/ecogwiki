@@ -63,6 +63,5 @@
   background-color: #f0f0f0;
   text-align: center; }
 
-#fileUploadLink.dragover {
-  border-color: #B4C978;
-  background-color: #dce6c1; }
+#fileUploadLink.disabled {
+  color: #CCC; }

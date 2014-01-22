@@ -138,6 +138,10 @@ var editor = (function($) {
             editor.updateFormValues = function() {
                 $('.editform').find('textarea[name="body"]').val(cm.getValue());
             };
+
+            editor.appendContent = function(content) {
+                cm.setValue(cm.getValue() + '\n\n' + content);
+            };
         } else {
             var $textarea = $('.editform textarea');
             if ($textarea.length === 0) return;
@@ -146,6 +150,10 @@ var editor = (function($) {
             $(window).resize(resizeEditor);
             $(window).on('orientationchange', resizeEditor);
             $textarea.on('input propertychange', resizeEditor);
+
+            editor.appendContent = function(content) {
+                $textarea.val($textarea.val() + '\n\n' + content);
+            };
         }
     }
 

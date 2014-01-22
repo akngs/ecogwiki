@@ -169,6 +169,9 @@ div.contents {
 .top-bar li.search input[type="submit"] {
   display: none; }
 
+.top-bar .user-email {
+  display: none; }
+
 @media (max-width: 320px) {
   .top-bar .preferences {
     display: none; } }
