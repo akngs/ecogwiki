@@ -27,6 +27,10 @@ p = re.compile(
     r'^(?P<slideshare><iframe.*?src="https?\://www\.slideshare\.net/slideshow/embed\_code/(?P<slideshare_vid>\d+?)".*?>\s*</iframe>\s*<div.+?</div>)$'
     r'|'
     r'^(?P<gcal><iframe.*?src="https?\://www\.google\.com/calendar/embed\?(?P<gcal_vid>.+?)".*?>\s*</iframe>)$'
+    r'|'
+    r'^(?P<googlemap>https?\://maps\.google\.com/(?P<googlemap_vid>.+?))$'
+    r'|'
+    r'^(?P<googlemap2><iframe.*?src="https?\://maps\.google\.com/(?P<googlemap2_vid>.+?)".*?>\s*</iframe>)$'
     r')'
 )
 
@@ -60,12 +64,18 @@ class EmbedPrepreprocessor(Preprocessor):
             return self._create_video(m, 'slideshare', 425, 355, 'http://www.slideshare.net/slideshow/embed_code/%s')
         elif m.group('gcal'):
             return self._create_video(m, 'gcal', 800, 600, 'http://www.google.com/calendar/embed?%s')
+        elif m.group('googlemap'):
+            return self._create_video(m, 'googlemap', 425, 350, 'http://maps.google.com/%s&output=embed')
+        elif m.group('googlemap2'):
+            return self._create_video(m, 'googlemap2', 425, 350, 'http://maps.google.com/%s')
         else:
             raise ValueError('Should not reach here')
 
     def _create_video(self, m, vtype, width, height, url):
         vid = m.group('%s_vid' % vtype)
         url = url % vid
+        url = url.replace('&amp;', '&')
+        print url
 
         div = etree.Element('div')
         div.set('class', 'video %s' % vtype)
