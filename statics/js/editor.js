@@ -106,17 +106,30 @@ var editor = (function($) {
         return lines.join('\n');
     };
 
-    editor.generateForm = function(schema) {
+    editor.generateForm = function(types, schema) {
         var result = [];
+
+        result.push('<form>');
+
+        // render item types
+        result.push('<select id="sed_type">');
+        for(var i = 0; i < types.length; i++) {
+            result.push('<option>' + types[i] + '</option>');
+        }
+        result.push('</select>');
+
+        // render form fields
         var props = schema['properties'];
         for(var prop in props) {
             if(props[prop]['cardinality'][0] > 0) {
-                result.push('<label for="prop_' + prop + '">' + props[prop]['type']['label'] + '</label>')
+                result.push('<label for="prop_' + prop + '">' + props[prop]['type']['label'] + '</label>');
                 result.push('<input type="text" id="prop_' + prop + '" name="prop_' + prop + '" value="">');
             }
         }
+
+        result.push('</form>');
         return result.join('\n');
-    };
+    }
 
     function initPlainEditor() {
         if(window['CodeMirror']) {
@@ -135,12 +148,16 @@ var editor = (function($) {
                 'Ctrl-Enter': function() {$('input.comment').focus();}
             });
 
+            editor.getContent = function() {
+                return cm.getValue();
+            };
             editor.updateFormValues = function() {
-                $('.editform').find('textarea[name="body"]').val(cm.getValue());
+                var content = this.getContent();
+                $('.editform').find('textarea[name="body"]').val(content);
             };
 
             editor.appendContent = function(content) {
-                cm.setValue(cm.getValue() + '\n\n' + content);
+                cm.setValue(this.getContent() + '\n\n' + content);
             };
         } else {
             var $textarea = $('.editform textarea');
@@ -151,8 +168,11 @@ var editor = (function($) {
             $(window).on('orientationchange', resizeEditor);
             $textarea.on('input propertychange', resizeEditor);
 
+            editor.getContent = function() {
+                return $textarea.val();
+            };
             editor.appendContent = function(content) {
-                $textarea.val($textarea.val() + '\n\n' + content);
+                $textarea.val(this.getContent() + '\n\n' + content);
             };
         }
     }
@@ -166,7 +186,31 @@ var editor = (function($) {
 
     function initStructuredEditor() {
         $('.editor-tab').append('<li class="tab struct" data-name="struct"><a href="#struct">Structured editor</a></li>');
-        $('.editor-content').append('<li class="content struct" data-name="struct">...</li>');
+        $('.editor-content').append('<li class="content struct" data-name="struct"></li>');
+    }
+
+    function renderStructuredEditor() {
+        var $sed = $('.editor-content .struct');
+        var content = editor.getContent();
+        var parsed = editor.parseBody(content);
+
+        $sed.addClass('initializing');
+        $.get('/sp.schema/types?_type=json', function(json) {
+            var types = json['values'];
+            var curType = parsed['itemtype'];
+
+            $.get('/sp.schema/sctypes/' + curType + '?_type=json', function(schema) {
+                $sed.removeClass('initializing');
+                $sed.html(editor.generateForm(types, schema));
+                updateStructuredEditor();
+            });
+        });
+    }
+
+    function updateStructuredEditor() {
+        var content = editor.getContent();
+        var parsed = editor.parseBody(content);
+        $('#sed_type').val(parsed['itemtype']);
     }
 
     function registerEventHandlers() {
@@ -186,6 +230,10 @@ var editor = (function($) {
             $this.parent().addClass('active');
             var name = $this.parent().data('name');
             $('.editor-content .content.' + name).addClass('active');
+
+            if(name === 'struct') {
+                renderStructuredEditor();
+            }
         });
 
         /* Delete */

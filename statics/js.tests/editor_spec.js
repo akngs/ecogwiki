@@ -99,6 +99,10 @@ describe('Editor parse/generate roundtrip', function() {
 
 
 describe('Editor.generateForm', function() {
+    var types = [
+        'Article',
+        'Person'
+    ];
     var person = {
         "supertypes": ["Thing"],
         "properties": {
@@ -161,12 +165,18 @@ describe('Editor.generateForm', function() {
         "plural_label": "People"
     };
 
-    it('should generate form from schema', function() {
-        expect(editor.generateForm(person)).toEqual(
+    it('should generate form', function() {
+        expect(editor.generateForm(types, person)).toEqual(
+            '<form>\n' +
+            '<select id="sed_type">\n' +
+            '<option>Article</option>\n' +
+            '<option>Person</option>\n' +
+            '</select>\n' +
             '<label for="prop_email">Email</label>\n' +
             '<input type="text" id="prop_email" name="prop_email" value="">\n' +
             '<label for="prop_gender">Gender</label>\n' +
-            '<input type="text" id="prop_gender" name="prop_gender" value="">'
+            '<input type="text" id="prop_gender" name="prop_gender" value="">\n' +
+            '</form>'
         );
     });
 });
