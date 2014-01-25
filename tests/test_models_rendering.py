@@ -54,6 +54,8 @@ class SimpleExtensionsTest(RenderingTestCase):
 
 
 class EmbedTest(RenderingTestCase):
+    maxDiff = None
+
     def test_youtube(self):
         self.assertRenderedText(
             u'http://www.youtube.com/watch?v=w5gmK-ZXIMQ',
@@ -103,6 +105,16 @@ class EmbedTest(RenderingTestCase):
         self.assertRenderedText(
             u'<iframe src="http://www.slideshare.net/slideshow/embed_code/29840080" width="425" height="355" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC;border-width:1px 1px 0;margin-bottom:5px" allowfullscreen> </iframe> <div style="margin-bottom:5px"> <strong> <a href="https://www.slideshare.net/TerryJohnson9/top-10-benefits-of-using-slideshareslide-share" title="Top 10 Benefits of Using SlideShare" target="_blank">Top 10 Benefits of Using SlideShare</a> </strong> from <strong><a href="http://www.slideshare.net/TerryJohnson9" target="_blank">BZ9 :: Proven Marketing Solutions Since 2003</a></strong> </div>',
             u'<div class="video slideshare"><iframe allowfullscreen="true" frameborder="0" height="355" scrolling="no" src="http://www.slideshare.net/slideshow/embed_code/29840080" width="425"></iframe></div>')
+
+    def test_google_map(self):
+        self.assertRenderedText(
+            u'https://maps.google.com/?ll=42.733593,-105.61172&spn=0.001147,0.002245&t=h&z=19',
+            u'<div class="video googlemap"><iframe allowfullscreen="true" frameborder="0" height="350" scrolling="no" src="http://maps.google.com/?ll=42.733593,-105.61172&amp;spn=0.001147,0.002245&amp;t=h&amp;z=19&amp;output=embed" width="425"></iframe></div>')
+
+    def test_google_map2(self):
+        self.assertRenderedText(
+            u'<iframe marginheight="0" marginwidth="0" src="https://maps.google.com/?ie=UTF8&amp;t=m&amp;ll=37.0625,-95.677068&amp;spn=24.455808,37.353516&amp;z=4&amp;output=embed"></iframe>',
+            u'<div class="video googlemap2"><iframe allowfullscreen="true" frameborder="0" height="350" scrolling="no" src="http://maps.google.com/?ie=UTF8&amp;t=m&amp;ll=37.0625,-95.677068&amp;spn=24.455808,37.353516&amp;z=4&amp;output=embed" width="425"></iframe></div>')
 
 
 class WikilinkTest(RenderingTestCase):
