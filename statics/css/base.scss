@@ -807,6 +807,10 @@ article .body .more-suggestions {
     article .body .video.slideshare {
         position: relative; padding-bottom: 83.52%; height: 0; overflow: hidden;
     }
+    article .body .video.googlemap,
+    article .body .video.googlemap2 {
+        position: relative; padding-bottom: 82.35%; height: 0; overflow:hidden;
+    }
     article .body .video iframe,
     article .body .video object,
     article .body .video embed {

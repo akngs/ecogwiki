@@ -281,6 +281,7 @@ class PageOperationMixin(object):
                 'prezi.com',
                 'www.google.com',
                 'www.slideshare.net',
+                'maps.google.com'
             )
             cleaner.forms = False
             rendered = cleaner.clean_html(rendered)
