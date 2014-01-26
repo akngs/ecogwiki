@@ -75,7 +75,6 @@ class EmbedPrepreprocessor(Preprocessor):
         vid = m.group('%s_vid' % vtype)
         url = url % vid
         url = url.replace('&amp;', '&')
-        print url
 
         div = etree.Element('div')
         div.set('class', 'video %s' % vtype)
