@@ -179,5 +179,171 @@ describe('Edit mode', function() {
     });
 
     describe('Structured mode', function() {
+
+    });
+
+    describe('ContentParser', function() {
+        var parser;
+
+        beforeEach(function() {
+            parser = new editor2.ContentParser();
+        });
+
+        it('should parse empty body', function() {
+            expect(parser.parseBody('')).toEqual({
+                'itemtype': 'Article',
+                'data': {},
+                'body': ''
+            });
+        });
+
+        it('should parse simple text', function() {
+            expect(parser.parseBody('Hello\nthere?')).toEqual({
+                'itemtype': 'Article',
+                'data': {},
+                'body': 'Hello\nthere?'
+            });
+        });
+
+        it('should recognize itemtype', function() {
+            expect(parser.parseBody('.schema Book\n\nHello\nthere?')).toEqual({
+                'itemtype': 'Book',
+                'data': {},
+                'body': 'Hello\nthere?'
+            });
+        });
+
+        it('should retain other metadata', function() {
+            expect(parser.parseBody('.schema Book\n.pub\n\nHello\nthere?')).toEqual({
+                'itemtype': 'Book',
+                'data': [],
+                'body': '.pub\n\nHello\nthere?'
+            });
+        });
+
+        it('should recognize yaml block', function() {
+            expect(parser.parseBody('.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?')).toEqual({
+                'itemtype': 'Book',
+                'data': {'author': 'AK'},
+                'body': 'Hello\nthere?'
+            });
+        });
+
+        it('should generate empty string with default data', function() {
+            var data = {
+                'itemtype': 'Article',
+                'data': {},
+                'body': ''
+            }
+            expect(parser.generateBody(data)).toEqual('');
+        });
+
+        it('should generate simple text', function() {
+            var data = {
+                'itemtype': 'Article',
+                'data': {},
+                'body': 'Hello\nthere?'
+            };
+            expect(parser.generateBody(data)).toEqual('Hello\nthere?');
+        });
+
+        it('should generate schema metadata', function() {
+            var data = {
+                'itemtype': 'Book',
+                'data': {},
+                'body': 'Hello\nthere?'
+            };
+            expect(parser.generateBody(data)).toEqual('.schema Book\n\nHello\nthere?');
+        });
+
+        it('should generate yaml block', function() {
+            var data = {
+                'itemtype': 'Book',
+                'data': {'author': 'AK'},
+                'body': 'Hello\nthere?'
+            };
+            expect(parser.generateBody(data)).toEqual('.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?');
+        });
+
+        it('should roundtrip parse/generate', function() {
+            var bodies = [
+                '',
+                'Hello\nthere?',
+                '.schema Book\n\nHello\nthere?',
+                '.schema Book\n.pub\n\nHello\nthere?',
+                '.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?',
+                '.schema Book\n.pub\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?'
+            ];
+            for(var i = 0; i < bodies.length; i++) {
+                var body = bodies[i];
+                expect(parser.generateBody(parser.parseBody(body))).toEqual(body);
+            }
+        });
     });
 });
+
+//    var types = [
+//        'Article',
+//        'Person'
+//    ];
+//    var person = {
+//        "supertypes": ["Thing"],
+//        "properties": {
+//            "birthDate": {
+//                "type": {
+//                    "reversed_label": "%s Born",
+//                    "label": "Birth Date",
+//                    "comment": "Date of birth.",
+//                    "domains": ["Person"],
+//                    "ranges": ["Date"],
+//                    "comment_plain": "Date of birth.",
+//                    "id": "birthDate"
+//                },
+//                "cardinality": [0, 0]
+//            },
+//            "email": {
+//                "type": {
+//                    "reversed_label": "[%s] Email",
+//                    "label": "Email",
+//                    "comment": "Email address.",
+//                    "domains": ["Person", "ContactPoint", "Organization"],
+//                    "ranges": ["Text"],
+//                    "comment_plain": "Email address.",
+//                    "id": "email"
+//                },
+//                "cardinality": [1, 0]
+//            },
+//            "gender": {
+//                "type": {
+//                    "reversed_label": "[%s] Gender",
+//                    "label": "Gender",
+//                    "comment": "Gender of the person.",
+//                    "domains": ["Person"],
+//                    "ranges": ["Text"],
+//                    "comment_plain": "Gender of the person.",
+//                    "id": "gender"
+//                },
+//                "cardinality": [1, 1]
+//            },
+//            "parent": {
+//                "type": {
+//                    "reversed_label": "Children (%s)",
+//                    "label": "Parent",
+//                    "comment": "A parent of this person.",
+//                    "domains": ["Person"],
+//                    "ranges": ["Person"],
+//                    "comment_plain": "A parent of this person.",
+//                    "id": "parent"
+//                },
+//                "cardinality": [0, 0]
+//            }
+//        },
+//        "comment": "",
+//        "subtypes": ["Politician"],
+//        "url": "http://schema.org/Person",
+//        "label": "Person",
+//        "ancestors": ["Thing"],
+//        "comment_plain": "",
+//        "id": "Person",
+//        "plural_label": "People"
+//    };
