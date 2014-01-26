@@ -4,20 +4,23 @@ import hashlib
 
 
 class TocGenerator(object):
-    re_headings = ur'<h(\d)>(.+?)</h\d>'
+    re_headings = ur'<h(\d)\b[^>]*>(.+?)</h\d>'
 
     def __init__(self, html):
         self._html = html
         self._index = 0
 
     def validate(self):
+        return not self.is_invalid()
+
+    def is_invalid(self):
         try:
             headings = TocGenerator.extract_headings(self._html)
             outlines = self.generate_outline(headings)
             self.generate_path(outlines)
-            return True
-        except ValueError:
             return False
+        except ValueError as e:
+            return e.message
 
     def add_toc(self):
         """Add table of contents to HTML"""
@@ -66,7 +69,7 @@ class TocGenerator(object):
 
         cur_lev = headings[0][0]
         if cur_lev != 1:
-            raise ValueError('Headings should start from H1')
+            raise ValueError('Headings should start from H1 but found: <H%d>%s</H%d>' % (cur_lev, headings[0][1], cur_lev))
 
         _, result = self._outline_children(headings, 0, cur_lev)
         return result
@@ -99,7 +102,7 @@ class TocGenerator(object):
                 index -= 1
                 break
             else:
-                raise ValueError('Invalid level of headings')
+                raise ValueError('Invalid level of headings: expected H%d or H%d but found <H%d>%s</H%d>' % (lev-1, lev, curlev, curtitle, curlev))
 
         return index, result
 
