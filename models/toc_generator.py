@@ -4,7 +4,7 @@ import hashlib
 
 
 class TocGenerator(object):
-    re_headings = ur'<h(\d)>(.+?)</h\d>'
+    re_headings = ur'<h(\d)\b[^>]*>(.+?)</h\d>'
 
     def __init__(self, html):
         self._html = html
