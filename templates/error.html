@@ -18,6 +18,10 @@
                 <li>{{ error }}</li>
             {% endfor %}
             </ul>
+			{% if suggest_link %}
+				<a href="{{suggest_link[0]}}">{{suggest_link[1]}}</a>
+			{% endif %}
+
             {% endif %}
         </div>
     </section>
