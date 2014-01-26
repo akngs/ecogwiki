@@ -272,7 +272,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         # check data
         new_data = PageOperationMixin.parse_data(self.title, new_body, new_md['schema'])
         if any(type(value) == schema.InvalidProperty for value in new_data.values()):
-            raise ValueError('Invalid schema data')
+            invalid_keys = [key for key,value in new_data.iteritems() if type(value) == schema.InvalidProperty]
+            raise ValueError('Invalid schema data: %s' % ', '.join(invalid_keys))
 
         # check revision
         if self.revision < base_revision:
