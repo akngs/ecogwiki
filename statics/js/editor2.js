@@ -6,6 +6,9 @@ var editor2 = (function($) {
             var _this = this;
 
             this._textarea = textarea;
+            $(this._textarea.form).on('submit', function() {
+                $(_this._textarea).val(_this.getContent());
+            });
 
             // Hide underlaying textarea
             $(this._textarea).hide();
@@ -62,8 +65,11 @@ var editor2 = (function($) {
         setContent: function(content) {
             this.getActiveMode().setContent(content);
         },
+        updateTextarea: function() {
+            $(this._textarea).val(this.getContent());
+        },
         getContent: function() {
-            this.getActiveMode().getContent();
+            return this.getActiveMode().getContent();
         },
         appendContent: function(content) {
             this.getActiveMode().appendContent(content);
@@ -113,7 +119,7 @@ var editor2 = (function($) {
         setContent: function(content) {},
         getContent: function() {},
         appendContent: function(content) {
-            this.setContent(this.getContent() + content);
+            this.setContent(this.getContent() + '\n\n' + content);
         }
     });
     TextEditlet.createInstance = function(textarea) {
@@ -126,11 +132,27 @@ var editor2 = (function($) {
 
 
     var SimpleTextEditlet = TextEditlet.extend({
+        init: function(textarea) {
+            this._super(textarea);
+
+            this.resizeToAutofit();
+
+            var resizeToAutofit = this.resizeToAutofit.bind(this);
+            $(window).resize(resizeToAutofit);
+            $(window).on('orientationchange', resizeToAutofit);
+            $(this._textarea).on('input propertychange', resizeToAutofit);
+        },
         setContent: function(content) {
             $(this._textarea).val(content);
         },
         getContent: function() {
             return $(this._textarea).val();
+        },
+        resizeToAutofit: function() {
+            // It doesn't work when there's large amount of reduction in text
+            var $textarea = $(this._textarea);
+            $textarea.height($textarea.height() - 50);
+            $textarea.height($textarea.prop('scrollHeight'));
         }
     });
 
@@ -162,6 +184,7 @@ var editor2 = (function($) {
         },
         setContent: function(content) {
             this._cm.setValue(content);
+            this._cm.refresh();
             $(this._textarea).val(this.getContent());
         },
         getNextFocusTarget: function() {

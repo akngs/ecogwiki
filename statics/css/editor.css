@@ -1,24 +1,20 @@
-.editor-tab {
+.ecogwiki-editor .mode-tab {
   list-style: none;
   margin: 0;
   padding: 0;
   border-bottom: 1px solid #dddddd; }
-
-.editor-tab:before,
-.editor-tab:after {
+.ecogwiki-editor .mode-tab:before,
+.ecogwiki-editor .mode-tab:after {
   display: table;
   content: " "; }
-
-.editor-tab:after {
+.ecogwiki-editor .mode-tab:after {
   clear: both; }
-
-.editor-tab .tab {
+.ecogwiki-editor .mode-tab li {
   position: relative;
   display: block;
   float: left;
   margin-bottom: -1px; }
-
-.editor-tab .tab > a {
+.ecogwiki-editor .mode-tab li > a {
   position: relative;
   display: block;
   padding: 10px 15px;
@@ -26,33 +22,25 @@
   border: 1px solid transparent;
   border-radius: 4px 4px 0 0;
   line-height: 1.428571429; }
-
-.editor-tab .tab > a:hover,
-.editor-tab .tab > a:active {
+.ecogwiki-editor .mode-tab li > a:hover,
+.ecogwiki-editor .mode-tab li > a:active {
   text-decoration: none;
   background-color: #eee; }
-
-.editor-tab .tab.active > a,
-.editor-tab .tab.active > a:hover
-.editor-tab .tab.active > a:active {
+.ecogwiki-editor .mode-tab li.active > a,
+.ecogwiki-editor .mode-tab li.active > a:hover
+.mode-tab li.active > a:active {
   color: #555;
   cursor: default;
   background-color: #fff;
   border: 1px solid #dddddd;
   border-bottom-color: transparent; }
-
-.editor-content {
+.ecogwiki-editor .mode-pane {
   list-style-type: none;
   margin: 0;
   padding: 0; }
-
-.editor-content .content {
-  display: none;
+.ecogwiki-editor .mode-pane li {
   margin: 0;
   padding: 0; }
-
-.editor-content .content.active {
-  display: block; }
 
 #fileUploadLink {
   display: block;

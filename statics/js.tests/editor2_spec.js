@@ -51,8 +51,8 @@ describe('TextEditlet', function() {
 
         it('should append text to current content', function() {
             editlet.setContent('Hello');
-            editlet.appendContent(' there?');
-            expect(editlet.getContent()).toEqual('Hello there?');
+            editlet.appendContent('there?');
+            expect(editlet.getContent()).toEqual('Hello\n\nthere?');
         });
     });
 
@@ -74,8 +74,8 @@ describe('TextEditlet', function() {
 
         it('should append text to current content', function() {
             editlet.setContent('Hello');
-            editlet.appendContent(' there?');
-            expect(editlet.getContent()).toEqual('Hello there?');
+            editlet.appendContent('there?');
+            expect(editlet.getContent()).toEqual('Hello\n\nthere?');
         });
     });
 

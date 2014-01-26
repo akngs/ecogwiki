@@ -9,9 +9,8 @@ var editor = (function($) {
         registerEventHandlers();
     };
 
-    editor.updateFormValues = function() {};
+    editor.updateTextarea = function() {};
     editor.getContent = function() {};
-    editor.updateFormValues = function() {};
     editor.appendContent = function(content) {};
 
     editor.parseBody = function(body) {
@@ -154,7 +153,7 @@ var editor = (function($) {
             editor.getContent = function() {
                 return cm.getValue();
             };
-            editor.updateFormValues = function() {
+            editor.updateTextarea = function() {
                 var content = this.getContent();
                 $('.editform').find('textarea[name="body"]').val(content);
             };
@@ -256,7 +255,7 @@ var editor = (function($) {
 
             var $form = $('.editform');
             $form.find('input[name="preview"]').val('1');
-            editor.updateFormValues();
+            editor.updateTextarea();
             var formdata = $form.serialize();
             $form.find('input[name="preview"]').val(0);
 
