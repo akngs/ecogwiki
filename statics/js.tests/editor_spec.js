@@ -21,15 +21,15 @@ describe('TextEditlet', function() {
         });
 
         it('should create CodeMirrorEditlet if there is CodeMirror', function() {
-            var editlet = editor2.TextEditlet.createInstance(textarea);
-            expect(editlet instanceof editor2.CodeMirrorTextEditlet).toBeTruthy();
+            var editlet = editor.TextEditlet.createInstance(textarea);
+            expect(editlet instanceof editor.CodeMirrorTextEditlet).toBeTruthy();
         });
 
         it('should create SimpleTextEditlet if there is no CodeMirror', function() {
             delete window['CodeMirror'];
 
-            var editlet = editor2.TextEditlet.createInstance(textarea);
-            expect(editlet instanceof editor2.SimpleTextEditlet).toBeTruthy();
+            var editlet = editor.TextEditlet.createInstance(textarea);
+            expect(editlet instanceof editor.SimpleTextEditlet).toBeTruthy();
         });
     });
 
@@ -40,7 +40,7 @@ describe('TextEditlet', function() {
         beforeEach(function() {
             sandbox.innerHTML = '<form><textarea></textarea><input type="submit"></form>';
             textarea = sandbox.querySelector('textarea');
-            editlet = new editor2.SimpleTextEditlet(textarea);
+            editlet = new editor.SimpleTextEditlet(textarea);
         });
 
         it('should work with associated textarea', function() {
@@ -63,7 +63,7 @@ describe('TextEditlet', function() {
         beforeEach(function() {
             sandbox.innerHTML = '<form><textarea id="this"></textarea><p>Hello</p><input type="submit" id="target"></form>';
             textarea = sandbox.querySelector('textarea');
-            editlet = new editor2.CodeMirrorTextEditlet(textarea);
+            editlet = new editor.CodeMirrorTextEditlet(textarea);
         });
 
         it('should work with associated textarea', function() {
@@ -83,14 +83,14 @@ describe('TextEditlet', function() {
         it('should find next form element', function() {
             sandbox.innerHTML = '<form><textarea id="this"></textarea><p>Hello</p><input type="submit" id="target"></form>';
             var textarea = sandbox.querySelector('textarea');
-            var editlet = new editor2.CodeMirrorTextEditlet(textarea);
+            var editlet = new editor.CodeMirrorTextEditlet(textarea);
             expect(editlet.getNextFocusTarget().getAttribute('id')).toEqual('target');
         });
 
         it('should select the first form element if the textarea is the last element', function() {
             sandbox.innerHTML = '<form><input type="text" id="target"><textarea id="this"></textarea></form>';
             var textarea = sandbox.querySelector('textarea');
-            var editlet = new editor2.CodeMirrorTextEditlet(textarea);
+            var editlet = new editor.CodeMirrorTextEditlet(textarea);
             expect(editlet.getNextFocusTarget().getAttribute('id')).toEqual('target');
         });
     });
@@ -100,7 +100,7 @@ describe('TextEditlet', function() {
 describe('Editor', function() {
     var sandbox;
     var textarea;
-    var editor;
+    var ed;
     var $root;
 
     beforeEach(function() {
@@ -109,7 +109,7 @@ describe('Editor', function() {
 
         sandbox.innerHTML = '<form><textarea></textarea></form>';
         textarea = sandbox.querySelector('textarea');
-        editor = new editor2.Editor(textarea);
+        ed = new editor.Editor(textarea);
         $root = $(textarea).next();
     });
 
@@ -129,21 +129,21 @@ describe('Editor', function() {
     });
 
     it('should start from plain mode', function() {
-        expect(editor.getActiveModeName()).toEqual('plain');
+        expect(ed.getActiveModeName()).toEqual('plain');
     });
 
     it('should switch plain mode to structured modes', function() {
         $root.find('ul.mode-tab > li.structured > a').click();
-        expect(editor.getActiveModeName()).toEqual('structured');
-        expect(editor.getActiveMode() instanceof editor2.StructuredEditMode).toBeTruthy();
+        expect(ed.getActiveModeName()).toEqual('structured');
+        expect(ed.getActiveMode() instanceof editor.StructuredEditMode).toBeTruthy();
         expect($root.find('ul.mode-tab > li.active').hasClass('structured')).toBeTruthy();
         expect($root.find('ul.mode-pane > li.plain').css('display')).toEqual('none');
     });
 
     it('should switch structured mode to plain modes', function() {
         $root.find('ul.mode-tab > li.plain > a').click();
-        expect(editor.getActiveModeName()).toEqual('plain');
-        expect(editor.getActiveMode() instanceof editor2.PlainEditMode).toBeTruthy();
+        expect(ed.getActiveModeName()).toEqual('plain');
+        expect(ed.getActiveMode() instanceof editor.PlainEditMode).toBeTruthy();
         expect($root.find('ul.mode-tab > li.active').hasClass('plain')).toBeTruthy();
         expect($root.find('ul.mode-pane > li.structured').css('display')).toEqual('none');
     });
@@ -159,13 +159,13 @@ describe('Edit mode', function() {
 
     describe('Plain mode', function() {
         it('should create TextEditlet with given initial content', function() {
-            var mode = new editor2.PlainEditMode(sandbox, 'Hello');
+            var mode = new editor.PlainEditMode(sandbox, 'Hello');
             var editlet = mode.getEditlet();
             expect(mode.getContent()).toEqual('Hello');
             expect(editlet.getContent()).toEqual('Hello');
         });
         it('should connected to TextEditlet', function() {
-            var mode = new editor2.PlainEditMode(sandbox, 'Hello');
+            var mode = new editor.PlainEditMode(sandbox, 'Hello');
             var editlet = mode.getEditlet();
 
             mode.setContent('Hello');
@@ -186,7 +186,7 @@ describe('Edit mode', function() {
         var parser;
 
         beforeEach(function() {
-            parser = new editor2.ContentParser();
+            parser = new editor.ContentParser();
         });
 
         it('should parse empty body', function() {

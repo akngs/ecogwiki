@@ -1,4 +1,4 @@
-var editor2 = (function($) {
+var editor = (function($) {
     "use strict";
 
     var Editor = Class.extend({

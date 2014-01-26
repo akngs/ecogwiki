@@ -96,9 +96,9 @@
 {% endblock %}
 {% block before_body_close %}
     <script type="text/javascript" src="/statics/js/js-yaml.min.js?ver={{ app.version }}"></script>
-    <script type="text/javascript" src="/statics/js/editor2.js?ver={{ app.version }}"></script>
+    <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
     <script type="text/javascript">
-        var editor = new editor2.Editor(document.querySelector('.editform textarea'));
+        var ed = new editor.Editor(document.querySelector('.editform textarea'));
 
         /* Delete */
         $('.btn-delete').on('click', function(e) {
@@ -120,7 +120,7 @@
 
             var $form = $('.editform');
             $form.find('input[name="preview"]').val('1');
-            editor.updateTextarea();
+            ed.updateTextarea();
             var formdata = $form.serialize();
             $form.find('input[name="preview"]').val(0);
 
@@ -137,7 +137,7 @@
     function _gapiLoaded() {
         gapi.client.load('drive', 'v2', function() {
             gdrive.gapiLoaded();
-            gdrive.main(editor);
+            gdrive.main(ed);
         });
     }
     </script>
