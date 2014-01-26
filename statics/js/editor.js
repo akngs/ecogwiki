@@ -10,6 +10,9 @@ var editor = (function($) {
     };
 
     editor.updateFormValues = function() {};
+    editor.getContent = function() {};
+    editor.updateFormValues = function() {};
+    editor.appendContent = function(content) {};
 
     editor.parseBody = function(body) {
         // parse yaml/schema block
@@ -263,6 +266,7 @@ var editor = (function($) {
             });
         });
     }
+
 
     return editor;
 })($);
