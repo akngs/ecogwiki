@@ -105,6 +105,16 @@ class PathTest(unittest.TestCase):
     def test_duplicated_path(self):
         self.assertRaises(ValueError, self.t.generate_path, [[u'T1', []], [u'T1', []]])
 
+class ExtractHeadingsTest(unittest.TestCase):
+    def test_header_with_attributes(self):
+        html = '''
+        <h1>a one</h1>
+        <h1 id="user-defined-id">a two</h1>
+        <h1>a three</h1>
+        '''
+        headings = TocGenerator.extract_headings(html)
+        self.assertEqual(len(headings), 3);
+
 
 class HTMLGenerationTest(unittest.TestCase):
     def test_strip_html_in_headings(self):
