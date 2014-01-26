@@ -123,6 +123,7 @@ class PageLikeResource(Resource):
             'page': page,
             'description': 'You don\'t have a permission',
             'errors': [],
+            'suggest_link': ('javascript:history.back();', 'Go back'),
         })
         set_response_body(self.res, html, head)
 
@@ -182,7 +183,8 @@ class PageResource(PageLikeResource):
             html = template(self.req, 'error.html', {
                 'page': page,
                 'description': 'Cannot accept the data for following reasons',
-                'errors': [e.message]
+                'errors': [e.message],
+                'suggest_link': ('javascript:history.back();', 'Go back'),
             })
             self.res.status = 406
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -235,7 +237,8 @@ class PageResource(PageLikeResource):
             html = template(self.req, 'error.html', {
                 'page': page,
                 'description': 'Cannot accept the data for following reasons',
-                'errors': [e.message]
+                'errors': [e.message],
+                'suggest_link': ('javascript:history.back();', 'Go back'),
             })
             self.res.status = 406
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -252,7 +255,8 @@ class PageResource(PageLikeResource):
             html = template(self.req, 'error.html', {
                 'page': page,
                 'description': 'You don\'t have a permission to delete the page',
-                'errors': [e.message]
+                'errors': [e.message],
+                'suggest_link': ('javascript:history.back();', 'Go back'),
             })
             set_response_body(self.res, html, False)
 
