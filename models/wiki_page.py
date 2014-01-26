@@ -280,8 +280,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
             raise ValueError('Invalid revision number: %d' % base_revision)
 
         # check headings
-        if not TocGenerator(md.convert(new_body)).validate():
-            raise ValueError("Duplicate paths not allowed")
+        invalid_reason = TocGenerator(md.convert(new_body)).is_invalid() 
+        if invalid_reason:
+            raise ValueError(invalid_reason)
 
         return new_data, new_md
 

@@ -126,3 +126,33 @@ class HTMLGenerationTest(unittest.TestCase):
         """
         t = TocGenerator(html)
         self.assertEqual(1, len(re.findall(ur'Blah', t.add_toc())))
+
+class ValidateTest(unittest.TestCase):
+    def test_duplicate_path_name_should_metion_reason(self):
+        html = '''
+            <h1>a one</h1>
+            <h1>a two</h1>
+            <h1>a one</h1>
+            <h1>two</h1>
+            <h1>three</h1>
+        '''
+        reason = TocGenerator(html).is_invalid()
+        self.assertIn('a one', reason)
+
+    def test_invalid_level_of_headings_should_mention_reason(self):
+        html = '''
+            <h1>one</h1>
+            <h1>two</h1>
+            <h3>three</h3>
+        '''
+        reason = TocGenerator(html).is_invalid()
+        self.assertIn('<h3>three</h3>', reason.lower())
+
+    def test_heading_not_startig_from_h1_should_mention_reason(self):
+        html = '''
+            <h2>two</h2>
+            <h3>three</h3>
+        '''
+        reason = TocGenerator(html).is_invalid()
+        self.assertIn('<h2>two</h2>', reason.lower())
+
