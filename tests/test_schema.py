@@ -238,17 +238,15 @@ class YamlSchemaDataTest(AppEngineTestCase):
         self.assertEqual(-1, page.rendered_body.find(u'#!yaml/schema'))
 
     def test_tab_and_space_mixed(self):
-        body = u'\t#!yaml/schema\r\n    alternateName: 반올림\r\n\turl: http://cafe.daum.net/samsunglabor\r\n    name: "반도체 노동자의 건강과 인권 지킴이"\r\n'
+        body = u'\t#!yaml/schema\r\n    alternateName: hi\r\n\turl: http://x.com\r\n    name: "Hello"\r\n'
         data = PageOperationMixin.parse_schema_yaml(body)
-        self.assertEquals(data['name'], u'반도체 노동자의 건강과 인권 지킴이')
-        self.assertEquals(data['alternateName'], u'반올림')
-        self.assertEquals(data['url'], 'http://cafe.daum.net/samsunglabor')
+        self.assertEquals(data['name'], u'Hello')
+        self.assertEquals(data['alternateName'], u'hi')
+        self.assertEquals(data['url'], u'http://x.com')
 
     def test_yaml_indent_catching_only_space(self):
-        body = u'''Hello\r\n\r\n\t#!yaml/schema\n    url: "http://abc.com"\n\nWorld\n'''
+        body = u'''\r\n\t#!yaml/schema\n    url: "http://x.com"\n\nHello\n'''
         matched = PageOperationMixin.re_yaml_schema.search(body).group(0)
-        self.assertFalse(matched.startswith('\r'))
-        self.assertFalse(matched.startswith('\n'))
         self.assertTrue(matched.startswith('\t'))
 
 
