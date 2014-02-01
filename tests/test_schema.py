@@ -244,6 +244,13 @@ class YamlSchemaDataTest(AppEngineTestCase):
         self.assertEquals(data['alternateName'], u'반올림')
         self.assertEquals(data['url'], 'http://cafe.daum.net/samsunglabor')
 
+    def test_yaml_indent_catching_only_space(self):
+        body = u'''Hello\r\n\r\n\t#!yaml/schema\n    url: "http://abc.com"\n\nWorld\n'''
+        matched = PageOperationMixin.re_yaml_schema.search(body).group(0)
+        self.assertFalse(matched.startswith('\r'))
+        self.assertFalse(matched.startswith('\n'))
+        self.assertTrue(matched.startswith('\t'))
+
 
 class SchemaIndexTest(AppEngineTestCase):
     def setUp(self):

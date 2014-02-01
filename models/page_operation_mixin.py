@@ -21,12 +21,12 @@ class PageOperationMixin(object):
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
     re_yaml_schema = re.compile(r'''
                                     # HEADER
-            (?:\s{4}|\t)            #   leading tab or 4 space followed by (non-capture)
+            (?:[ ]{4}|\t)           #   leading tab or 4 space followed by (non-capture)
             \#!yaml/schema          #   `#!yaml/schema`
             [\n\r]+                 #   new line(s)
             (                       # CONTENT (group 1)
                 (                   #   multiple lines of  (group 2)
-                    (?:\s{4}|\t)    #   leading tab or 4 space followed by (non-capture)
+                    (?:[ ]{4}|\t)   #   leading tab or 4 space followed by (non-capture)
                     .+?             #   any string
                     [\n\r]+         #   new line(s)
                 )+
