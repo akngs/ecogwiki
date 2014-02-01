@@ -259,7 +259,7 @@ describe('Edit mode', function() {
                 callback(['Article', 'Book', 'Person']);
             }, function(itemtype, callback) {
                 callback(schema[itemtype]);
-            });
+            }, {});
             mode.setContent('', function() {});
         });
 
@@ -494,7 +494,7 @@ describe('Edit mode', function() {
                 callback(['Article']);
             }, function(itemtype, callback) {
                 callback(schema[itemtype]);
-            });
+            }, {});
             mode.setContent('', function() {});
         });
 

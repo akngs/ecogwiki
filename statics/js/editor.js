@@ -3,11 +3,11 @@ var editor = (function($) {
 
     var Editor = Class.extend({
         init: function(textarea, callback, typesLoader, schemaLoader) {
-            var _this = this;
+            var self = this;
 
             this._textarea = textarea;
             $(this._textarea.form).on('submit', function() {
-                $(_this._textarea).val(_this.getContent());
+                $(self._textarea).val(self.getContent());
             });
 
             // Hide underlaying textarea
@@ -28,7 +28,9 @@ var editor = (function($) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                _this.setActiveModeName($(this).parent().data('name'));
+                if(self._$root.hasClass('busy')) return;
+
+                self.setActiveModeName($(this).parent().data('name'));
             });
 
             // Create content panes
@@ -40,7 +42,7 @@ var editor = (function($) {
             );
 
             this._plainEditMode = new PlainEditMode(this._$root.find('.mode-pane .plain')[0]);
-            this._structEditMode = new StructuredEditMode(this._$root.find('.mode-pane .structured')[0], typesLoader, schemaLoader);
+            this._structEditMode = new StructuredEditMode(this._$root.find('.mode-pane .structured')[0], typesLoader, schemaLoader, this);
             this.setActiveModeName('plain', callback);
         },
         setActiveModeName: function(newMode, callback) {
@@ -79,6 +81,24 @@ var editor = (function($) {
         },
         appendContent: function(content, callback) {
             this.getActiveMode().appendContent(content, callback);
+        },
+
+        // StructuredEditMode callbacks
+        onStartLoadTypes: function(mode) {
+            this._$root.addClass('busy');
+            this._$root.addClass('busy-loading-types');
+        },
+        onEndLoadTypes: function(mode) {
+            this._$root.removeClass('busy');
+            this._$root.removeClass('busy-loading-types');
+        },
+        onStartLoadSchema: function(mode) {
+            this._$root.addClass('busy');
+            this._$root.addClass('busy-loading-schema');
+        },
+        onEndLoadSchema: function(mode) {
+            this._$root.removeClass('busy');
+            this._$root.removeClass('busy-loading-schema');
         }
     });
 
@@ -116,7 +136,7 @@ var editor = (function($) {
 
 
     var StructuredEditMode = EditMode.extend({
-        init: function(rootEl, typesLoader, schemaLoader) {
+        init: function(rootEl, typesLoader, schemaLoader, callback) {
             this._rootEl = rootEl;
             this._parser = new ContentParser();
             this._types = [];
@@ -124,6 +144,7 @@ var editor = (function($) {
             this._wikibodyEditlet = null;
             this._typesLoader = typesLoader;
             this._schemaLoader = schemaLoader;
+            this._callback = callback;
 
             $(this._rootEl).on('click', '.add-prop', this._onAddProp.bind(this));
             $(this._rootEl).on('click', '.add-field', this._onAddField.bind(this));
@@ -134,9 +155,15 @@ var editor = (function($) {
 
             // load types
             if(this._types.length === 0) {
+                $(self._rootEl).find(':input').prop('disabled', true);
+                if(this._callback.onStartLoadTypes) this._callback.onStartLoadTypes(this);
+
                 this._typesLoader(function(types) {
                     self._types = types;
                     self.setContent(content, callback);
+
+                    $(self._rootEl).find(':input').prop('disabled', false);
+                    if(self._callback.onEndLoadTypes) self._callback.onEndLoadTypes(this);
                 });
                 return;
             }
@@ -146,9 +173,15 @@ var editor = (function($) {
             var itemtype = parsed['itemtype'];
             var schema = this._schema[itemtype];
             if(schema === undefined) {
+                $(self._rootEl).find(':input').prop('disabled', true);
+                if(this._callback.onStartLoadSchema) this._callback.onStartLoadSchema(this);
+
                 this._schemaLoader(itemtype, function(schema) {
                     self._schema[itemtype] = schema || {'properties': {}};
                     self.setContent(content, callback);
+
+                    $(self._rootEl).find(':input').prop('disabled', false);
+                    if(self._callback.onEndLoadSchema) self._callback.onEndLoadSchema(this);
                 });
                 return;
             }

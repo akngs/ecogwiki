@@ -34,6 +34,10 @@
   background-color: #fff;
   border: 1px solid #dddddd;
   border-bottom-color: transparent; }
+.ecogwiki-editor.busy .mode-tab li > a {
+  cursor: wait;
+  background-color: #ddd;
+  color: #888; }
 .ecogwiki-editor .mode-pane {
   list-style-type: none;
   margin: 0;

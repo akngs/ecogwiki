@@ -43,6 +43,11 @@
       border: 1px solid #ddd;
       border-bottom-color: transparent;
   }
+  &.busy .mode-tab li > a {
+      cursor: wait;
+      background-color: #ddd;
+      color: #888;
+  }
 
   .mode-pane {
       list-style-type: none;
