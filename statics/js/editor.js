@@ -124,6 +124,9 @@ var editor = (function($) {
             this._wikibodyEditlet = null;
             this._typesLoader = typesLoader;
             this._schemaLoader = schemaLoader;
+
+            $(this._rootEl).on('click', '.add-field', this._onAddField.bind(this));
+            $(this._rootEl).on('click', '.delete-field', this._onDeleteField.bind(this));
         },
         setContent: function(content, callback) {
             var self = this;
@@ -153,39 +156,28 @@ var editor = (function($) {
             var $root = $(this._rootEl);
             $root.html('');
 
-            this._populateItemtypeSelector($root, parsed['itemtype']);
+            this._populateItemtypeSelector(parsed['itemtype']);
 
             var props = schema['properties'];
             var data = parsed['data'];
             var pnames = union([props, data]);
+
             for(var i = 0; i < pnames.length; i++) {
                 var pname = pnames[i];
-                this._populateField(pname, $root, props[pname], data[pname]);
+                this._populateField(itemtype, pname, data[pname]);
             }
 
-            this._populateBodyField($root, parsed['body']);
+            this._populateBodyField(parsed['body']);
         },
         appendContent: function(content, callback) {
         },
         getContent: function() {
-            var parsed = this._gatherData($(this._rootEl));
+            var parsed = this._gatherData();
             return this._parser.generateBody(parsed);
         },
-        _populateField: function(pname, $container, prop, values) {
-            // Use default property if prop == undefined
-            if(prop === undefined) {
-                prop = {
-                    "type": {
-                        "label": pname,
-                        "comment": pname,
-                        "comment_plain": pname,
-                        "domains": [],
-                        "ranges": ["Text"],
-                        "id": pname
-                    },
-                    "cardinality": [0, 0]
-                };
-            }
+        _populateField: function(itemtype, pname, values) {
+            var $root = $(this._rootEl);
+            var prop = this._getProperty(itemtype, pname);
 
             // Make values array
             if(values && !$.isArray(values)) {
@@ -209,14 +201,21 @@ var editor = (function($) {
             sb.push('   <ol>');
 
             for(var i = 0; i < numOfFields; i++) {
-                sb.push('       <li><input class="field" type="text" id="' + idPrefix + '_' + i + '" name="' + prop['type']['id'] + '" value="' + encodeHtmlEntity(values[i] || '') + '"></li>');
+                sb.push('        <li class="fields">');
+                sb.push('            <input class="field" type="text" id="' + idPrefix + '_' + i + '" name="' + prop['type']['id'] + '" value="' + encodeHtmlEntity(values[i] || '') + '">');
+                sb.push('            <a class="delete-field" href="#">Delete</a>');
+                sb.push('        </li>');
             }
             sb.push('   </ol>');
+            sb.push('   <a class="add-field" href="#">Add field</a>');
             sb.push('</div>');
-            $container.append(sb.join('\n'));
+            $root.append(sb.join('\n'));
+
+            this._updateButtonsVisibility(itemtype, pname);
         },
-        _populateItemtypeSelector: function($container, itemtype) {
+        _populateItemtypeSelector: function(itemtype) {
             var self = this;
+            var $root = $(this._rootEl);
             var sb = [];
             sb.push('<div class="prop prop-itemtype" data-pname="itemtype">');
             sb.push('   <label for="prop_itemtype">Item type</label>');
@@ -230,32 +229,35 @@ var editor = (function($) {
             }
             sb.push('   </select>');
             sb.push('</div>');
-            $container.append(sb.join('\n'));
+            $root.append(sb.join('\n'));
 
-            $container.find('#prop_itemtype').on('change', function() {
+            // repopulate fields if itemtype changes
+            $root.find('#prop_itemtype').on('change', function() {
                 self.setContent(self.getContent());
             });
         },
-        _populateBodyField: function($container, body) {
+        _populateBodyField: function(body) {
             var sb = [];
+            var $root = $(this._rootEl);
             sb.push('<div class="prop prop-wikibody" data-pname="wikibody">');
             sb.push('   <label for="prop_wikibody">Body</label>');
             sb.push('   <textarea class="field" id="prop_wikibody" name="prop_wikibody">' + encodeHtmlEntity(body) + '</textarea>');
             sb.push('</div>');
-            $container.append(sb.join('\n'));
+            $root.append(sb.join('\n'));
 
-            this._wikibodyEditlet = TextEditlet.createInstance($container.find('#prop_wikibody')[0]);
+            this._wikibodyEditlet = TextEditlet.createInstance($root.find('#prop_wikibody')[0]);
         },
-        _gatherData: function($container) {
+        _gatherData: function() {
             var result = {
                 itemtype: '',
                 data: {},
                 body: ''
             };
+            var $root = $(this._rootEl);
 
-            result['itemtype'] = $container.find('#prop_itemtype').val();
+            result['itemtype'] = $root.find('#prop_itemtype').val();
 
-            var $props = $container.find('.prop');
+            var $props = $root.find('.prop');
             for(var i = 0; i < $props.length; i++) {
                 var $prop = $($props[i]);
                 var pname = $prop.data('pname');
@@ -276,6 +278,73 @@ var editor = (function($) {
             result['body'] = this._wikibodyEditlet.getContent();
 
             return result;
+        },
+        _getProperty: function(itemtype, pname) {
+            var schema = this._schema[itemtype] || {'properties': {}};
+            return schema['properties'][pname] || {
+                "type": {
+                    "label": pname,
+                    "comment": pname,
+                    "comment_plain": pname,
+                    "domains": [],
+                    "ranges": ["Text"],
+                    "id": pname
+                },
+                "cardinality": [0, 0]
+            };
+        },
+        _updateButtonsVisibility: function(itemtype, pname) {
+            var $root = $(this._rootEl);
+            var prop = this._getProperty(itemtype, pname);
+            var numOfFields = $root.find('.prop-' + pname + ' li').length;
+
+            var addButtonVisible =
+                prop['cardinality'][1] == 0 ||
+                prop['cardinality'][1] > numOfFields;
+            $root.find('.prop-' + pname + ' .add-field')[addButtonVisible ? 'show' : 'hide']();
+
+            var deleteButtonVisible =
+                prop['cardinality'][0] < numOfFields;
+            $root.find('.prop-' + pname + ' .delete-field')[deleteButtonVisible ? 'show' : 'hide']();
+        },
+        _onAddField: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $prop = $(e.target).parents('.prop');
+            var $root = $(this._rootEl);
+            var itemtype = $root.find('#prop_itemtype').val();
+            var pname = $prop.data('pname');
+            var i = $prop.find('li').length;
+
+            // Add element
+            var sb = [];
+            sb.push('<li class="fields">');
+            sb.push('    <input class="field" type="text" id="prop_' + pname + '_' + i + '" name="' + pname + '" value="">');
+            sb.push('    <a class="delete-field" href="#">Delete</a>');
+            sb.push('</li>');
+            $prop.find('ol').append(sb.join('\n'));
+
+            this._updateButtonsVisibility(itemtype, pname);
+        },
+        _onDeleteField: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $prop = $(e.target).parents('.prop');
+            var $root = $(this._rootEl);
+            var itemtype = $root.find('#prop_itemtype').val();
+            var pname = $prop.data('pname');
+
+            // Remove element
+            $(e.target).parents('li.fields').remove();
+
+            // Update id to fill removed index
+            $prop.find('li.fields').each(function(i) {
+                $(this).find('.field').attr('id', 'prop_' + pname + '_' + i);
+            });
+
+            this._updateButtonsVisibility(itemtype, pname);
         }
     });
 

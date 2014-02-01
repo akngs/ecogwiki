@@ -219,7 +219,7 @@ describe('Edit mode', function() {
                             "ranges": ["Text"],
                             "id": "field2"
                         },
-                        "cardinality": [2, 2]
+                        "cardinality": [2, 3]
                     },
                     "field3": {
                         "type": {
@@ -230,7 +230,7 @@ describe('Edit mode', function() {
                             "ranges": ["Text"],
                             "id": "field3"
                         },
-                        "cardinality": [0, 1]
+                        "cardinality": [0, 0]
                     }
                 }
             },
@@ -360,6 +360,54 @@ describe('Edit mode', function() {
 
             expect($(sandbox).find('#prop_field1_0').length).toEqual(0);
             expect($(sandbox).find('#prop_author_0').length).toEqual(1);
+        });
+
+        it('should allow adding new field', function() {
+            mode.setContent('', function() {});
+
+            // Cardinality of field2 is [2, 3], so it should allow adding new field
+            var $addField2 = $(sandbox).find('.prop-field2 .add-field:visible');
+            expect($addField2.length).toEqual(1);
+
+            // Add a feild
+            $addField2.trigger('click');
+            expect($(sandbox).find('#prop_field2_2').length).toEqual(1);
+
+            // Now it should not allow adding more field
+            $addField2 = $(sandbox).find('.prop-field2 .add-field:visible');
+            expect($addField2.length).toEqual(0);
+        });
+
+        it('should prevent adding too much fields', function() {
+            mode.setContent('', function() {});
+
+            // cardinality of field1 is [1, 1], so it should not allow adding new field
+            var $addField1 = $(sandbox).find('.prop-field1 .add-field:visible');
+            expect($addField1.length).toEqual(0);
+        });
+
+        it('should allow deleting new field', function() {
+            mode.setContent('    #!yaml/schema\n    field2: ["A", "B", "C"]\n', function() {});
+
+            // cardinality of field2 is [2, 3], so it should allow deleting a field
+            var $deleteField2 = $(sandbox).find('.prop-field2 .delete-field:visible');
+            expect($deleteField2.length).toEqual(3);
+
+            $($deleteField2[1]).click();
+            $deleteField2 = $(sandbox).find('.prop-field2 .delete-field:visible');
+            expect($deleteField2.length).toEqual(0);
+
+            expect($(sandbox).find('#prop_field2_0').val()).toEqual("A");
+            expect($(sandbox).find('#prop_field2_1').val()).toEqual("C");
+            expect($(sandbox).find('#prop_field2_2').length).toEqual(0);
+        });
+
+        it('should prevent deleting too much fields', function() {
+            mode.setContent('    #!yaml/schema\n    field2: ["A", "B"]\n', function() {});
+
+            // cardinality of field1 is [2, 3], so it should not allow deleting more fields
+            var $deleteField2 = $(sandbox).find('.prop-field2 .delete-field:visible');
+            expect($deleteField2.length).toEqual(0);
         });
     });
 
