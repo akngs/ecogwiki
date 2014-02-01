@@ -454,7 +454,48 @@ describe('Edit mode', function() {
             $(sandbox).find('.add-prop').click();
 
             expect($(sandbox).find('.prop-field3').length).toEqual(1);
-            expect($(sandbox).find('#prop_field3_0').val()).toEqual('');
+        });
+    });
+
+    describe('Structured mode data type', function() {
+        var mode;
+
+        beforeEach(function() {
+            mode = new editor.StructuredEditMode(sandbox, function(callback) {
+                callback(['Article']);
+            }, function(itemtype, callback) {
+                callback({'Article': {'properties': {}}});
+            });
+            mode.setContent('', function() {});
+        });
+
+        it('should prefer URL over Text', function() {
+            expect(mode._generateFieldHtml('f', 0, ['Text', 'URL'], null, 'http://x.com')).toEqual('<input class="field" type="url" id="prop_f_0" name="f" value="http://x.com">');
+        });
+
+        it('should render url field for url type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['URL'], null, 'http://x.com')).toEqual('<input class="field" type="url" id="prop_f_0" name="f" value="http://x.com">');
+        });
+
+        it('should render text field for text type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['Text'], null, 'Hello')).toEqual('<input class="field" type="text" id="prop_f_0" name="f" value="Hello">');
+            expect(mode._generateFieldHtml('f', 0, ['Time'], null, 'Hello')).toEqual('<input class="field" type="text" id="prop_f_0" name="f" value="Hello">');
+            expect(mode._generateFieldHtml('f', 0, ['DateTime'], null, 'Hello')).toEqual('<input class="field" type="text" id="prop_f_0" name="f" value="Hello">');
+        });
+
+        it('should render checkbox for boolean type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, true)).toEqual('<input class="field" type="checkbox" id="prop_f_0" name="f" checked="checked">');
+            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, false)).toEqual('<input class="field" type="checkbox" id="prop_f_0" name="f">');
+        });
+
+        it('should render date field for date type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['Date'], null, '1979-03-27')).toEqual('<input class="field" type="date" id="prop_f_0" name="f" value="1979-03-27">');
+        });
+
+        it('should render number field for number type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['Number'], null, 1.5)).toEqual('<input class="field" type="number" id="prop_f_0" name="f" value="1.5">');
+            expect(mode._generateFieldHtml('f', 0, ['Integer'], null, 1)).toEqual('<input class="field" type="number" id="prop_f_0" name="f" value="1">');
+            expect(mode._generateFieldHtml('f', 0, ['Float'], null, 1.5)).toEqual('<input class="field" type="number" id="prop_f_0" name="f" value="1.5">');
         });
     });
 
@@ -565,69 +606,3 @@ describe('Edit mode', function() {
         });
     });
 });
-
-//    var types = [
-//        'Article',
-//        'Person'
-//    ];
-//    var person = {
-//        "supertypes": ["Thing"],
-//        "properties": {
-//            "birthDate": {
-//                "type": {
-//                    "reversed_label": "%s Born",
-//                    "label": "Birth Date",
-//                    "comment": "Date of birth.",
-//                    "domains": ["Person"],
-//                    "ranges": ["Date"],
-//                    "comment_plain": "Date of birth.",
-//                    "id": "birthDate"
-//                },
-//                "cardinality": [0, 0]
-//            },
-//            "email": {
-//                "type": {
-//                    "reversed_label": "[%s] Email",
-//                    "label": "Email",
-//                    "comment": "Email address.",
-//                    "domains": ["Person", "ContactPoint", "Organization"],
-//                    "ranges": ["Text"],
-//                    "comment_plain": "Email address.",
-//                    "id": "email"
-//                },
-//                "cardinality": [1, 0]
-//            },
-//            "gender": {
-//                "type": {
-//                    "reversed_label": "[%s] Gender",
-//                    "label": "Gender",
-//                    "comment": "Gender of the person.",
-//                    "domains": ["Person"],
-//                    "ranges": ["Text"],
-//                    "comment_plain": "Gender of the person.",
-//                    "id": "gender"
-//                },
-//                "cardinality": [1, 1]
-//            },
-//            "parent": {
-//                "type": {
-//                    "reversed_label": "Children (%s)",
-//                    "label": "Parent",
-//                    "comment": "A parent of this person.",
-//                    "domains": ["Person"],
-//                    "ranges": ["Person"],
-//                    "comment_plain": "A parent of this person.",
-//                    "id": "parent"
-//                },
-//                "cardinality": [0, 0]
-//            }
-//        },
-//        "comment": "",
-//        "subtypes": ["Politician"],
-//        "url": "http://schema.org/Person",
-//        "label": "Person",
-//        "ancestors": ["Thing"],
-//        "comment_plain": "",
-//        "id": "Person",
-//        "plural_label": "People"
-//    };

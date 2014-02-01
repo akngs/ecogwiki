@@ -342,16 +342,60 @@ var editor = (function($) {
         _addField: function(itemtype, pname, value) {
             var $root = $(this._rootEl);
             var $prop = $root.find('.prop-' + pname);
+            var prop = this._getProperty(itemtype, pname);
             var i = $prop.find('li.fields').length;
 
             var sb = [];
             sb.push('<li class="fields">');
-            sb.push('    <input class="field" type="text" id="prop_' + pname + '_' + i + '" name="' + pname + '" value="' + value + '">');
-            sb.push('    <a class="delete-field" href="#">Delete</a>');
+            sb.push(this._generateFieldHtml(pname, i, prop['type']['ranges'], prop['type']['enum'], value));
+            sb.push('<a class="delete-field" href="#">Delete</a>');
             sb.push('</li>');
             $prop.find('ol').append(sb.join('\n'));
 
             return $prop.find('#prop_' + pname + '_' + i);
+        },
+        _generateFieldHtml: function(pname, index, ranges, enums, value) {
+            // Decide type to use
+            var priority = ['ISBN', 'URL', 'Date', 'DateTime', 'Time', 'Boolean', 'Integer', 'Float', 'Number', 'Text'];
+            if($.isArray(ranges)) {
+                for(var i = 0; i < priority.length; i++) {
+                    if(ranges.indexOf(priority[i]) !== -1) return this._generateFieldHtml(pname, index, priority[i], enums, value);
+                }
+                return this._generateFieldHtml(pname, index, 'Text', enums, value);
+            }
+
+            // Render element according to target
+            var sb = [];
+            if(enums) {
+                // Render <select> element for enums
+                sb.push('<select class="field" id="prop_' + pname + '_' + index + '" name="' + pname + '">');
+                for(var i = 0; i < enums.length; i++) {
+                    sb.push('<option value="' + enums[i] + '">' + enums[i] + '</option>');
+                }
+                sb.push('</select>');
+            } else {
+                // Render appropriate element
+                if('ISBN' === ranges) {
+                    sb.push('<input class="field" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if('URL' === ranges) {
+                    sb.push('<input class="field" type="url" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if(['Text', 'DateTime', 'Time'].indexOf(ranges) !== -1) {
+                    sb.push('<input class="field" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if(['Number', 'Integer', 'Float'].indexOf(ranges) !== -1) {
+                    sb.push('<input class="field" type="number" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if('Boolean' === ranges) {
+                    if(value) {
+                        sb.push('<input class="field" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" checked="checked">');
+                    } else {
+                        sb.push('<input class="field" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '">');
+                    }
+                } else if('Date' === ranges) {
+                    sb.push('<input class="field" type="date" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else {
+                    sb.push('<input class="field" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                }
+            }
+            return sb.join('\n');
         },
         _onAddProp: function(e) {
             e.preventDefault();
@@ -590,7 +634,7 @@ var editor = (function($) {
     });
 
     function encodeHtmlEntity(value) {
-        return value.replace(/</g, '&lt;');
+        return value.replace ? value.replace(/</g, '&lt;') : value;
     }
 
     function union(arrayOfArray) {
