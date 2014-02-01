@@ -52,6 +52,11 @@ class SimpleExtensionsTest(RenderingTestCase):
         self.assertRenderedText(u'http://x.com/_a_', u'<p><a class="plainurl" href="http://x.com/_a_">http://x.com/_a_</a></p>')
         self.assertRenderedText(u'![Image](http://x.com/_a_)', u'<p class="img-container"><img alt="Image" src="http://x.com/_a_"></p>')
 
+    def test_leading_newlines_followed_by_schema_block(self):
+        self.assertRenderedText(
+            u'''\r\n\t#!yaml/schema\n    url: "http://abc.com"\n\nHello\n''',
+            u'<p>Hello</p>')
+
 
 class EmbedTest(RenderingTestCase):
     maxDiff = None
