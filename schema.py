@@ -7,6 +7,9 @@ import caching
 import operator
 from markdownext import md_wikilink
 
+from datetime import date
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
 
 SCHEMA_TO_LOAD = [
     'schema.json',
@@ -401,7 +404,7 @@ class TextProperty(TypeProperty):
         self.value = pvalue
 
     def is_wikilink(self):
-        return self.pname == 'name'
+        return True
 
     def render(self):
         if self.is_wikilink():
@@ -464,12 +467,17 @@ class URLProperty(TypeProperty):
             raise ValueError('Invalid URL: %s' % pvalue)
         self.value = pvalue
 
+    def render(self):
+        return u'<a href="%s" class="url" itemprop="url">%s</a>' % (self.value, self.value)
+
 
 class DateProperty(TypeProperty):
     P_DATE = ur'(?P<y>\d+)(-(?P<m>(\d\d|\?\?))-(?P<d>(\d\d|\?\?)))?( (?P<bce>BCE))?'
 
     def __init__(self, itemtype, ptype, pname, pvalue):
         super(DateProperty, self).__init__(itemtype, ptype, pname, pvalue)
+        if isinstance(pvalue, date):
+            pvalue = pvalue.strftime("%Y-%m-%d")
         m = re.match(DateProperty.P_DATE, pvalue)
         if m is None:
             raise ValueError('Invalid value: %s' % pvalue)
