@@ -198,9 +198,9 @@ var editor = (function($) {
             var prop = this._getProperty(itemtype, pname);
 
             // Make values array
-            if(values && !$.isArray(values)) {
+            if(values !== undefined && !$.isArray(values)) {
                 values = [values];
-            } else if(!values) {
+            } else if(values === undefined) {
                 values = [];
             }
 
@@ -293,13 +293,13 @@ var editor = (function($) {
             for(var i = 0; i < $props.length; i++) {
                 var $prop = $($props[i]);
                 var pname = $prop.data('pname');
-                if(['itemtype', 'wikibody'].indexOf(pname) !== -1) continue;
+                if(['itemtype', 'wikibody', 'property'].indexOf(pname) !== -1) continue;
 
                 var $fields = $prop.find('li .field');
                 var values = [];
                 for(var j = 0; j < $fields.length; j++) {
                     var $field = $($fields[j]);
-                    var value = $field.val();
+                    var value = this._parseDataValue($field);
                     if(value !== '') values.push(value);
                 }
                 if(values.length) {
@@ -310,6 +310,19 @@ var editor = (function($) {
             result['body'] = this._wikibodyEditlet.getContent();
 
             return result;
+        },
+        _parseDataValue: function($field) {
+            var type = $field.data('type');
+
+            if(['Number', 'Float'].indexOf(type) !== -1) {
+                return +$field.val();
+            } else if('Integer' === type) {
+                return parseInt(+$field.val());
+            } else if('Boolean' === type) {
+                return $field.attr('checked') === 'checked';
+            } else {
+                return $field.val();
+            }
         },
         _getProperty: function(itemtype, pname) {
             var schema = this._schema[itemtype] || {'properties': {}};
@@ -368,7 +381,7 @@ var editor = (function($) {
             var sb = [];
             if(enums) {
                 // Render <select> element for enums
-                sb.push('<select class="field" id="prop_' + pname + '_' + index + '" name="' + pname + '">');
+                sb.push('<select class="field" data-type="' + ranges + '" id="prop_' + pname + '_' + index + '" name="' + pname + '">');
                 for(var i = 0; i < enums.length; i++) {
                     sb.push('<option value="' + enums[i] + '">' + enums[i] + '</option>');
                 }
@@ -376,23 +389,23 @@ var editor = (function($) {
             } else {
                 // Render appropriate element
                 if('ISBN' === ranges) {
-                    sb.push('<input class="field" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                    sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if('URL' === ranges) {
-                    sb.push('<input class="field" type="url" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                    sb.push('<input class="field" data-type="' + ranges + '" type="url" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if(['Text', 'DateTime', 'Time'].indexOf(ranges) !== -1) {
-                    sb.push('<input class="field" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                    sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if(['Number', 'Integer', 'Float'].indexOf(ranges) !== -1) {
-                    sb.push('<input class="field" type="number" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                    sb.push('<input class="field" data-type="' + ranges + '" type="number" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if('Boolean' === ranges) {
                     if(value) {
-                        sb.push('<input class="field" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" checked="checked">');
+                        sb.push('<input class="field" data-type="' + ranges + '" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="on" checked="checked">');
                     } else {
-                        sb.push('<input class="field" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '">');
+                        sb.push('<input class="field" data-type="' + ranges + '" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="on">');
                     }
                 } else if('Date' === ranges) {
-                    sb.push('<input class="field" type="date" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                    sb.push('<input class="field" data-type="' + ranges + '" type="date" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else {
-                    sb.push('<input class="field" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                    sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 }
             }
             return sb.join('\n');

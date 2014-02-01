@@ -459,43 +459,102 @@ describe('Edit mode', function() {
 
     describe('Structured mode data type', function() {
         var mode;
+        var schema = {'Article': {"properties": {
+            "url": {"cardinality": [0, 0], "type": { "label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "url", "ranges": ["URL"]
+            }},
+            "text": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "text", "ranges": ["Text"]
+            }},
+            "time": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "time", "ranges": ["Time"]
+            }},
+            "datetime": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "datetime", "ranges": ["DateTime"]
+            }},
+            "boolean": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "boolean", "ranges": ["Boolean"]
+            }},
+            "date": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "date", "ranges": ["Date"]
+            }},
+            "number": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "number", "ranges": ["Number"]
+            }},
+            "integer": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "integer", "ranges": ["Integer"]
+            }},
+            "float": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "float", "ranges": ["Float"]
+            }}
+        }}};
 
         beforeEach(function() {
             mode = new editor.StructuredEditMode(sandbox, function(callback) {
                 callback(['Article']);
             }, function(itemtype, callback) {
-                callback({'Article': {'properties': {}}});
+                callback(schema[itemtype]);
             });
             mode.setContent('', function() {});
         });
 
-        it('should prefer URL over Text', function() {
-            expect(mode._generateFieldHtml('f', 0, ['Text', 'URL'], null, 'http://x.com')).toEqual('<input class="field" type="url" id="prop_f_0" name="f" value="http://x.com">');
+        it('should render url field for url type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['URL'], null, 'http://x.com')).toEqual('<input class="field" data-type="URL" type="url" id="prop_f_0" name="f" value="http://x.com">');
         });
 
-        it('should render url field for url type', function() {
-            expect(mode._generateFieldHtml('f', 0, ['URL'], null, 'http://x.com')).toEqual('<input class="field" type="url" id="prop_f_0" name="f" value="http://x.com">');
+        it('should parse url as string', function() {
+            mode.setContent('    #!yaml/schema\n    url: "http://x.com"\n', function() {});
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    url: "http://x.com"\n');
         });
 
         it('should render text field for text type', function() {
-            expect(mode._generateFieldHtml('f', 0, ['Text'], null, 'Hello')).toEqual('<input class="field" type="text" id="prop_f_0" name="f" value="Hello">');
-            expect(mode._generateFieldHtml('f', 0, ['Time'], null, 'Hello')).toEqual('<input class="field" type="text" id="prop_f_0" name="f" value="Hello">');
-            expect(mode._generateFieldHtml('f', 0, ['DateTime'], null, 'Hello')).toEqual('<input class="field" type="text" id="prop_f_0" name="f" value="Hello">');
+            expect(mode._generateFieldHtml('f', 0, ['Text'], null, 'Hello')).toEqual('<input class="field" data-type="Text" type="text" id="prop_f_0" name="f" value="Hello">');
+            expect(mode._generateFieldHtml('f', 0, ['Time'], null, 'Hello')).toEqual('<input class="field" data-type="Time" type="text" id="prop_f_0" name="f" value="Hello">');
+            expect(mode._generateFieldHtml('f', 0, ['DateTime'], null, 'Hello')).toEqual('<input class="field" data-type="DateTime" type="text" id="prop_f_0" name="f" value="Hello">');
+        });
+
+        it('should parse text as string', function() {
+            mode.setContent('    #!yaml/schema\n    text: "Hello"\n', function() {});
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    text: Hello\n');
         });
 
         it('should render checkbox for boolean type', function() {
-            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, true)).toEqual('<input class="field" type="checkbox" id="prop_f_0" name="f" checked="checked">');
-            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, false)).toEqual('<input class="field" type="checkbox" id="prop_f_0" name="f">');
+            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, true)).toEqual('<input class="field" data-type="Boolean" type="checkbox" id="prop_f_0" name="f" value="on" checked="checked">');
+            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, false)).toEqual('<input class="field" data-type="Boolean" type="checkbox" id="prop_f_0" name="f" value="on">');
+        });
+
+        it('should parse checkbox as boolean', function() {
+            mode.setContent('    #!yaml/schema\n    boolean: true\n', function() {});
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    boolean: true\n');
+
+            mode.setContent('    #!yaml/schema\n    boolean: false\n', function() {});
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    boolean: false\n');
         });
 
         it('should render date field for date type', function() {
-            expect(mode._generateFieldHtml('f', 0, ['Date'], null, '1979-03-27')).toEqual('<input class="field" type="date" id="prop_f_0" name="f" value="1979-03-27">');
+            expect(mode._generateFieldHtml('f', 0, ['Date'], null, '1979-03-27')).toEqual('<input class="field" data-type="Date" type="date" id="prop_f_0" name="f" value="1979-03-27">');
         });
 
         it('should render number field for number type', function() {
-            expect(mode._generateFieldHtml('f', 0, ['Number'], null, 1.5)).toEqual('<input class="field" type="number" id="prop_f_0" name="f" value="1.5">');
-            expect(mode._generateFieldHtml('f', 0, ['Integer'], null, 1)).toEqual('<input class="field" type="number" id="prop_f_0" name="f" value="1">');
-            expect(mode._generateFieldHtml('f', 0, ['Float'], null, 1.5)).toEqual('<input class="field" type="number" id="prop_f_0" name="f" value="1.5">');
+            expect(mode._generateFieldHtml('f', 0, ['Number'], null, 1.5)).toEqual('<input class="field" data-type="Number" type="number" id="prop_f_0" name="f" value="1.5">');
+            expect(mode._generateFieldHtml('f', 0, ['Integer'], null, 1)).toEqual('<input class="field" data-type="Integer" type="number" id="prop_f_0" name="f" value="1">');
+            expect(mode._generateFieldHtml('f', 0, ['Float'], null, 1.5)).toEqual('<input class="field" data-type="Float" type="number" id="prop_f_0" name="f" value="1.5">');
+        });
+
+        it('should parse number as number', function() {
+            mode.setContent('    #!yaml/schema\n    number: 1.5\n', function() {});
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    number: 1.5\n');
+
+            mode.setContent('    #!yaml/schema\n    float: 1.5\n', function() {});
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    float: 1.5\n');
+
+            mode.setContent('    #!yaml/schema\n    integer: 1.5\n', function() {});
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    integer: 1\n');
+        });
+
+        it('should prefer URL over Text', function() {
+            expect(mode._generateFieldHtml('f', 0, ['Text', 'URL'], null, 'http://x.com')).toEqual('<input class="field" data-type="URL" type="url" id="prop_f_0" name="f" value="http://x.com">');
+
         });
     });
 
