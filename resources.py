@@ -191,7 +191,6 @@ class PageResource(PageLikeResource):
             set_response_body(self.res, html, False)
 
     def put(self):
-        print 'put'
         page = self.load()
 
         revision = int(self.req.POST['revision'])
