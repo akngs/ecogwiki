@@ -305,7 +305,7 @@ describe('Edit mode', function() {
             expect($(sandbox).find('#prop_field2_0').val()).toEqual('');
             expect($(sandbox).find('#prop_field2_1').val()).toEqual('');
             expect($(sandbox).find('#prop_field3_0').val()).toEqual('World');
-        })
+        });
 
         it('should ignore empty field', function() {
             mode.setContent('    #!yaml/schema\n    field1: Hey\n    field2: ["Hello", "World"]\n    field3: ["Goodbye", "World"]\n', function() {});
@@ -408,6 +408,53 @@ describe('Edit mode', function() {
             // cardinality of field1 is [2, 3], so it should not allow deleting more fields
             var $deleteField2 = $(sandbox).find('.prop-field2 .delete-field:visible');
             expect($deleteField2.length).toEqual(0);
+        });
+
+        it('should remove a property if there is no fields in it', function() {
+            mode.setContent('    #!yaml/schema\n    field3: "A"\n', function() {});
+            $(sandbox).find('.prop-field3 .delete-field:visible').click();
+
+            expect($(sandbox).find('.prop-field3').length).toEqual(0);
+        });
+
+        it('should render property selector', function() {
+            mode.setContent('.schema Article', function() {});
+            var $propertySelector = $(sandbox).find('.prop-property');
+
+            // Property selector
+            expect($propertySelector.length).toEqual(1);
+
+            // Add button
+            expect($propertySelector.find('.add-prop').length).toEqual(1);
+
+            // Should list all fields
+            var $options = $propertySelector.find('option');
+            expect($options.length).toEqual(3);
+            expect($($options[0]).attr('value')).toEqual('field1');
+            expect($($options[1]).attr('value')).toEqual('field2');
+            expect($($options[2]).attr('value')).toEqual('field3');
+        });
+
+        it('should allow to add new property', function() {
+            mode.setContent('.schema Article', function() {});
+            $(sandbox).find('#prop_property').val('field3');
+            $(sandbox).find('.add-prop').click();
+
+            expect($(sandbox).find('.prop-field3').length).toEqual(1);
+            expect($(sandbox).find('#prop_field3_0').val()).toEqual('');
+        });
+
+        it('should not add property if there already is', function() {
+            mode.setContent('.schema Article', function() {});
+            $(sandbox).find('#prop_property').val('field3');
+
+            // Add once...
+            $(sandbox).find('.add-prop').click();
+            // ...and twice
+            $(sandbox).find('.add-prop').click();
+
+            expect($(sandbox).find('.prop-field3').length).toEqual(1);
+            expect($(sandbox).find('#prop_field3_0').val()).toEqual('');
         });
     });
 

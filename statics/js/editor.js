@@ -125,6 +125,7 @@ var editor = (function($) {
             this._typesLoader = typesLoader;
             this._schemaLoader = schemaLoader;
 
+            $(this._rootEl).on('click', '.add-prop', this._onAddProp.bind(this));
             $(this._rootEl).on('click', '.add-field', this._onAddField.bind(this));
             $(this._rootEl).on('click', '.delete-field', this._onDeleteField.bind(this));
         },
@@ -156,17 +157,23 @@ var editor = (function($) {
             var $root = $(this._rootEl);
             $root.html('');
 
+            // 1. Itemtype selector
             this._populateItemtypeSelector(parsed['itemtype']);
 
+            // 2. Properties
             var props = schema['properties'];
             var data = parsed['data'];
             var pnames = union([props, data]);
 
             for(var i = 0; i < pnames.length; i++) {
                 var pname = pnames[i];
-                this._populateField(itemtype, pname, data[pname]);
+                this._populateProp(itemtype, pname, data[pname]);
             }
 
+            // 3. Property selector
+            this._populatePropertySelector(parsed['itemtype']);
+
+            // 4. Wikibody
             this._populateBodyField(parsed['body']);
         },
         appendContent: function(content, callback) {
@@ -175,8 +182,19 @@ var editor = (function($) {
             var parsed = this._gatherData();
             return this._parser.generateBody(parsed);
         },
-        _populateField: function(itemtype, pname, values) {
+        _populateProp: function(itemtype, pname, values, forceAdd) {
             var $root = $(this._rootEl);
+
+            // Create property container if there is not
+            var $propList = $root.find('.props');
+            if($propList.length === 0) {
+                $propList = $('<ol class="props"></ol>');
+                $root.append($propList);
+            }
+
+            // Do not create property if there already is
+            if($propList.find('.prop-' + pname).length !== 0) return;
+
             var prop = this._getProperty(itemtype, pname);
 
             // Make values array
@@ -191,6 +209,8 @@ var editor = (function($) {
 
             // Decide number of fields to populate
             var numOfFields = Math.max(prop['cardinality'][0], values.length);
+            if(forceAdd && numOfFields === 0) numOfFields = 1;
+
             if(numOfFields === 0) return;
 
             // Generate fields
@@ -198,18 +218,14 @@ var editor = (function($) {
             var sb = [];
             sb.push('<div class="prop prop-' + prop['type']['id'] + '" data-pname="' + prop['type']['id'] + '">');
             sb.push('   <label for="' + idPrefix + '_0">' + prop['type']['label'] + '</label>');
-            sb.push('   <ol>');
-
-            for(var i = 0; i < numOfFields; i++) {
-                sb.push('        <li class="fields">');
-                sb.push('            <input class="field" type="text" id="' + idPrefix + '_' + i + '" name="' + prop['type']['id'] + '" value="' + encodeHtmlEntity(values[i] || '') + '">');
-                sb.push('            <a class="delete-field" href="#">Delete</a>');
-                sb.push('        </li>');
-            }
-            sb.push('   </ol>');
+            sb.push('   <ol></ol>');
             sb.push('   <a class="add-field" href="#">Add field</a>');
             sb.push('</div>');
-            $root.append(sb.join('\n'));
+            $propList.append(sb.join('\n'));
+
+            for(var i = 0; i < numOfFields; i++) {
+                this._addField(itemtype, pname, encodeHtmlEntity(values[i] || ''));
+            }
 
             this._updateButtonsVisibility(itemtype, pname);
         },
@@ -235,6 +251,22 @@ var editor = (function($) {
             $root.find('#prop_itemtype').on('change', function() {
                 self.setContent(self.getContent());
             });
+        },
+        _populatePropertySelector: function(itemtype) {
+            var props = this._schema[itemtype]['properties'];
+            var $root = $(this._rootEl);
+            var sb = [];
+            sb.push('<div class="prop prop-property" data-pname="property">');
+            sb.push('    <label for="prop_property">Available properties</label>');
+            sb.push('    <select class="field" id="prop_property" name="prop_property">');
+
+            for(var pname in props) {
+                sb.push('        <option value="' + pname + '">' + props[pname]['type']['label'] + '</option>');
+            }
+            sb.push('    </select>');
+            sb.push('    <a class="add-prop" href="#">Add</a>');
+            sb.push('</div>');
+            $root.append(sb.join('\n'));
         },
         _populateBodyField: function(body) {
             var sb = [];
@@ -307,6 +339,31 @@ var editor = (function($) {
                 prop['cardinality'][0] < numOfFields;
             $root.find('.prop-' + pname + ' .delete-field')[deleteButtonVisible ? 'show' : 'hide']();
         },
+        _addField: function(itemtype, pname, value) {
+            var $root = $(this._rootEl);
+            var $prop = $root.find('.prop-' + pname);
+            var i = $prop.find('li.fields').length;
+
+            var sb = [];
+            sb.push('<li class="fields">');
+            sb.push('    <input class="field" type="text" id="prop_' + pname + '_' + i + '" name="' + pname + '" value="' + value + '">');
+            sb.push('    <a class="delete-field" href="#">Delete</a>');
+            sb.push('</li>');
+            $prop.find('ol').append(sb.join('\n'));
+
+            return $prop.find('#prop_' + pname + '_' + i);
+        },
+        _onAddProp: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $root = $(this._rootEl);
+            var itemtype = $root.find('#prop_itemtype').val();
+            var pname = $root.find('#prop_property').val();
+            this._populateProp(itemtype, pname, [], true);
+
+            $root.find('#prop_' + pname + '_0').focus();
+        },
         _onAddField: function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -315,17 +372,11 @@ var editor = (function($) {
             var $root = $(this._rootEl);
             var itemtype = $root.find('#prop_itemtype').val();
             var pname = $prop.data('pname');
-            var i = $prop.find('li').length;
 
-            // Add element
-            var sb = [];
-            sb.push('<li class="fields">');
-            sb.push('    <input class="field" type="text" id="prop_' + pname + '_' + i + '" name="' + pname + '" value="">');
-            sb.push('    <a class="delete-field" href="#">Delete</a>');
-            sb.push('</li>');
-            $prop.find('ol').append(sb.join('\n'));
-
+            var $addedField = this._addField(itemtype, pname, '');
             this._updateButtonsVisibility(itemtype, pname);
+
+            $addedField.focus();
         },
         _onDeleteField: function(e) {
             e.preventDefault();
@@ -345,6 +396,9 @@ var editor = (function($) {
             });
 
             this._updateButtonsVisibility(itemtype, pname);
+
+            // Remove property if there's no fields
+            if($prop.find('li.fields').length === 0) $prop.remove();
         }
     });
 
@@ -428,7 +482,7 @@ var editor = (function($) {
             return lines.join('\n');
         },
         extractYaml: function(body) {
-            var p_yaml = /(?:\s{4}|\t)#!yaml\/schema[\n\r]+(((?:\s{4}|\t).+[\n\r]+?)+)/;
+            var p_yaml = /(?:[ ]{4}|\t)#!yaml\/schema[\n\r]+(((?:[ ]{4}|\t).+[\n\r]+?)+)/;
             var m = body.match(p_yaml);
             if(m) {
                 return {
