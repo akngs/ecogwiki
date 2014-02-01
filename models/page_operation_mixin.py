@@ -19,7 +19,19 @@ class PageOperationMixin(object):
     re_img = re.compile(ur'<(.+?)>[\n\t\s]*<img( .+? )/>[\n\t\s]*</(.+?)>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
-    re_yaml_schema = re.compile(ur'(?:\s{4}|\t)#!yaml/schema[\n\r]+(((?:\s{4}|\t).+?[\n\r]+?)+)')
+    re_yaml_schema = re.compile(r'''
+                                    # HEADER
+            (?:\s{4}|\t)            #   leading tab or 4 space followed by (non-capture)
+            \#!yaml/schema          #   `#!yaml/schema`
+            [\n\r]+                 #   new line(s)
+            (                       # CONTENT (group 1)
+                (                   #   multiple lines of  (group 2)
+                    (?:\s{4}|\t)    #   leading tab or 4 space followed by (non-capture)
+                    .+?             #   any string
+                    [\n\r]+?        #   new line(s)
+                )+
+            )
+    ''', re.VERBOSE)
     re_conflicted = re.compile(ur'<<<<<<<.+=======.+>>>>>>>', re.DOTALL)
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
