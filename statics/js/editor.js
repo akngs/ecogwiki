@@ -2,7 +2,7 @@ var editor = (function($) {
     "use strict";
 
     var Editor = Class.extend({
-        init: function(textarea) {
+        init: function(textarea, callback, typesLoader, schemaLoader) {
             var _this = this;
 
             this._textarea = textarea;
@@ -20,7 +20,7 @@ var editor = (function($) {
             // Create tabs
             this._$root.append(
                 '<ul class="mode-tab">' +
-                '<li class="plain active" data-name="plain"><a href="#">Plain</a></li>' +
+                '<li class="plain" data-name="plain"><a href="#">Plain</a></li>' +
                 '<li class="structured" data-name="structured"><a href="#">Structured</a></li>' +
                 '</ul>'
             );
@@ -39,22 +39,28 @@ var editor = (function($) {
                 '</ul>'
             );
 
-            this._plainEditMode = new PlainEditMode(this._$root.find('.mode-pane .plain')[0], $(this._textarea).val());
-            this._structEditMode = new StructuredEditMode(this._$root.find('.mode-pane .structured')[0], $(this._textarea).val());
+            this._plainEditMode = new PlainEditMode(this._$root.find('.mode-pane .plain')[0]);
+            this._structEditMode = new StructuredEditMode(this._$root.find('.mode-pane .structured')[0], typesLoader, schemaLoader);
+            this.setActiveModeName('plain', callback);
         },
-        setActiveModeName: function(newMode) {
+        setActiveModeName: function(newMode, callback) {
             // If not changed, do nothing
             var $oldTab = this._$root.find('.mode-tab > li.active');
             if($oldTab.data('name') === newMode) return;
 
             // Deactive old mode
-            var oldMode = this._$root.find('.mode-tab > li.active').data('name');
-            $oldTab.removeClass('active');
-            this._$root.find('.mode-pane > li.' + oldMode).hide();
+            if($oldTab.length) {
+                this.updateTextarea();
+
+                var oldMode = this._$root.find('.mode-tab > li.active').data('name');
+                $oldTab.removeClass('active');
+                this._$root.find('.mode-pane > li.' + oldMode).hide();
+            }
 
             // Activate new mode
             this._$root.find('.mode-tab > li.' + newMode).addClass('active');
             this._$root.find('.mode-pane > li.' + newMode).show();
+            this.setContent($(this._textarea).val(), callback);
         },
         getActiveModeName: function() {
             return this._$root.find('.mode-tab > li.active').data('name');
@@ -62,8 +68,8 @@ var editor = (function($) {
         getActiveMode: function() {
             return this.getActiveModeName() === 'plain' ? this._plainEditMode : this._structEditMode;
         },
-        setContent: function(content) {
-            this.getActiveMode().setContent(content);
+        setContent: function(content, callback) {
+            this.getActiveMode().setContent(content, callback);
         },
         updateTextarea: function() {
             $(this._textarea).val(this.getContent());
@@ -71,27 +77,26 @@ var editor = (function($) {
         getContent: function() {
             return this.getActiveMode().getContent();
         },
-        appendContent: function(content) {
-            this.getActiveMode().appendContent(content);
+        appendContent: function(content, callback) {
+            this.getActiveMode().appendContent(content, callback);
         }
     });
 
 
     var EditMode = Class.extend({
         getContent: function() {},
-        setContent: function(content) {},
-        appendContent: function(content) {}
+        setContent: function(content, callback) {},
+        appendContent: function(content, callback) {}
     });
 
 
     var PlainEditMode = EditMode.extend({
-        init: function(rootEl, content) {
+        init: function(rootEl) {
             this._rootEl = rootEl;
 
             var $textarea = $('<textarea></textarea>')
                 .appendTo(this._rootEl);
             this._editlet = TextEditlet.createInstance($textarea[0]);
-            this._editlet.setContent(content);
         },
         getEditlet: function() {
             return this._editlet;
@@ -99,16 +104,63 @@ var editor = (function($) {
         getContent: function() {
             return this._editlet.getContent();
         },
-        setContent: function(content) {
+        setContent: function(content, callback) {
             this._editlet.setContent(content);
+            if(callback) callback();
         },
-        appendContent: function(content) {
+        appendContent: function(content, callback) {
             this._editlet.appendContent(content);
+            if(callback) callback();
         }
     });
 
 
     var StructuredEditMode = EditMode.extend({
+        init: function(rootEl, typesLoader, schemaLoader) {
+            this._rootEl = rootEl;
+            this._parser = new ContentParser();
+            this._types = [];
+            this._schema = {};
+            this._typesLoader = typesLoader;
+            this._schemaLoader = schemaLoader;
+        },
+        setContent: function(content, callback) {
+            var self = this;
+
+            // load types
+            if(this._types.length === 0) {
+                this._typesLoader(function(types) {
+                    self._types = types;
+                    self.setContent(content, callback);
+                });
+                return;
+            }
+
+            // load schema
+            var parsed = this._parser.parseBody(content);
+            var itemtype = parsed['itemtype'];
+            var schema = this._schema[itemtype];
+
+            if(!schema) {
+                this._schemaLoader(itemtype, function(schema) {
+                    self._schema[itemtype] = schema;
+                    self.setContent(content, callback);
+                });
+                return;
+            }
+
+            // render fields
+            var $root = $(this._rootEl);
+            var props = schema['properties'];
+            for(var pname in props) {
+                var prop = props[pname];
+                $root.append('<div class="prop-' + prop['type']['id'] + '"><label>' + prop['type']['label'] + '</label><input type="text"></div>');
+            }
+        },
+        appendContent: function(content, callback) {
+        },
+        getContent: function() {
+        }
     });
 
 

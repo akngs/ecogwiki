@@ -98,7 +98,18 @@
     <script type="text/javascript" src="/statics/js/js-yaml.min.js?ver={{ app.version }}"></script>
     <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
     <script type="text/javascript">
-        var ed = new editor.Editor(document.querySelector('.editform textarea'));
+        var ed = new editor.Editor(
+            document.querySelector('.editform textarea'),
+            function() {
+
+            },
+            function(callback) {
+                $.get('/sp.schema/types?_type=json', function(data) {callback(data['values']);});
+            },
+            function(itemtype, callback) {
+                $.get('/sp.schema/sctypes/' + itemtype + '?_type=json', function(data) {callback(data);});
+            }
+        );
 
         /* Delete */
         $('.btn-delete').on('click', function(e) {

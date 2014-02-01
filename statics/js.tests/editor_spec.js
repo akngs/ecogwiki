@@ -98,19 +98,31 @@ describe('TextEditlet', function() {
 
 
 describe('Editor', function() {
+    var logs;
     var sandbox;
     var textarea;
     var ed;
     var $root;
 
     beforeEach(function() {
+        logs = [];
         sandbox = document.createElement('div');
         document.body.appendChild(sandbox);
 
         sandbox.innerHTML = '<form><textarea></textarea></form>';
         textarea = sandbox.querySelector('textarea');
-        ed = new editor.Editor(textarea);
+        ed = new editor.Editor(textarea, function() {
+            logs.push('Editor.init() callback');
+        }, function(callback) {
+            callback(['Article']);
+        }, function(itemtype, callback) {
+            callback({'properties': {}});
+        });
         $root = $(textarea).next();
+    });
+
+    it('should execute callback on init', function() {
+        expect(logs).toEqual(['Editor.init() callback']);
     });
 
     it('should modify DOM', function() {
@@ -159,13 +171,15 @@ describe('Edit mode', function() {
 
     describe('Plain mode', function() {
         it('should create TextEditlet with given initial content', function() {
-            var mode = new editor.PlainEditMode(sandbox, 'Hello');
+            var mode = new editor.PlainEditMode(sandbox);
+            mode.setContent('Hello');
             var editlet = mode.getEditlet();
             expect(mode.getContent()).toEqual('Hello');
             expect(editlet.getContent()).toEqual('Hello');
         });
+
         it('should connected to TextEditlet', function() {
-            var mode = new editor.PlainEditMode(sandbox, 'Hello');
+            var mode = new editor.PlainEditMode(sandbox);
             var editlet = mode.getEditlet();
 
             mode.setContent('Hello');
@@ -179,7 +193,45 @@ describe('Edit mode', function() {
     });
 
     describe('Structured mode', function() {
+        var article = {
+            "id": "Article",
+            "label": "Article",
+            "properties": {
+                "field1": {
+                    "type": {
+                        "label": "First field",
+                        "comment": "First field of the article.",
+                        "comment_plain": "First field of the article.",
+                        "domains": ["Article"],
+                        "ranges": ["Text"],
+                        "id": "field1"
+                    },
+                    "cardinality": [1, 1]
+                },
+                "field2": {
+                    "type": {
+                        "label": "Second field",
+                        "comment": "Second field of the article.",
+                        "comment_plain": "Second field of the article.",
+                        "domains": ["Article"],
+                        "ranges": ["Text"],
+                        "id": "field2"
+                    },
+                    "cardinality": [1, 1]
+                }
+            }
+        };
 
+        it('should render mandatory fields', function() {
+            var mode = new editor.StructuredEditMode(sandbox, function(callback) {
+                callback(['Article']);
+            }, function(itemtype, callback) {
+                callback(itemtype === 'Article' ? article : null);
+            });
+
+            mode.setContent('', function() {});
+            console.log(sandbox.innerHTML);
+        });
     });
 
     describe('ContentParser', function() {
@@ -192,6 +244,14 @@ describe('Edit mode', function() {
         it('should parse empty body', function() {
             expect(parser.parseBody('')).toEqual({
                 'itemtype': 'Article',
+                'data': {},
+                'body': ''
+            });
+        });
+
+        it('should parse .schema', function() {
+            expect(parser.parseBody('.schema Hello')).toEqual({
+                'itemtype': 'Hello',
                 'data': {},
                 'body': ''
             });
