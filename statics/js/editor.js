@@ -578,25 +578,33 @@ var editor = (function($) {
     var SimpleTextEditlet = TextEditlet.extend({
         init: function(textarea) {
             this._super(textarea);
+            this._$textarea = $(this._textarea);
+            this._needToResize = true;
 
-            this.resizeToAutofit();
+            var triggerResize = this.triggerResize.bind(this);
+            $(window).resize(triggerResize);
+            $(window).on('orientationchange', triggerResize);
+            this._$textarea.on('input', triggerResize);
 
-            var resizeToAutofit = this.resizeToAutofit.bind(this);
-            $(window).resize(resizeToAutofit);
-            $(window).on('orientationchange', resizeToAutofit);
-            $(this._textarea).on('input propertychange', resizeToAutofit);
+            this.resizeToFit();
         },
         setContent: function(content) {
-            $(this._textarea).val(content);
+            this._$textarea.val(content);
         },
         getContent: function() {
-            return $(this._textarea).val();
+            return this._$textarea.val();
         },
-        resizeToAutofit: function() {
-            // It doesn't work when there's large amount of reduction in text
-            var $textarea = $(this._textarea);
-            $textarea.height($textarea.height() - 50);
-            $textarea.height($textarea.prop('scrollHeight'));
+        triggerResize: function() {
+            this._needToResize = true;
+        },
+        resizeToFit: function() {
+            var resizeToFit = this.resizeToFit.bind(this);
+            window.setTimeout(resizeToFit, 1000);
+            if(!this._needToResize) return;
+
+            this._$textarea.height(10);
+            this._$textarea.height(this._$textarea.prop('scrollHeight') + 100);
+            this._needToResize = false;
         }
     });
 
