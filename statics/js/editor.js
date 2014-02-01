@@ -319,7 +319,7 @@ var editor = (function($) {
             } else if('Integer' === type) {
                 return parseInt(+$field.val());
             } else if('Boolean' === type) {
-                return $field.attr('checked') === 'checked';
+                return $field.prop('checked');
             } else {
                 return $field.val();
             }
@@ -382,9 +382,9 @@ var editor = (function($) {
             if(enums) {
                 // Render <select> element for enums
                 sb.push('<select class="field" data-type="' + ranges + '" id="prop_' + pname + '_' + index + '" name="' + pname + '">');
-                for(var i = 0; i < enums.length; i++) {
-                    sb.push('<option value="' + enums[i] + '">' + enums[i] + '</option>');
-                }
+                enums.forEach(function(v) {
+                    sb.push('<option value="' + v + '">' + v + '</option>');
+                })
                 sb.push('</select>');
             } else {
                 // Render appropriate element

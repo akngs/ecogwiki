@@ -527,8 +527,11 @@ describe('Edit mode', function() {
             mode.setContent('    #!yaml/schema\n    boolean: true\n', function() {});
             expect(mode.getContent()).toEqual('    #!yaml/schema\n    boolean: true\n');
 
-            mode.setContent('    #!yaml/schema\n    boolean: false\n', function() {});
-            expect(mode.getContent()).toEqual('    #!yaml/schema\n    boolean: false\n');
+            var falses = ['FALSE', 'False', 'false'];
+            for(var i = 0; i < falses.length; i++) {
+                mode.setContent('    #!yaml/schema\n    boolean: ' + falses[i] + '\n', function() {});
+                expect(mode.getContent()).toEqual('    #!yaml/schema\n    boolean: false\n');
+            }
         });
 
         it('should render date field for date type', function() {
