@@ -19,7 +19,7 @@ class PageOperationMixin(object):
     re_img = re.compile(ur'<(.+?)>[\n\t\s]*<img( .+? )/>[\n\t\s]*</(.+?)>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
-    re_yaml_schema = re.compile(ur'(?:\s{4}|\t)#!yaml/schema[\n\r]+(((?:\s{4}|\t).+[\n\r]+?)+)')
+    re_yaml_schema = re.compile(ur'(?:\s{4}|\t)#!yaml/schema[\n\r]+(((?:\s{4}|\t).+?[\n\r]+?)+)')
     re_conflicted = re.compile(ur'<<<<<<<.+=======.+>>>>>>>', re.DOTALL)
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
@@ -311,7 +311,7 @@ class PageOperationMixin(object):
         try:
             parsed = yaml.load(m.group(1))
         except ParserError as e:
-            raise ValueError(e.message)
+            raise ValueError(e.message or u'invalid YAML format:<pre>%s</pre>' % m.group(0))
 
         # check if it's dict
         if type(parsed) != dict:

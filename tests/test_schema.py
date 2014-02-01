@@ -59,6 +59,11 @@ class SchemaTest(AppEngineTestCase):
         self.assertEqual([0, 0], url['cardinality'])
         self.assertEqual(['URL'], url['type']['ranges'])
 
+    def xtest_re_match(self):
+        body = u'''\t#!yaml/schema\r\n    url: "http://anotherfam.kr/"\r\n\r\n\r\n[[\uc81c\uc791\ub450\ub808]]\ub97c ...\r\n'''
+        data = PageOperationMixin.parse_schema_yaml(body)
+        self.assertEqual(data['url'], 'http://anotherfam.kr/')
+
 
 class CustomTypeAndPropertyTest(AppEngineTestCase):
     def setUp(self):
