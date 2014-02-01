@@ -52,6 +52,13 @@ class SimpleExtensionsTest(RenderingTestCase):
         self.assertRenderedText(u'http://x.com/_a_', u'<p><a class="plainurl" href="http://x.com/_a_">http://x.com/_a_</a></p>')
         self.assertRenderedText(u'![Image](http://x.com/_a_)', u'<p class="img-container"><img alt="Image" src="http://x.com/_a_"></p>')
 
+    def test_structure_without_schema(self):
+        body = u'''Hello\r\n\r\n\t#!yaml/schema\n    url: "http://abc.com"\n\nWorld\n'''
+        rendered = PageOperationMixin.render_body(u'Hello', body)
+        self.assertEquals(rendered.replace(u'\n', u''), u'<p>Hello</p><p>World</p>')
+
+
+
 
 class EmbedTest(RenderingTestCase):
     maxDiff = None
