@@ -28,7 +28,7 @@ class PageOperationMixin(object):
                 (                   #   multiple lines of  (group 2)
                     (?:\s{4}|\t)    #   leading tab or 4 space followed by (non-capture)
                     .+?             #   any string
-                    [\n\r]+?        #   new line(s)
+                    [\n\r]+         #   new line(s)
                 )+
             )
     ''', re.VERBOSE)
@@ -322,7 +322,8 @@ class PageOperationMixin(object):
 
         # parse
         try:
-            parsed = yaml.load(m.group(1))
+            captured = m.group(1).replace('\t', '    ')
+            parsed = yaml.load(captured)
         except ParserError as e:
             raise ValueError(e.message or u'invalid YAML format:<pre>%s</pre>' % m.group(0))
 

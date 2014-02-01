@@ -237,6 +237,13 @@ class YamlSchemaDataTest(AppEngineTestCase):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello')
         self.assertEqual(-1, page.rendered_body.find(u'#!yaml/schema'))
 
+    def test_tab_and_space_mixed(self):
+        body = u'\t#!yaml/schema\r\n    alternateName: 반올림\r\n\turl: http://cafe.daum.net/samsunglabor\r\n    name: "반도체 노동자의 건강과 인권 지킴이"\r\n'
+        data = PageOperationMixin.parse_schema_yaml(body)
+        self.assertEquals(data['name'], u'반도체 노동자의 건강과 인권 지킴이')
+        self.assertEquals(data['alternateName'], u'반올림')
+        self.assertEquals(data['url'], 'http://cafe.daum.net/samsunglabor')
+
 
 class SchemaIndexTest(AppEngineTestCase):
     def setUp(self):
