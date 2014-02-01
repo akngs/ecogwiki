@@ -121,6 +121,7 @@ var editor = (function($) {
             this._parser = new ContentParser();
             this._types = [];
             this._schema = {};
+            this._wikibodyEditlet = null;
             this._typesLoader = typesLoader;
             this._schemaLoader = schemaLoader;
         },
@@ -140,26 +141,141 @@ var editor = (function($) {
             var parsed = this._parser.parseBody(content);
             var itemtype = parsed['itemtype'];
             var schema = this._schema[itemtype];
-
-            if(!schema) {
+            if(schema === undefined) {
                 this._schemaLoader(itemtype, function(schema) {
-                    self._schema[itemtype] = schema;
+                    self._schema[itemtype] = schema || {'properties': {}};
                     self.setContent(content, callback);
                 });
                 return;
             }
 
-            // render fields
+            // populate fields
             var $root = $(this._rootEl);
+            $root.html('');
+
+            this._populateItemtypeSelector($root, parsed['itemtype']);
+
             var props = schema['properties'];
-            for(var pname in props) {
-                var prop = props[pname];
-                $root.append('<div class="prop-' + prop['type']['id'] + '"><label>' + prop['type']['label'] + '</label><input type="text"></div>');
+            var data = parsed['data'];
+            var pnames = union([props, data]);
+            for(var i = 0; i < pnames.length; i++) {
+                var pname = pnames[i];
+                this._populateField(pname, $root, props[pname], data[pname]);
             }
+
+            this._populateBodyField($root, parsed['body']);
         },
         appendContent: function(content, callback) {
         },
         getContent: function() {
+            var parsed = this._gatherData($(this._rootEl));
+            return this._parser.generateBody(parsed);
+        },
+        _populateField: function(pname, $container, prop, values) {
+            // Use default property if prop == undefined
+            if(prop === undefined) {
+                prop = {
+                    "type": {
+                        "label": pname,
+                        "comment": pname,
+                        "comment_plain": pname,
+                        "domains": [],
+                        "ranges": ["Text"],
+                        "id": pname
+                    },
+                    "cardinality": [0, 0]
+                };
+            }
+
+            // Make values array
+            if(values && !$.isArray(values)) {
+                values = [values];
+            } else if(!values) {
+                values = [];
+            }
+
+            // Filter out empty value
+            values = values.filter(function(v) {return v !== '';});
+
+            // Decide number of fields to populate
+            var numOfFields = Math.max(prop['cardinality'][0], values.length);
+            if(numOfFields === 0) return;
+
+            // Generate fields
+            var idPrefix = 'prop_' + prop['type']['id'];
+            var sb = [];
+            sb.push('<div class="prop prop-' + prop['type']['id'] + '" data-pname="' + prop['type']['id'] + '">');
+            sb.push('   <label for="' + idPrefix + '_0">' + prop['type']['label'] + '</label>');
+            sb.push('   <ol>');
+
+            for(var i = 0; i < numOfFields; i++) {
+                sb.push('       <li><input class="field" type="text" id="' + idPrefix + '_' + i + '" name="' + prop['type']['id'] + '" value="' + encodeHtmlEntity(values[i] || '') + '"></li>');
+            }
+            sb.push('   </ol>');
+            sb.push('</div>');
+            $container.append(sb.join('\n'));
+        },
+        _populateItemtypeSelector: function($container, itemtype) {
+            var self = this;
+            var sb = [];
+            sb.push('<div class="prop prop-itemtype" data-pname="itemtype">');
+            sb.push('   <label for="prop_itemtype">Item type</label>');
+            sb.push('   <select class="field" id="prop_itemtype" name="prop_itemtype">');
+            for(var i = 0; i < this._types.length; i++) {
+                if(this._types[i] === itemtype) {
+                    sb.push('      <option selected="selected" value="' + this._types[i] + '">' + this._types[i] + '</option>');
+                } else {
+                    sb.push('      <option value="' + this._types[i] + '">' + this._types[i] + '</option>');
+                }
+            }
+            sb.push('   </select>');
+            sb.push('</div>');
+            $container.append(sb.join('\n'));
+
+            $container.find('#prop_itemtype').on('change', function() {
+                self.setContent(self.getContent());
+            });
+        },
+        _populateBodyField: function($container, body) {
+            var sb = [];
+            sb.push('<div class="prop prop-wikibody" data-pname="wikibody">');
+            sb.push('   <label for="prop_wikibody">Body</label>');
+            sb.push('   <textarea class="field" id="prop_wikibody" name="prop_wikibody">' + encodeHtmlEntity(body) + '</textarea>');
+            sb.push('</div>');
+            $container.append(sb.join('\n'));
+
+            this._wikibodyEditlet = TextEditlet.createInstance($container.find('#prop_wikibody')[0]);
+        },
+        _gatherData: function($container) {
+            var result = {
+                itemtype: '',
+                data: {},
+                body: ''
+            };
+
+            result['itemtype'] = $container.find('#prop_itemtype').val();
+
+            var $props = $container.find('.prop');
+            for(var i = 0; i < $props.length; i++) {
+                var $prop = $($props[i]);
+                var pname = $prop.data('pname');
+                if(['itemtype', 'wikibody'].indexOf(pname) !== -1) continue;
+
+                var $fields = $prop.find('li .field');
+                var values = [];
+                for(var j = 0; j < $fields.length; j++) {
+                    var $field = $($fields[j]);
+                    var value = $field.val();
+                    if(value !== '') values.push(value);
+                }
+                if(values.length) {
+                    result['data'][pname] = values.length === 1 ? values[0] : values;
+                }
+            }
+
+            result['body'] = this._wikibodyEditlet.getContent();
+
+            return result;
         }
     });
 
@@ -350,6 +466,29 @@ var editor = (function($) {
         }
     });
 
+    function encodeHtmlEntity(value) {
+        return value.replace(/</g, '&lt;');
+    }
+
+    function union(arrayOfArray) {
+        var result = [];
+        for(var i = 0; i < arrayOfArray.length; i++) {
+            var array = arrayOfArray[i];
+            if($.isArray(array)) {
+                for(var j = 0; j < array.length; j++) {
+                    var value = array[j];
+                    if(result.indexOf(value) !== -1) continue;
+                    result.push(value);
+                }
+            } else {
+                for(var key in array) {
+                    if(result.indexOf(key) !== -1) continue;
+                    result.push(key);
+                }
+            }
+        }
+        return result;
+    }
 
     return {
         Editor: Editor,

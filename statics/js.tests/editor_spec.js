@@ -193,44 +193,173 @@ describe('Edit mode', function() {
     });
 
     describe('Structured mode', function() {
-        var article = {
-            "id": "Article",
-            "label": "Article",
-            "properties": {
-                "field1": {
-                    "type": {
-                        "label": "First field",
-                        "comment": "First field of the article.",
-                        "comment_plain": "First field of the article.",
-                        "domains": ["Article"],
-                        "ranges": ["Text"],
-                        "id": "field1"
+        var mode;
+        var schema = {
+            'Article': {
+                "id": "Article",
+                "label": "Article",
+                "properties": {
+                    "field1": {
+                        "type": {
+                            "label": "First field",
+                            "comment": "First field of the article.",
+                            "comment_plain": "First field of the article.",
+                            "domains": ["Article"],
+                            "ranges": ["Text"],
+                            "id": "field1"
+                        },
+                        "cardinality": [1, 1]
                     },
-                    "cardinality": [1, 1]
-                },
-                "field2": {
-                    "type": {
-                        "label": "Second field",
-                        "comment": "Second field of the article.",
-                        "comment_plain": "Second field of the article.",
-                        "domains": ["Article"],
-                        "ranges": ["Text"],
-                        "id": "field2"
+                    "field2": {
+                        "type": {
+                            "label": "Second field",
+                            "comment": "Second field of the article.",
+                            "comment_plain": "Second field of the article.",
+                            "domains": ["Article"],
+                            "ranges": ["Text"],
+                            "id": "field2"
+                        },
+                        "cardinality": [2, 2]
                     },
-                    "cardinality": [1, 1]
+                    "field3": {
+                        "type": {
+                            "label": "Third field",
+                            "comment": "Third field of the article.",
+                            "comment_plain": "Third field of the article.",
+                            "domains": ["Article"],
+                            "ranges": ["Text"],
+                            "id": "field3"
+                        },
+                        "cardinality": [0, 1]
+                    }
                 }
+            },
+            'Book': {
+                "properties": {
+                    "author": {
+                        "type": {
+                            "label": "Author",
+                            "comment": "Author of the book.",
+                            "comment_plain": "Author of the book.",
+                            "domains": ["Book"],
+                            "ranges": ["Text"],
+                            "id": "author"
+                        },
+                        "cardinality": [1, 0]
+                    }
+                }
+            },
+            'Person': {
+                "properties": {}
             }
         };
 
-        it('should render mandatory fields', function() {
-            var mode = new editor.StructuredEditMode(sandbox, function(callback) {
-                callback(['Article']);
+        beforeEach(function() {
+            mode = new editor.StructuredEditMode(sandbox, function(callback) {
+                callback(['Article', 'Book', 'Person']);
             }, function(itemtype, callback) {
-                callback(itemtype === 'Article' ? article : null);
+                callback(schema[itemtype]);
             });
-
             mode.setContent('', function() {});
-            console.log(sandbox.innerHTML);
+        });
+
+        it('should render itemtype selector', function() {
+            var $itemtypeSelector = $(sandbox).find('#prop_itemtype');
+            expect($itemtypeSelector.length).toEqual(1);
+            expect($itemtypeSelector.val()).toEqual('Article');
+        });
+
+        it('should render mandatory fields', function() {
+            expect($(sandbox).find('.prop-field1').length).toEqual(1);
+            expect($(sandbox).find('.prop-field2').length).toEqual(1);
+
+            expect($(sandbox).find('#prop_field1_0').length).toEqual(1);
+            expect($(sandbox).find('#prop_field2_0').length).toEqual(1);
+            expect($(sandbox).find('#prop_field2_1').length).toEqual(1);
+        });
+
+        it('should render wikibody textarea', function() {
+            expect($(sandbox).find('#prop_wikibody').length).toEqual(1);
+        });
+
+        it('should not render optional fields', function() {
+            expect($(sandbox).find('.prop-field3').length).toEqual(0);
+        });
+
+        it('should populate value of fields with content', function() {
+            mode.setContent('    #!yaml/schema\n    field1: Hey\n    field2: ["Hello", "World"]\n    field3: ["Goodbye", "World"]\n\nHello', function() {});
+
+            expect($(sandbox).find('#prop_field1_0').val()).toEqual('Hey');
+            expect($(sandbox).find('#prop_field2_0').val()).toEqual('Hello');
+            expect($(sandbox).find('#prop_field2_1').val()).toEqual('World');
+            expect($(sandbox).find('#prop_field3_0').val()).toEqual('Goodbye');
+            expect($(sandbox).find('#prop_field3_1').val()).toEqual('World');
+            expect($(sandbox).find('#prop_wikibody').val()).toEqual('Hello');
+        });
+
+        it('should not populate empty field', function() {
+            // No values for field2 and empty value in field3
+            mode.setContent('    #!yaml/schema\n    field1: Hey\n    field3: ["", "World"]\n', function() {});
+
+            expect($(sandbox).find('#prop_field1_0').val()).toEqual('Hey');
+            expect($(sandbox).find('#prop_field2_0').val()).toEqual('');
+            expect($(sandbox).find('#prop_field2_1').val()).toEqual('');
+            expect($(sandbox).find('#prop_field3_0').val()).toEqual('World');
+        })
+
+        it('should ignore empty field', function() {
+            mode.setContent('    #!yaml/schema\n    field1: Hey\n    field2: ["Hello", "World"]\n    field3: ["Goodbye", "World"]\n', function() {});
+
+            $(sandbox).find('#prop_field2_0').val('');
+            $(sandbox).find('#prop_field2_1').val('');
+            $(sandbox).find('#prop_field3_0').val('');
+            $(sandbox).find('#prop_field3_1').val('World');
+
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    field1: Hey\n    field3: World\n');
+        });
+
+        it('should populate fields for unknown values', function() {
+            mode.setContent('.schema Person\n    #!yaml/schema\n    unknown: Hey\n', function() {});
+            expect($(sandbox).find('#prop_unknown_0').val()).toEqual('Hey');
+        });
+
+        it('should retain unknown values', function() {
+            mode.setContent('.schema Person\n\n    #!yaml/schema\n    unknown: Hey\n', function() {});
+            $(sandbox).find('#prop_unknown_0').val('Hello');
+            expect(mode.getContent()).toEqual('.schema Person\n\n    #!yaml/schema\n    unknown: Hello\n');
+        });
+
+        it('should update content if fields updated', function() {
+            mode.setContent('    #!yaml/schema\n    field1: "Hey"\n    field2:\n      - "Hello"\n      - "World"\n    field3:\n      - "Goodbye"\n      - "World"\n\nHello', function() {});
+            $(sandbox).find('#prop_field1_0').val('Hey!');
+            $(sandbox).find('#prop_field2_0').val('Hello!');
+            $(sandbox).find('#prop_field2_1').val('World!');
+            $(sandbox).find('#prop_field3_0').val('Goodbye!');
+            $(sandbox).find('#prop_field3_1').val('World!');
+
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    field1: "Hey!"\n    field2:\n      - "Hello!"\n      - "World!"\n    field3:\n      - "Goodbye!"\n      - "World!"\n\nHello');
+        });
+
+        it('should populate itemtype according to .schema', function() {
+            mode.setContent('.schema Book', function() {});
+            expect($(sandbox).find('#prop_itemtype').val()).toEqual('Book');
+        });
+
+        it('should update content if itemtype updated', function() {
+            mode.setContent('.schema Book', function() {});
+            $(sandbox).find('#prop_itemtype').val('Person');
+            expect(mode.getContent()).toEqual('.schema Person\n');
+        });
+
+        it('should repopulate fields if itemtype updated', function() {
+            mode.setContent('.schema Article', function() {});
+
+            $(sandbox).find('#prop_itemtype').val('Book');
+            // jquery doesn't automatically triggers change event
+            $(sandbox).find('#prop_itemtype').trigger('change');
+
+            expect($(sandbox).find('#prop_field1_0').length).toEqual(0);
+            expect($(sandbox).find('#prop_author_0').length).toEqual(1);
         });
     });
 
@@ -294,7 +423,7 @@ describe('Edit mode', function() {
                 'itemtype': 'Article',
                 'data': {},
                 'body': ''
-            }
+            };
             expect(parser.generateBody(data)).toEqual('');
         });
 
