@@ -194,6 +194,7 @@ describe('Edit mode', function() {
 
     describe('Structured mode', function() {
         var mode;
+        var logs;
         var schema = {
             'Article': {
                 "id": "Article",
@@ -255,12 +256,22 @@ describe('Edit mode', function() {
         };
 
         beforeEach(function() {
+            logs = [];
             mode = new editor.StructuredEditMode(sandbox, function(callback) {
                 callback(['Article', 'Book', 'Person']);
             }, function(itemtype, callback) {
                 callback(schema[itemtype]);
-            }, {});
+            }, {
+                onStartLoadTypes: function() {logs.push('onStartLoadTypes');},
+                onEndLoadTypes: function() {logs.push('onEndLoadTypes');},
+                onStartLoadSchema: function() {logs.push('onStartLoadSchema');},
+                onEndLoadSchema: function() {logs.push('onEndLoadSchema');}
+            });
             mode.setContent('', function() {});
+        });
+
+        it('should execute callbacks while loading', function() {
+            expect(logs).toEqual(['onStartLoadTypes', 'onEndLoadTypes', 'onStartLoadSchema', 'onEndLoadSchema']);
         });
 
         it('should render itemtype selector', function() {

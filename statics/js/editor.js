@@ -160,10 +160,11 @@ var editor = (function($) {
 
                 this._typesLoader(function(types) {
                     self._types = types;
-                    self.setContent(content, callback);
 
                     $(self._rootEl).find(':input').prop('disabled', false);
                     if(self._callback.onEndLoadTypes) self._callback.onEndLoadTypes(this);
+
+                    self.setContent(content, callback);
                 });
                 return;
             }
@@ -178,10 +179,11 @@ var editor = (function($) {
 
                 this._schemaLoader(itemtype, function(schema) {
                     self._schema[itemtype] = schema || {'properties': {}};
-                    self.setContent(content, callback);
 
                     $(self._rootEl).find(':input').prop('disabled', false);
                     if(self._callback.onEndLoadSchema) self._callback.onEndLoadSchema(this);
+
+                    self.setContent(content, callback);
                 });
                 return;
             }
