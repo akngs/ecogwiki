@@ -15,11 +15,11 @@ class CurrentUserTest(AppEngineTestCase):
     def test_users_first(self):
         self.login('ak@gmail.com', 'ak')
         self.oauth_stub.login('jh@gmail.com', 'jh')
-        self.assertEquals(self.get_cur_user().email(), 'ak@gmail.com')
+        self.assertEqual(self.get_cur_user().email(), 'ak@gmail.com')
 
     def test_oauth_only_when_user_is_not_logged_in(self):
         self.oauth_stub.login('jh@gmail.com', 'jh')
-        self.assertEquals(self.get_cur_user().email(), 'jh@gmail.com')
+        self.assertEqual(self.get_cur_user().email(), 'jh@gmail.com')
 
 
 class AdminUserTest(AppEngineTestCase):

@@ -505,7 +505,7 @@ class LinkTest(AppEngineTestCase):
 
     def test_get_outlinks(self):
         page = self.update_page(u'[[A]], [[A]], [[Hello World]]')
-        self.assertEquals({u'Article/relatedTo': [u'A', u'Hello World']}, page.outlinks)
+        self.assertEqual({u'Article/relatedTo': [u'A', u'Hello World']}, page.outlinks)
 
     def test_rel(self):
         page = self.update_page(u'.schema Person\n[[birthDate::1979]]', u'A')
@@ -706,11 +706,11 @@ class UserPreferencesTest(AppEngineTestCase):
 
     def test_get_by_user(self):
         prefs = UserPreferences.get_by_user(self.user)
-        self.assertEquals(None, prefs.userpage_title)
+        self.assertEqual(None, prefs.userpage_title)
 
         prefs.userpage_title = u'김경수'
         prefs.put()
-        self.assertEquals(u'김경수', UserPreferences.get_by_user(self.user).userpage_title)
+        self.assertEqual(u'김경수', UserPreferences.get_by_user(self.user).userpage_title)
 
 
 class WikiPageDeleteTest(AppEngineTestCase):
@@ -730,9 +730,9 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.pagea.delete(users.get_current_user())
 
         self.pagea = WikiPage.get_by_title(u'A')
-        self.assertEquals(None, self.pagea.modifier)
-        self.assertEquals(u'', self.pagea.body)
-        self.assertEquals(0, self.pagea.revision)
+        self.assertEqual(None, self.pagea.modifier)
+        self.assertEqual(u'', self.pagea.body)
+        self.assertEqual(0, self.pagea.revision)
 
     def test_only_admin_can_perform_delete(self):
         self.login('a@x.com', 'a')
@@ -748,10 +748,10 @@ class WikiPageDeleteTest(AppEngineTestCase):
 
         self.pagea.delete(users.get_current_user())
         self.pageb = WikiPage.get_by_title(u'B')
-        self.assertEquals(1, len(self.pagea.inlinks))
-        self.assertEquals(0, len(self.pagea.outlinks))
-        self.assertEquals(0, len(self.pageb.inlinks))
-        self.assertEquals(1, len(self.pageb.outlinks))
+        self.assertEqual(1, len(self.pagea.inlinks))
+        self.assertEqual(0, len(self.pagea.outlinks))
+        self.assertEqual(0, len(self.pageb.inlinks))
+        self.assertEqual(1, len(self.pageb.outlinks))
 
     def test_delete_twice(self):
         self.login('a@x.com', 'a', is_admin=True)
@@ -766,7 +766,7 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.pagea.delete(users.get_current_user())
         self.pagea = WikiPage.get_by_title(u'A')
         self.pagea.update_content(u'Hello', 0, user=self.get_cur_user())
-        self.assertEquals(1, self.pagea.revision)
+        self.assertEqual(1, self.pagea.revision)
 
     def test_delete_and_redirection_1(self):
         self.update_page(u'.redirect C', u'B')
@@ -778,10 +778,10 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.pagea = WikiPage.get_by_title(u'A')
         self.pagec = WikiPage.get_by_title(u'C')
 
-        self.assertEquals(1, len(self.pagea.inlinks))
-        self.assertEquals(0, len(self.pagea.outlinks))
-        self.assertEquals(0, len(self.pagec.inlinks))
-        self.assertEquals(1, len(self.pagec.outlinks))
+        self.assertEqual(1, len(self.pagea.inlinks))
+        self.assertEqual(0, len(self.pagea.outlinks))
+        self.assertEqual(0, len(self.pagec.inlinks))
+        self.assertEqual(1, len(self.pagec.outlinks))
 
     def test_delete_and_redirection_2(self):
         self.update_page(u'.redirect C', u'B')
@@ -794,12 +794,12 @@ class WikiPageDeleteTest(AppEngineTestCase):
         self.pageb = WikiPage.get_by_title(u'B')
         self.pagec = WikiPage.get_by_title(u'C')
 
-        self.assertEquals(1, len(self.pagea.inlinks))
-        self.assertEquals(1, len(self.pagea.outlinks))
-        self.assertEquals(1, len(self.pageb.inlinks))
-        self.assertEquals(0, len(self.pageb.outlinks))
-        self.assertEquals(0, len(self.pagec.inlinks))
-        self.assertEquals(1, len(self.pagec.outlinks))
+        self.assertEqual(1, len(self.pagea.inlinks))
+        self.assertEqual(1, len(self.pagea.outlinks))
+        self.assertEqual(1, len(self.pageb.inlinks))
+        self.assertEqual(0, len(self.pageb.outlinks))
+        self.assertEqual(0, len(self.pagec.inlinks))
+        self.assertEqual(1, len(self.pagec.outlinks))
 
 
 class WikiPageHierarchyTest(AppEngineTestCase):
