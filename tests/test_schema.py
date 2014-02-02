@@ -208,8 +208,10 @@ class YamlSchemaDataTest(AppEngineTestCase):
     def test_yaml(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello', u'Hello')
         self.assertEqual({u'Book/author': [u'AK']}, page.outlinks)
-        self.assertEqual({'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'},
-                          dict((k, v.pvalue) for k, v in page.data.items()))
+        self.assertEqual(
+            {'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'},
+            dict((k, v.pvalue) for k, v in page.data.items())
+        )
 
     def test_re_match(self):
         body = u'''\t#!yaml/schema\r\n    url: "http://anotherfam.kr/"\r\n\r\n\r\n[[\uc81c\uc791\ub450\ub808]]\ub97c ...\r\n'''
