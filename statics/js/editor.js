@@ -253,7 +253,7 @@ var editor = (function($) {
             var idPrefix = 'prop_' + prop['type']['id'];
             var sb = [];
             sb.push('<div class="prop prop-' + prop['type']['id'] + '" data-pname="' + prop['type']['id'] + '">');
-            sb.push('   <label for="' + idPrefix + '_0">' + prop['type']['label'] + '</label>');
+            sb.push('   <label for="' + idPrefix + '_0" title="' + encodeHtmlEntity(prop['type']['comment']) + '">' + prop['type']['label'] + '</label>');
             sb.push('   <ol></ol>');
             sb.push('   <a class="add-field btn" href="#">Add field</a>');
             sb.push('</div>');
@@ -691,7 +691,7 @@ var editor = (function($) {
     });
 
     function encodeHtmlEntity(value) {
-        return value.replace ? value.replace(/</g, '&lt;') : value;
+        return value.replace ? value.replace(/</g, '&lt;').replace(/"/g, '&quot;') : value;
     }
 
     function union(arrayOfArray) {

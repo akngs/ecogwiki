@@ -530,8 +530,8 @@ describe('Edit mode', function() {
         });
 
         it('should render checkbox for boolean type', function() {
-            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, true)).toEqual('<input class="field" data-type="Boolean" type="checkbox" id="prop_f_0" name="f" value="on" checked="checked">');
-            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, false)).toEqual('<input class="field" data-type="Boolean" type="checkbox" id="prop_f_0" name="f" value="on">');
+            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, true)).toEqual('<input class="field" data-type="Boolean" type="checkbox" id="prop_f_0" name="f" value="on" checked="checked"> Yes');
+            expect(mode._generateFieldHtml('f', 0, ['Boolean'], null, false)).toEqual('<input class="field" data-type="Boolean" type="checkbox" id="prop_f_0" name="f" value="on"> Yes');
         });
 
         it('should parse checkbox as boolean', function() {
