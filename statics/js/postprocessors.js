@@ -27,7 +27,8 @@ var postprocessors = (function($) {
 
     var RevealProcessor = PostProcessor.extend({
         check: function() {
-            return this.hasMetadata('pt');
+            var inPreview = document.getElementById('wikibody_preview');
+            return !inPreview && this.hasMetadata('pt');
         },
         dependencies: function() {
             return [
