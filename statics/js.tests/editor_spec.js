@@ -232,6 +232,17 @@ describe('Edit mode', function() {
                             "id": "field3"
                         },
                         "cardinality": [0, 0]
+                    },
+                    "field4": {
+                        "type": {
+                            "label": "Fourth field",
+                            "comment": "Fourth field of the article.",
+                            "comment_plain": "Fourth field of the article.",
+                            "domains": ["Article"],
+                            "ranges": ["LongText"],
+                            "id": "field4"
+                        },
+                        "cardinality": [0, 0]
                     }
                 }
             },
@@ -295,16 +306,18 @@ describe('Edit mode', function() {
 
         it('should not render optional fields', function() {
             expect($(sandbox).find('.prop-field3').length).toEqual(0);
+            expect($(sandbox).find('.prop-field4').length).toEqual(0);
         });
 
         it('should populate value of fields with content', function() {
-            mode.setContent('    #!yaml/schema\n    field1: Hey\n    field2: ["Hello", "World"]\n    field3: ["Goodbye", "World"]\n\nHello', function() {});
+            mode.setContent('    #!yaml/schema\n    field1: Hey\n    field2: ["Hello", "World"]\n    field3: ["Goodbye", "World"]\n\nHello\n\nfield4::---\n\nHey', function() {});
 
             expect($(sandbox).find('#prop_field1_0').val()).toEqual('Hey');
             expect($(sandbox).find('#prop_field2_0').val()).toEqual('Hello');
             expect($(sandbox).find('#prop_field2_1').val()).toEqual('World');
             expect($(sandbox).find('#prop_field3_0').val()).toEqual('Goodbye');
             expect($(sandbox).find('#prop_field3_1').val()).toEqual('World');
+            expect($(sandbox).find('#prop_field4_0').val()).toEqual('Hey');
             expect($(sandbox).find('#prop_wikibody').val()).toEqual('Hello');
         });
 
@@ -330,14 +343,16 @@ describe('Edit mode', function() {
         });
 
         it('should populate fields for unknown values', function() {
-            mode.setContent('.schema Person\n    #!yaml/schema\n    unknown: Hey\n', function() {});
-            expect($(sandbox).find('#prop_unknown_0').val()).toEqual('Hey');
+            mode.setContent('.schema Person\n\n    #!yaml/schema\n    unknown1: Hey\n\nunknown2::---\n\nThere', function() {});
+            expect($(sandbox).find('#prop_unknown1_0').val()).toEqual('Hey');
+            expect($(sandbox).find('#prop_unknown2_0').val()).toEqual('There');
         });
 
         it('should retain unknown values', function() {
-            mode.setContent('.schema Person\n\n    #!yaml/schema\n    unknown: Hey\n', function() {});
-            $(sandbox).find('#prop_unknown_0').val('Hello');
-            expect(mode.getContent()).toEqual('.schema Person\n\n    #!yaml/schema\n    unknown: Hello\n');
+            mode.setContent('.schema Person\n\n    #!yaml/schema\n    unknown1: Hey\n\nunknown2::---\n\nThere', function() {});
+            $(sandbox).find('#prop_unknown1_0').val('Hello');
+            $(sandbox).find('#prop_unknown2_0').val('There');
+            expect(mode.getContent()).toEqual('.schema Person\n\n    #!yaml/schema\n    unknown1: Hello\n\nunknown2::---\n\nThere');
         });
 
         it('should update content if fields updated', function() {
@@ -440,10 +455,11 @@ describe('Edit mode', function() {
 
             // Should list all fields
             var $options = $propertySelector.find('option');
-            expect($options.length).toEqual(3);
+            expect($options.length).toEqual(4);
             expect($($options[0]).attr('value')).toEqual('field1');
             expect($($options[1]).attr('value')).toEqual('field2');
             expect($($options[2]).attr('value')).toEqual('field3');
+            expect($($options[3]).attr('value')).toEqual('field4');
         });
 
         it('should allow to add new property', function() {
@@ -476,6 +492,9 @@ describe('Edit mode', function() {
             }},
             "text": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
                 "id": "text", "ranges": ["Text"]
+            }},
+            "longtext": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "longtext", "ranges": ["LongText"]
             }},
             "time": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
                 "id": "time", "ranges": ["Time"]
@@ -522,6 +541,10 @@ describe('Edit mode', function() {
             expect(mode._generateFieldHtml('f', 0, ['Text'], null, 'Hello')).toEqual('<input class="field" data-type="Text" type="text" id="prop_f_0" name="f" value="Hello">');
             expect(mode._generateFieldHtml('f', 0, ['Time'], null, 'Hello')).toEqual('<input class="field" data-type="Time" type="text" id="prop_f_0" name="f" value="Hello">');
             expect(mode._generateFieldHtml('f', 0, ['DateTime'], null, 'Hello')).toEqual('<input class="field" data-type="DateTime" type="text" id="prop_f_0" name="f" value="Hello">');
+        });
+
+        it('should render textarea for longtext type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['LongText'], null, 'Hello')).toEqual('<textarea class="field" data-type="LongText" id="prop_f_0" name="f">Hello</textarea>');
         });
 
         it('should parse text as string', function() {
@@ -583,6 +606,7 @@ describe('Edit mode', function() {
             expect(parser.parseBody('')).toEqual({
                 'itemtype': 'Article',
                 'data': {},
+                'sections': {},
                 'body': ''
             });
         });
@@ -591,6 +615,7 @@ describe('Edit mode', function() {
             expect(parser.parseBody('.schema Hello')).toEqual({
                 'itemtype': 'Hello',
                 'data': {},
+                'sections': {},
                 'body': ''
             });
         });
@@ -599,6 +624,7 @@ describe('Edit mode', function() {
             expect(parser.parseBody('Hello\nthere?')).toEqual({
                 'itemtype': 'Article',
                 'data': {},
+                'sections': {},
                 'body': 'Hello\nthere?'
             });
         });
@@ -607,6 +633,7 @@ describe('Edit mode', function() {
             expect(parser.parseBody('.schema Book\n\nHello\nthere?')).toEqual({
                 'itemtype': 'Book',
                 'data': {},
+                'sections': {},
                 'body': 'Hello\nthere?'
             });
         });
@@ -615,6 +642,7 @@ describe('Edit mode', function() {
             expect(parser.parseBody('.schema Book\n.pub\n\nHello\nthere?')).toEqual({
                 'itemtype': 'Book',
                 'data': [],
+                'sections': {},
                 'body': '.pub\n\nHello\nthere?'
             });
         });
@@ -623,7 +651,35 @@ describe('Edit mode', function() {
             expect(parser.parseBody('.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?')).toEqual({
                 'itemtype': 'Book',
                 'data': {'author': 'AK'},
+                'sections': {},
                 'body': 'Hello\nthere?'
+            });
+        });
+
+        it('should parse section block in body', function() {
+            expect(parser.parseBody('Hey\n\nsection::---\nHello\nThere\n')).toEqual({
+                'itemtype': 'Article',
+                'data': {},
+                'sections': {'section': 'Hello\nThere'},
+                'body': 'Hey'
+            });
+        });
+
+        it('should parse two section blocks', function() {
+            expect(parser.parseBody('s1::---\nHello\n\ns2::---\nThere\n')).toEqual({
+                'itemtype': 'Article',
+                'data': {},
+                'sections': {'s1': 'Hello', 's2': 'There'},
+                'body': ''
+            });
+        });
+
+        it('should parse two section blocks with the same name', function() {
+            expect(parser.parseBody('s1::---\nHello\n\ns1::---\nThere\n')).toEqual({
+                'itemtype': 'Article',
+                'data': {},
+                'sections': {'s1': ['Hello', 'There']},
+                'body': ''
             });
         });
 
@@ -631,6 +687,7 @@ describe('Edit mode', function() {
             var data = {
                 'itemtype': 'Article',
                 'data': {},
+                'sections': {},
                 'body': ''
             };
             expect(parser.generateBody(data)).toEqual('');
@@ -640,6 +697,7 @@ describe('Edit mode', function() {
             var data = {
                 'itemtype': 'Article',
                 'data': {},
+                'sections': {},
                 'body': 'Hello\nthere?'
             };
             expect(parser.generateBody(data)).toEqual('Hello\nthere?');
@@ -649,6 +707,7 @@ describe('Edit mode', function() {
             var data = {
                 'itemtype': 'Book',
                 'data': {},
+                'sections': {},
                 'body': 'Hello\nthere?'
             };
             expect(parser.generateBody(data)).toEqual('.schema Book\n\nHello\nthere?');
@@ -658,9 +717,30 @@ describe('Edit mode', function() {
             var data = {
                 'itemtype': 'Book',
                 'data': {'author': 'AK'},
+                'sections': {},
                 'body': 'Hello\nthere?'
             };
             expect(parser.generateBody(data)).toEqual('.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?');
+        });
+
+        it('should generate sections', function() {
+            var data = {
+                'itemtype': 'Article',
+                'data': {'author': 'AK'},
+                'sections': {'s1': 'Hello\nThere', 's2': 'Hey'},
+                'body': 'Body goes here'
+            };
+            expect(parser.generateBody(data)).toEqual('    #!yaml/schema\n    author: AK\n\nBody goes here\n\ns1::---\n\nHello\nThere\n\ns2::---\n\nHey');
+        });
+
+        it('should generate sections array', function() {
+            var data = {
+                'itemtype': 'Article',
+                'data': {'author': 'AK'},
+                'sections': {'s1': ['Hello', 'There']},
+                'body': 'Body goes here'
+            };
+            expect(parser.generateBody(data)).toEqual('    #!yaml/schema\n    author: AK\n\nBody goes here\n\ns1::---\n\nHello\n\ns1::---\n\nThere');
         });
 
         it('should roundtrip parse/generate', function() {
@@ -670,7 +750,8 @@ describe('Edit mode', function() {
                 '.schema Book\n\nHello\nthere?',
                 '.schema Book\n.pub\n\nHello\nthere?',
                 '.schema Book\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?',
-                '.schema Book\n.pub\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?'
+                '.schema Book\n.pub\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?',
+                '.schema Book\n.pub\n\n    #!yaml/schema\n    author: AK\n\nHello\nthere?\n\ns1::---\n\nHello'
             ];
             for(var i = 0; i < bodies.length; i++) {
                 var body = bodies[i];

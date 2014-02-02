@@ -43,9 +43,11 @@ var editor = (function($) {
 
             this._plainEditMode = new PlainEditMode(this._$root.find('.mode-pane .plain')[0]);
             this._structEditMode = new StructuredEditMode(this._$root.find('.mode-pane .structured')[0], typesLoader, schemaLoader, this);
+
             this.setActiveModeName('plain', callback);
         },
         setActiveModeName: function(newMode, callback) {
+            var self = this;
             // If not changed, do nothing
             var $oldTab = this._$root.find('.mode-tab > li.active');
             if($oldTab.data('name') === newMode) return;
@@ -62,7 +64,11 @@ var editor = (function($) {
             // Activate new mode
             this._$root.find('.mode-tab > li.' + newMode).addClass('active');
             this._$root.find('.mode-pane > li.' + newMode).show();
-            this.setContent($(this._textarea).val(), callback);
+
+            this.setContent($(this._textarea).val(), function() {
+                self.getActiveMode().focus();
+                if(callback) callback();
+            });
         },
         getActiveModeName: function() {
             return this._$root.find('.mode-tab > li.active').data('name');
@@ -104,6 +110,7 @@ var editor = (function($) {
 
 
     var EditMode = Class.extend({
+        focus: function() {},
         getContent: function() {},
         setContent: function(content, callback) {},
         appendContent: function(content, callback) {}
@@ -117,6 +124,9 @@ var editor = (function($) {
             var $textarea = $('<textarea></textarea>')
                 .appendTo(this._rootEl);
             this._editlet = TextEditlet.createInstance($textarea[0]);
+        },
+        focus: function() {
+            this._editlet.focus();
         },
         getEditlet: function() {
             return this._editlet;
@@ -141,6 +151,7 @@ var editor = (function($) {
             this._types = [];
             this._schema = {};
             this._wikibodyEditlet = null;
+            this._sectionEditlets = {};
             this._typesLoader = typesLoader;
             this._schemaLoader = schemaLoader;
             this._callback = callback;
@@ -148,6 +159,9 @@ var editor = (function($) {
             $(this._rootEl).on('click', '.add-prop', this._onAddProp.bind(this));
             $(this._rootEl).on('click', '.add-field', this._onAddField.bind(this));
             $(this._rootEl).on('click', '.delete-field', this._onDeleteField.bind(this));
+        },
+        focus: function() {
+            this._wikibodyEditlet.focus();
         },
         setContent: function(content, callback) {
             var self = this;
@@ -199,11 +213,20 @@ var editor = (function($) {
             // 2. Properties
             var props = schema['properties'];
             var data = parsed['data'];
-            var pnames = union([props, data]);
+            var sections = parsed['sections'];
+            var pnames = union([props, data, sections]);
 
             for(var i = 0; i < pnames.length; i++) {
                 var pname = pnames[i];
-                this._populateProp(itemtype, pname, data[pname]);
+                var value = data[pname];
+
+                // force type to LongText if the value is from section markup
+                var forceType = undefined;
+                if(sections[pname]) {
+                    value = sections[pname];
+                    forceType = 'LongText';
+                }
+                this._populateProp(itemtype, pname, value, false, forceType);
             }
 
             // 3. Property selector
@@ -211,16 +234,17 @@ var editor = (function($) {
 
             // 4. Wikibody
             this._populateBodyField(parsed['body']);
+
+            if(callback) callback();
         },
         appendContent: function(content) {
             this._wikibodyEditlet.appendContent(content);
-
         },
         getContent: function() {
             var parsed = this._gatherData();
             return this._parser.generateBody(parsed);
         },
-        _populateProp: function(itemtype, pname, values, forceAdd) {
+        _populateProp: function(itemtype, pname, values, forceAdd, forceType) {
             var $root = $(this._rootEl);
 
             // Create property container if there is not
@@ -262,7 +286,7 @@ var editor = (function($) {
             $propList.append(sb.join('\n'));
 
             for(var i = 0; i < numOfFields; i++) {
-                this._addField(itemtype, pname, encodeHtmlEntity(values[i] || ''));
+                this._addField(itemtype, pname, encodeHtmlEntity(values[i] || ''), forceType);
             }
 
             this._updateButtonsVisibility(itemtype, pname);
@@ -321,7 +345,8 @@ var editor = (function($) {
             var result = {
                 itemtype: '',
                 data: {},
-                body: ''
+                body: '',
+                sections: {}
             };
             var $root = $(this._rootEl);
 
@@ -341,7 +366,8 @@ var editor = (function($) {
                     if(value !== '') values.push(value);
                 }
                 if(values.length) {
-                    result['data'][pname] = values.length === 1 ? values[0] : values;
+                    var sectionsOrData = $fields[0].nodeName === 'TEXTAREA' ? 'sections' : 'data';
+                    result[sectionsOrData][pname] = values.length === 1 ? values[0] : values;
                 }
             }
 
@@ -358,6 +384,8 @@ var editor = (function($) {
                 return parseInt(+$field.val());
             } else if('Boolean' === type) {
                 return $field.prop('checked');
+            } else if('LongText' === type) {
+                return this._sectionEditlets[$field.attr('id')].getContent();
             } else {
                 return $field.val();
             }
@@ -390,24 +418,35 @@ var editor = (function($) {
                 prop['cardinality'][0] < numOfFields;
             $root.find('.prop-' + pname + ' .delete-field')[deleteButtonVisible ? 'show' : 'hide']();
         },
-        _addField: function(itemtype, pname, value) {
+        _addField: function(itemtype, pname, value, forceType) {
             var $root = $(this._rootEl);
             var $prop = $root.find('.prop-' + pname);
             var prop = this._getProperty(itemtype, pname);
             var i = $prop.find('li.field-row').length;
 
+            // use forced type if there is
+            var type = forceType || prop['type']['ranges'];
+
             var sb = [];
             sb.push('<li class="field-row">');
-            sb.push(this._generateFieldHtml(pname, i, prop['type']['ranges'], prop['type']['enum'], value));
+            sb.push(this._generateFieldHtml(pname, i, type, prop['type']['enum'], value));
             sb.push('<a class="delete-field" href="#">Delete</a>');
             sb.push('</li>');
             $prop.find('ol').append(sb.join('\n'));
 
-            return $prop.find('#prop_' + pname + '_' + i);
+            var $field = $prop.find('#prop_' + pname + '_' + i);
+
+            if($field.data('type') === "LongText") {
+                $field.parent().addClass('field-row-longtext');
+                var editlet = TextEditlet.createInstance($field[0]);
+                this._sectionEditlets[$field.attr('id')] = editlet;
+            }
+
+            return $field;
         },
         _generateFieldHtml: function(pname, index, ranges, enums, value) {
             // Decide type to use
-            var priority = ['ISBN', 'URL', 'Date', 'DateTime', 'Time', 'Boolean', 'Integer', 'Float', 'Number', 'Text'];
+            var priority = ['ISBN', 'URL', 'Date', 'DateTime', 'Time', 'Boolean', 'Integer', 'Float', 'Number', 'LongText', 'Text'];
             if($.isArray(ranges)) {
                 for(var i = 0; i < priority.length; i++) {
                     if(ranges.indexOf(priority[i]) !== -1) return this._generateFieldHtml(pname, index, priority[i], enums, value);
@@ -430,6 +469,8 @@ var editor = (function($) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if('URL' === ranges) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="url" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if('LongText' === ranges) {
+                    sb.push('<textarea class="field" data-type="' + ranges + '" id="prop_' + pname + '_' + index + '" name="' + pname + '">' + value + '</textarea>');
                 } else if(['Text', 'DateTime', 'Time'].indexOf(ranges) !== -1) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if(['Number', 'Integer', 'Float'].indexOf(ranges) !== -1) {
@@ -470,7 +511,14 @@ var editor = (function($) {
             var itemtype = $root.find('#prop_itemtype').val();
             var pname = $prop.data('pname');
 
-            var $addedField = this._addField(itemtype, pname, '');
+            // If there is a field of this property, use type of the field
+            var forceType = null;
+            var $fields = $prop.find('.field');
+            if($fields.length) {
+                forceType = $fields.data('type');
+            }
+
+            var $addedField = this._addField(itemtype, pname, '', forceType);
             this._updateButtonsVisibility(itemtype, pname);
 
             $addedField.focus();
@@ -503,23 +551,32 @@ var editor = (function($) {
 
     var ContentParser = Class.extend({
         parseBody: function(body) {
-            // parse yaml/schema block
             var dataAndBody = this.extractYaml(body);
             var data = dataAndBody['data'];
             var bodyWithoutYamlBlock = dataAndBody['body'];
 
-            // extract out schema metadata
-            var schema = 'Article';
             var lines = bodyWithoutYamlBlock.split('\n');
+
+            var schema = this._extractOutSchema(lines);
+
+            var sections = this._extractOutSections(lines);
+
+            return {
+                'body': lines.join('\n').trim(),
+                'itemtype': schema,
+                'data': data,
+                'sections': sections
+            };
+        },
+        _extractOutSchema: function(lines) {
+            var schema = 'Article';
             for(var i = 0; i < lines.length; i++) {
                 var line = lines[i];
                 if(line.indexOf('.schema ') !== 0) break;
 
                 // save metadata
                 var sep = line.indexOf(' ');
-                if(sep === -1) {
-                    schema = 'Article';
-                } else {
+                if(sep !== -1) {
                     schema = line.substring(sep + 1).trim();
                 }
 
@@ -527,12 +584,49 @@ var editor = (function($) {
                 lines.splice(i, 1);
                 i--;
             }
+            return schema;
+        },
+        _extractOutSections: function(lines) {
+            var pSection = /^([^\s]+?)::---+$/;
 
-            return {
-                'body': lines.join('\n').trim(),
-                'itemtype': schema,
-                'data': data
-            };
+            // skip body lines
+            for(var i = 0; i < lines.length; i++) {
+                if(lines[i].match(pSection)) break;
+            }
+
+            // collect sections
+            var sections = {};
+            var sectionName = null;
+            var sectionLines = null;
+
+            while(i < lines.length) {
+                var m = lines[i].match(pSection);
+                if(m) {
+                    if(!sectionName) {
+                        // Found first section. Start new one.
+                        sectionName = m[1];
+                        sectionLines = [];
+                    } else {
+                        // Found other section. Close current section and start new one
+                        addToMultiDict(sections, sectionName, sectionLines.join('\n').trim());
+
+                        sectionName = m[1];
+                        sectionLines = [];
+                    }
+                } else {
+                    // In section. Collect lines
+                    sectionLines.push(lines[i]);
+                }
+
+                // remove this line
+                lines.splice(i, 1);
+            }
+
+            if(sectionName) {
+                addToMultiDict(sections, sectionName, sectionLines.join('\n').trim());
+            }
+
+            return sections;
         },
         generateBody: function(data) {
             var lines = [];
@@ -577,15 +671,30 @@ var editor = (function($) {
                 lines.push(i);
             });
 
+            // sections
+            var sections = data['sections'];
+            for(var sectionName in sections) {
+                var sectionValues = sections[sectionName];
+                if(!$.isArray(sectionValues)) sectionValues = [sectionValues];
+                sectionValues.forEach(function(value) {
+                    if(!lines.length || lines[lines.length - 1] !== '') lines.push('');
+
+                    lines.push(sectionName + '::---');
+                    lines.push('');
+
+                    lines.push(value);
+                })
+            }
+
             return lines.join('\n');
         },
         extractYaml: function(body) {
-            var p_yaml = /(?:[ ]{4}|\t)#!yaml\/schema[\n\r]+(((?:[ ]{4}|\t).+[\n\r]+?)+)/;
-            var m = body.match(p_yaml);
+            var pYaml = /(?:[ ]{4}|\t)#!yaml\/schema[\n\r]+(((?:[ ]{4}|\t).+[\n\r]+?)+)/;
+            var m = body.match(pYaml);
             if(m) {
                 return {
                     'data': jsyaml.load((m[0])) || {},
-                    'body': body.replace(p_yaml, '')
+                    'body': body.replace(pYaml, '')
                 };
             } else {
                 return {
@@ -601,6 +710,7 @@ var editor = (function($) {
         init: function(textarea) {
             this._textarea = textarea;
         },
+        focus: function() {},
         setContent: function(content) {},
         getContent: function() {},
         appendContent: function(content) {
@@ -628,6 +738,9 @@ var editor = (function($) {
             this._$textarea.on('input', triggerResize);
 
             this.resizeToFit();
+        },
+        focus: function() {
+            this._textarea.focus();
         },
         setContent: function(content) {
             this._$textarea.val(content);
@@ -661,7 +774,7 @@ var editor = (function($) {
                 indentWithTabs: false,
                 lineWrapping: true,
                 lineNumbers: true,
-                autofocus: true,
+                autofocus: false,
                 mode: 'markdown',
                 viewportMargin: Infinity
             });
@@ -671,6 +784,9 @@ var editor = (function($) {
                 'Cmd-Enter': function() {getNextFocusTarget().focus();},
                 'Ctrl-Enter': function() {getNextFocusTarget().focus();}
             });
+        },
+        focus: function() {
+            this._cm.focus();
         },
         getContent: function() {
             return this._cm.getValue();
@@ -697,6 +813,18 @@ var editor = (function($) {
 
     function encodeHtmlEntity(value) {
         return value.replace ? value.replace(/</g, '&lt;').replace(/"/g, '&quot;') : value;
+    }
+
+    function addToMultiDict(dict, key, value) {
+        if(key in dict) {
+            var cur = dict[key];
+            if(!$.isArray(cur)) cur = [cur];
+            cur.push(value);
+
+            dict[key] = cur;
+        } else {
+            dict[key] = value;
+        }
     }
 
     function union(arrayOfArray) {

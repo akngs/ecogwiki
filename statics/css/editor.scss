@@ -86,6 +86,9 @@
         .delete-field {
             float: right;
         }
+        .field-row-longtext .delete-field {
+            float: none;
+        }
         .add-field,
         .add-prop {
             padding: 0.1em 1em;

@@ -63,6 +63,8 @@
   padding: 0.2em 0 0.4em; }
 .ecogwiki-editor .structured .delete-field {
   float: right; }
+.ecogwiki-editor .structured .field-row-longtext .delete-field {
+  float: none; }
 .ecogwiki-editor .structured .add-field,
 .ecogwiki-editor .structured .add-prop {
   padding: 0.1em 1em;
