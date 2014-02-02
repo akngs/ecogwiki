@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="ko">
+<head><meta charset="utf-8"><title>{{ page.title }}</title></head>
+<body><div class="wrap">
+
+{{ page.rendered_body }}
+
+<div style="display: none">
+    <div class="ecogwiki-version">{{ app.version }}</div>
+    <ul class="page-metadata">
+        {% for md in page.metadata %}
+        <li class="key-{{ md }}" data-value="{{ page.metadata[md] }}">
+            <span class="key">{{ md }}</span>
+            <span class="value">{{ page.metadata[md] }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    <ul class="page-hashbang">
+        {% for hb in page.hashbangs %}
+        <li>{{ hb }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+</div></body>
+</html>

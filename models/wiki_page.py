@@ -108,10 +108,19 @@ class WikiPage(ndb.Model, PageOperationMixin):
                                    reverse=True)
         return OrderedDict(sorted_scoretable)
 
-    def preview_rendered_body(self, body):
-        """Preview rendered body without updating model"""
-        self.body = body
-        return super(WikiPage, self).rendered_body
+    def get_preview_instance(self, preview_body):
+        page = PageOperationMixin()
+
+        page.body = preview_body
+        page.title = self.title
+        page.revision = self.revision
+        page.inlinks = self.inlinks
+        page.outlinks = self.outlinks
+        page.related_links = self.related_links
+        page.older_title = self.older_title
+        page.newer_title = self.newer_title
+
+        return page
 
     def can_write(self, user, default_acl=None, acl_r=None, acl_w=None):
         if default_acl is None:

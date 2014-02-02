@@ -41,7 +41,7 @@
     <h1>{{ page.title }}</h1>
 </header>
 
-<article class="preview"><div class="body"></div></article>
+<article id="wikibody_preview"><div class="body"></div></article>
 
 {% if conflict %}
 <div class="message infobox">
@@ -127,7 +127,7 @@
             e.preventDefault();
             e.stopPropagation();
 
-            $('.preview').show();
+            $('#wikibody_preview').show();
 
             var $form = $('.editform');
             $form.find('input[name="preview"]').val('1');
@@ -137,7 +137,9 @@
 
             $.post('?_method=PUT', formdata, function(data) {
                 var html = $('<div>').append(jQuery.parseHTML(data)).find('.wrap').html();
-                $('.preview .body').html(html);
+                var previewEl = document.querySelector('#wikibody_preview .body');
+                previewEl.innerHTML = html;
+                postprocessors.run(previewEl);
             });
         });
     </script>
