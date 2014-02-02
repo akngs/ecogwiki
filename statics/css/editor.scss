@@ -80,7 +80,7 @@
         .prop:last-child {
             margin-bottom: 0.8em;
         }
-        .fields {
+        .field-row {
             padding: 0.2em 0 0.4em;
         }
         .delete-field {
@@ -98,7 +98,7 @@
             padding: 2px 3px;
             box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
         }
-        .fields:hover .field {
+        .field-row:hover .field {
             background-color: #ffc;
         }
     }

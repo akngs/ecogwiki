@@ -84,19 +84,19 @@ var editor = (function($) {
         },
 
         // StructuredEditMode callbacks
-        onStartLoadTypes: function(mode) {
+        onStartLoadTypes: function() {
             this._$root.addClass('busy');
             this._$root.addClass('busy-loading-types');
         },
-        onEndLoadTypes: function(mode) {
+        onEndLoadTypes: function() {
             this._$root.removeClass('busy');
             this._$root.removeClass('busy-loading-types');
         },
-        onStartLoadSchema: function(mode) {
+        onStartLoadSchema: function() {
             this._$root.addClass('busy');
             this._$root.addClass('busy-loading-schema');
         },
-        onEndLoadSchema: function(mode) {
+        onEndLoadSchema: function() {
             this._$root.removeClass('busy');
             this._$root.removeClass('busy-loading-schema');
         }
@@ -155,12 +155,14 @@ var editor = (function($) {
             // load types
             if(this._types.length === 0) {
                 $(self._rootEl).find(':input').prop('disabled', true);
+                $(self._rootEl).find('a').addClass('disabled', true);
                 if(this._callback.onStartLoadTypes) this._callback.onStartLoadTypes(this);
 
                 this._typesLoader(function(types) {
                     self._types = types;
 
                     $(self._rootEl).find(':input').prop('disabled', false);
+                    $(self._rootEl).find('a').removeClass('disabled', true);
                     if(self._callback.onEndLoadTypes) self._callback.onEndLoadTypes(this);
 
                     self.setContent(content, callback);
@@ -294,7 +296,7 @@ var editor = (function($) {
             var sb = [];
             sb.push('<div class="prop prop-property" data-pname="property">');
             sb.push('    <label for="prop_property">Available properties</label>');
-            sb.push('    <div class="fields"><select class="field" id="prop_property" name="prop_property">');
+            sb.push('    <div class="field-row"><select class="field" id="prop_property" name="prop_property">');
 
             for(var pname in props) {
                 sb.push('        <option value="' + pname + '">' + props[pname]['type']['label'] + '</option>');
@@ -392,10 +394,10 @@ var editor = (function($) {
             var $root = $(this._rootEl);
             var $prop = $root.find('.prop-' + pname);
             var prop = this._getProperty(itemtype, pname);
-            var i = $prop.find('li.fields').length;
+            var i = $prop.find('li.field-row').length;
 
             var sb = [];
-            sb.push('<li class="fields">');
+            sb.push('<li class="field-row">');
             sb.push(this._generateFieldHtml(pname, i, prop['type']['ranges'], prop['type']['enum'], value));
             sb.push('<a class="delete-field" href="#">Delete</a>');
             sb.push('</li>');
@@ -449,6 +451,7 @@ var editor = (function($) {
         _onAddProp: function(e) {
             e.preventDefault();
             e.stopPropagation();
+            if($(this).hasClass('disabled')) return;
 
             var $root = $(this._rootEl);
             var itemtype = $root.find('#prop_itemtype').val();
@@ -460,6 +463,7 @@ var editor = (function($) {
         _onAddField: function(e) {
             e.preventDefault();
             e.stopPropagation();
+            if($(this).hasClass('disabled')) return;
 
             var $prop = $(e.target).parents('.prop');
             var $root = $(this._rootEl);
@@ -474,6 +478,7 @@ var editor = (function($) {
         _onDeleteField: function(e) {
             e.preventDefault();
             e.stopPropagation();
+            if($(this).hasClass('disabled')) return;
 
             var $prop = $(e.target).parents('.prop');
             var $root = $(this._rootEl);
@@ -481,17 +486,17 @@ var editor = (function($) {
             var pname = $prop.data('pname');
 
             // Remove element
-            $(e.target).parents('li.fields').remove();
+            $(e.target).parents('li.field-row').remove();
 
             // Update id to fill removed index
-            $prop.find('li.fields').each(function(i) {
+            $prop.find('li.field-row').each(function(i) {
                 $(this).find('.field').attr('id', 'prop_' + pname + '_' + i);
             });
 
             this._updateButtonsVisibility(itemtype, pname);
 
             // Remove property if there's no fields
-            if($prop.find('li.fields').length === 0) $prop.remove();
+            if($prop.find('li.field-row').length === 0) $prop.remove();
         }
     });
 
