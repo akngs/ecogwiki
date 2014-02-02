@@ -2,6 +2,8 @@
 var gdrive = (function($) {
     "use strict";
 
+    if($('#google_oauth2_web_client_id').length === 0) return;
+
     var USERNAME = $('.user-email').text().split('@')[0];
     var GAPI_CLIENT_ID = $('#google_oauth2_web_client_id').val();
     var GAPI_FOLDER = $('#google_drive_folder').val().replace(/\{username\}/, USERNAME);

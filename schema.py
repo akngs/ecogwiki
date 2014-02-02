@@ -387,9 +387,9 @@ class TypeProperty(Property):
 class BooleanProperty(TypeProperty):
     def __init__(self, itemtype, ptype, pname, pvalue):
         super(BooleanProperty, self).__init__(itemtype, ptype, pname, pvalue)
-        if pvalue.lower() in ('1', 'yes', 'true'):
+        if pvalue == True or pvalue.lower() in ('1', 'yes', 'true'):
             self.value = True
-        elif pvalue.lower() in ('0', 'no', 'false'):
+        elif pvalue == False or pvalue.lower() in ('0', 'no', 'false'):
             self.value = False
         else:
             raise ValueError('Invalid boolean: %s' % pvalue)

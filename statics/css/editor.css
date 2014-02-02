@@ -1,24 +1,20 @@
-.editor-tab {
+.ecogwiki-editor .mode-tab {
   list-style: none;
   margin: 0;
   padding: 0;
   border-bottom: 1px solid #dddddd; }
-
-.editor-tab:before,
-.editor-tab:after {
+.ecogwiki-editor .mode-tab:before,
+.ecogwiki-editor .mode-tab:after {
   display: table;
   content: " "; }
-
-.editor-tab:after {
+.ecogwiki-editor .mode-tab:after {
   clear: both; }
-
-.editor-tab .tab {
+.ecogwiki-editor .mode-tab li {
   position: relative;
   display: block;
   float: left;
   margin-bottom: -1px; }
-
-.editor-tab .tab > a {
+.ecogwiki-editor .mode-tab li > a {
   position: relative;
   display: block;
   padding: 10px 15px;
@@ -26,33 +22,59 @@
   border: 1px solid transparent;
   border-radius: 4px 4px 0 0;
   line-height: 1.428571429; }
-
-.editor-tab .tab > a:hover,
-.editor-tab .tab > a:active {
+.ecogwiki-editor .mode-tab li > a:hover,
+.ecogwiki-editor .mode-tab li > a:active {
   text-decoration: none;
   background-color: #eee; }
-
-.editor-tab .tab.active > a,
-.editor-tab .tab.active > a:hover
-.editor-tab .tab.active > a:active {
+.ecogwiki-editor .mode-tab li.active > a,
+.ecogwiki-editor .mode-tab li.active > a:hover
+.mode-tab li.active > a:active {
   color: #555;
   cursor: default;
   background-color: #fff;
   border: 1px solid #dddddd;
   border-bottom-color: transparent; }
-
-.editor-content {
+.ecogwiki-editor.busy .mode-tab li > a {
+  cursor: wait;
+  background-color: #ddd;
+  color: #888; }
+.ecogwiki-editor .mode-pane {
   list-style-type: none;
   margin: 0;
   padding: 0; }
-
-.editor-content .content {
-  display: none;
+.ecogwiki-editor .mode-pane li {
   margin: 0;
   padding: 0; }
-
-.editor-content .content.active {
-  display: block; }
+.ecogwiki-editor .structured label {
+  display: block;
+  margin-bottom: 0.4em;
+  font-weight: 700; }
+.ecogwiki-editor .structured ol {
+  padding-left: 0;
+  margin-left: 0;
+  list-style-type: none; }
+.ecogwiki-editor .structured ol.props {
+  margin: 1em 0; }
+.ecogwiki-editor .structured .prop {
+  margin: 0.8em 0 1.6em; }
+.ecogwiki-editor .structured .prop:last-child {
+  margin-bottom: 0.8em; }
+.ecogwiki-editor .structured .fields {
+  padding: 0.2em 0 0.4em; }
+.ecogwiki-editor .structured .delete-field {
+  float: right; }
+.ecogwiki-editor .structured .add-field,
+.ecogwiki-editor .structured .add-prop {
+  padding: 0.1em 1em;
+  margin: 0.2em 0 0.4em; }
+.ecogwiki-editor .structured .field {
+  display: inline-block;
+  line-height: 1.428571429;
+  border: 1px solid #cccccc;
+  padding: 2px 3px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075); }
+.ecogwiki-editor .structured .fields:hover .field {
+  background-color: #ffc; }
 
 #fileUploadLink {
   display: block;

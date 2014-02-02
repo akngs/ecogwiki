@@ -1,62 +1,108 @@
-.editor-tab {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border-bottom: 1px solid #ddd;
-}
-.editor-tab:before,
-.editor-tab:after {
-    display: table;
-    content: " ";
-}
-.editor-tab:after {
-    clear: both;
-}
-.editor-tab .tab {
-    position: relative;
-    display: block;
-    float: left;
-    margin-bottom: -1px;
-}
-.editor-tab .tab > a {
-    position: relative;
-    display: block;
-    padding: 10px 15px;
-    margin-right: 2px;
-    border: 1px solid transparent;
-    border-radius: 4px 4px 0 0;
-    line-height: 1.428571429;
-}
-.editor-tab .tab > a:hover,
-.editor-tab .tab > a:active {
-    text-decoration: none;
-    background-color: #eee;
-}
-.editor-tab .tab.active {}
-.editor-tab .tab.active > a,
-.editor-tab .tab.active > a:hover
-.editor-tab .tab.active > a:active {
-    color: #555;
-    cursor: default;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-bottom-color: transparent;
-}
+.ecogwiki-editor {
+    .mode-tab {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        border-bottom: 1px solid #ddd;
+    }
+    .mode-tab:before,
+    .mode-tab:after {
+        display: table;
+        content: " ";
+    }
+    .mode-tab:after {
+        clear: both;
+    }
+    .mode-tab li {
+        position: relative;
+        display: block;
+        float: left;
+        margin-bottom: -1px;
+    }
+    .mode-tab li > a {
+        position: relative;
+        display: block;
+        padding: 10px 15px;
+        margin-right: 2px;
+        border: 1px solid transparent;
+        border-radius: 4px 4px 0 0;
+        line-height: 1.428571429;
+    }
+    .mode-tab li > a:hover,
+    .mode-tab li > a:active {
+        text-decoration: none;
+        background-color: #eee;
+    }
+    .mode-tab li.active {
+    }
+    .mode-tab li.active > a,
+    .mode-tab li.active > a:hover
+    .mode-tab li.active > a:active {
+        color: #555;
+        cursor: default;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-bottom-color: transparent;
+    }
+    &.busy .mode-tab li > a {
+        cursor: wait;
+        background-color: #ddd;
+        color: #888;
+    }
 
-.editor-content {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
-.editor-content .content {
-    display: none;
-    margin: 0;
-    padding: 0;
-}
-.editor-content .content.active {
-    display: block;
-}
+    .mode-pane {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+    .mode-pane li {
+        margin: 0;
+        padding: 0;
+    }
 
+    .structured {
+        label {
+            display: block;
+            margin-bottom: 0.4em;
+            font-weight: 700;
+        }
+        ol {
+            padding-left: 0;
+            margin-left: 0;
+            list-style-type: none;
+        }
+        ol.props {
+            margin: 1em 0;
+        }
+        .prop {
+            margin: 0.8em 0 1.6em;
+        }
+        .prop:last-child {
+            margin-bottom: 0.8em;
+        }
+        .fields {
+            padding: 0.2em 0 0.4em;
+        }
+        .delete-field {
+            float: right;
+        }
+        .add-field,
+        .add-prop {
+            padding: 0.1em 1em;
+            margin: 0.2em 0 0.4em;
+        }
+        .field {
+            display: inline-block;
+            line-height: 1.428571429;
+            border: 1px solid #ccc;
+            padding: 2px 3px;
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+        }
+        .fields:hover .field {
+            background-color: #ffc;
+        }
+    }
+}
 
 #fileUploadLink {
     display: block;
