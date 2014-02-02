@@ -89,11 +89,6 @@ def userpage_link(user):
     return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
 
 
-def has_supported_language(hashbangs):
-    langs = WikiPage.get_config()['highlight']['supported_languages']
-    return any(lang in langs for lang in hashbangs)
-
-
 JINJA.filters['dt'] = format_datetime
 JINJA.filters['sdt'] = format_short_datetime
 JINJA.filters['isodt'] = format_iso_datetime
@@ -101,7 +96,6 @@ JINJA.filters['to_abs_path'] = to_abs_path
 JINJA.filters['to_rel_path'] = to_rel_path
 JINJA.filters['to_pluspath'] = to_pluspath
 JINJA.filters['userpage'] = userpage_link
-JINJA.filters['has_supported_language'] = has_supported_language
 
 
 def template(req, path, data):

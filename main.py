@@ -40,30 +40,6 @@ DEFAULT_CONFIG = {
             'read': ['all'],
             'write': ['login'],
         },
-    },
-    'highlight': {
-        'style': 'default',
-        'supported_languages': [
-            'sh',
-            'csharp',
-            'c++',
-            'css',
-            'coffeescript',
-            'diff',
-            'html',
-            'xml',
-            'json',
-            'java',
-            'javascript',
-            'makefile',
-            'markdown',
-            'objectivec',
-            'php',
-            'perl',
-            'python',
-            'ruby',
-            'sql',
-        ]
     }
 }
 

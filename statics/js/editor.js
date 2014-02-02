@@ -715,16 +715,16 @@ var editor = (function($) {
     }
 
     return {
-        Editor: Editor,
+        'Editor': Editor,
 
-        EditMode: EditMode,
-        PlainEditMode: PlainEditMode,
-        StructuredEditMode: StructuredEditMode,
+        'EditMode': EditMode,
+        'PlainEditMode': PlainEditMode,
+        'StructuredEditMode': StructuredEditMode,
 
-        ContentParser: ContentParser,
+        'ContentParser': ContentParser,
 
-        TextEditlet: TextEditlet,
-        SimpleTextEditlet: SimpleTextEditlet,
-        CodeMirrorTextEditlet: CodeMirrorTextEditlet
+        'TextEditlet': TextEditlet,
+        'SimpleTextEditlet': SimpleTextEditlet,
+        'CodeMirrorTextEditlet': CodeMirrorTextEditlet
     };
 })($);
