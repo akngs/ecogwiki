@@ -22,8 +22,6 @@
     <link rel="stylesheet" href="{{ css }}?ver={{ app.version }}">
     {% endfor %}
 
-    <script src="/statics/js/head.js?ver={{ app.version }}" type="text/javascript"></script>
-
     <!-- Google Analytics 2013-07-28 { -->
     {% if is_local %}
     <script>
@@ -142,7 +140,9 @@
 <script src="/statics/js/jquery.js?ver={{ app.version }}"></script>
 {% endif %}
 
+<script src="/statics/js/head.js?ver={{ app.version }}" type="text/javascript"></script>
 <script src="/statics/js/main.js?ver={{ app.version }}"></script>
+<script src="/statics/js/postprocessors.js?ver={{ app.version }}" type="text/javascript"></script>
 
 {% block before_body_close %}{% endblock %}
 </body>

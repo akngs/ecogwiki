@@ -137,7 +137,9 @@
 
             $.post('?_method=PUT', formdata, function(data) {
                 var html = $('<div>').append(jQuery.parseHTML(data)).find('.wrap').html();
-                $('.preview .body').html(html);
+                var previewEl = document.querySelector('.preview .body');
+                previewEl.innerHTML = html;
+                postprocessors.run(previewEl);
             });
         });
     </script>

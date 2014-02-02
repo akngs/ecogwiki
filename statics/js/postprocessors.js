@@ -218,6 +218,8 @@ var postprocessors = (function($) {
     });
 
 
+    var loadedDependencies = [];
+
     function run(rootEl) {
         var procs = [
             new RevealProcessor(rootEl),
@@ -235,7 +237,11 @@ var postprocessors = (function($) {
 
             procsToRun.push(p);
             p.dependencies().forEach(function(d) {
+                // do not load the same resource more than once
+                if(loadedDependencies.indexOf(d) !== -1) return;
+
                 dependencies.push(d);
+                loadedDependencies.push(d);
             });
         });
 

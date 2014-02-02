@@ -90,10 +90,9 @@ class PageLikeResource(Resource):
 
     def represent_html_bodyonly(self, page):
         content = {
-            'title': page.title,
-            'body': page.rendered_body,
+            'page': page,
         }
-        return TemplateRepresentation(content, self.req, 'generic_bodyonly.html')
+        return TemplateRepresentation(content, self.req, 'wikipage_bodyonly.html')
 
     def represent_atom_default(self, page):
         content = render_atom(self.req, page.title, WikiPage.title_to_path(page.title),
@@ -158,7 +157,7 @@ class PageResource(PageLikeResource):
         new_body = self.req.POST['body']
         comment = self.req.POST.get('comment', '')
 
-        view    = self.req.GET.get('view', self.default_view)
+        view = self.req.GET.get('view', self.default_view)
         restype = get_restype(self.req, 'html')
 
         # POST to edit form, not content
@@ -201,9 +200,9 @@ class PageResource(PageLikeResource):
 
         if preview == '1':
             self.res.headers['Content-Type'] = 'text/html; charset=utf-8'
-            html = template(self.req, 'generic_bodyonly.html', {
-                'title': page.title,
-                'body': page.preview_rendered_body(new_body)
+            page = page.get_preview_instance(new_body)
+            html = template(self.req, 'wikipage_bodyonly.html', {
+                'page': page,
             })
             set_response_body(self.res, html, False)
             return
