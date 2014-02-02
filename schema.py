@@ -5,11 +5,9 @@ import sys
 import json
 import caching
 import operator
+from datetime import date
 from markdownext import md_wikilink
 
-from datetime import date
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
 SCHEMA_TO_LOAD = [
     'schema.json',
@@ -404,7 +402,7 @@ class TextProperty(TypeProperty):
         self.value = pvalue
 
     def is_wikilink(self):
-        return True
+        return self.pname == 'name'
 
     def render(self):
         if self.is_wikilink():
