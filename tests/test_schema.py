@@ -186,7 +186,7 @@ class SchemaPathTest(unittest.TestCase):
 class EmbeddedSchemaDataTest(unittest.TestCase):
     def test_no_data(self):
         data = PageOperationMixin.parse_data(u'Hello', u'Hello')
-        self.assertEquals(['name', 'schema'], data.keys())
+        self.assertEqual(['name', 'schema'], data.keys())
         self.assertEqual(u'Hello', data['name'].pvalue)
         self.assertEqual(u'Thing/CreativeWork/Article/', data['schema'].pvalue)
 
@@ -208,7 +208,7 @@ class YamlSchemaDataTest(AppEngineTestCase):
     def test_yaml(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello', u'Hello')
         self.assertEqual({u'Book/author': [u'AK']}, page.outlinks)
-        self.assertEquals({'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'},
+        self.assertEqual({'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'},
                           dict((k, v.pvalue) for k, v in page.data.items()))
 
     def test_re_match(self):
@@ -219,7 +219,7 @@ class YamlSchemaDataTest(AppEngineTestCase):
     def test_list_value(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\nHello', u'Hello')
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEquals([u'AK', u'TK'], [v.pvalue for v in page.data['author']])
+        self.assertEqual([u'AK', u'TK'], [v.pvalue for v in page.data['author']])
 
     def test_mix_with_embedded_data(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::1234567890}}\n\n[[author::JK]]', u'Hello')
@@ -231,7 +231,7 @@ class YamlSchemaDataTest(AppEngineTestCase):
     def test_no_duplications(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n\n{{isbn::1234567890}}\n\n[[author::TK]]')
         self.assertEqual({u'Book/author': [u'AK', u'TK']}, page.outlinks)
-        self.assertEquals([u'AK', u'TK'], [v.pvalue for v in page.data['author']])
+        self.assertEqual([u'AK', u'TK'], [v.pvalue for v in page.data['author']])
 
     def test_yaml_block_should_not_be_rendered(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello')
@@ -240,9 +240,9 @@ class YamlSchemaDataTest(AppEngineTestCase):
     def test_tab_and_space_mixed(self):
         body = u'\t#!yaml/schema\r\n    alternateName: hi\r\n\turl: http://x.com\r\n    name: "Hello"\r\n'
         data = PageOperationMixin.parse_schema_yaml(body)
-        self.assertEquals(data['name'], u'Hello')
-        self.assertEquals(data['alternateName'], u'hi')
-        self.assertEquals(data['url'], u'http://x.com')
+        self.assertEqual(data['name'], u'Hello')
+        self.assertEqual(data['alternateName'], u'hi')
+        self.assertEqual(data['url'], u'http://x.com')
 
     def test_yaml_indent_catching_only_space(self):
         body = u'''\r\n\t#!yaml/schema\n    url: "http://x.com"\n\nHello\n'''
