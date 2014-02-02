@@ -45,6 +45,36 @@
 .ecogwiki-editor .mode-pane li {
   margin: 0;
   padding: 0; }
+.ecogwiki-editor .structured label {
+  display: block;
+  margin-bottom: 0.4em;
+  font-weight: 700; }
+.ecogwiki-editor .structured ol {
+  padding-left: 0;
+  margin-left: 0;
+  list-style-type: none; }
+.ecogwiki-editor .structured ol.props {
+  margin: 1em 0; }
+.ecogwiki-editor .structured .prop {
+  margin: 0.8em 0 1.6em; }
+.ecogwiki-editor .structured .prop:last-child {
+  margin-bottom: 0.8em; }
+.ecogwiki-editor .structured .fields {
+  padding: 0.2em 0 0.4em; }
+.ecogwiki-editor .structured .delete-field {
+  float: right; }
+.ecogwiki-editor .structured .add-field,
+.ecogwiki-editor .structured .add-prop {
+  padding: 0.1em 1em;
+  margin: 0.2em 0 0.4em; }
+.ecogwiki-editor .structured .field {
+  display: inline-block;
+  line-height: 1.428571429;
+  border: 1px solid #cccccc;
+  padding: 2px 3px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075); }
+.ecogwiki-editor .structured .fields:hover .field {
+  background-color: #ffc; }
 
 #fileUploadLink {
   display: block;

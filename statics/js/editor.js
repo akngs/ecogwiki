@@ -79,8 +79,8 @@ var editor = (function($) {
         getContent: function() {
             return this.getActiveMode().getContent();
         },
-        appendContent: function(content, callback) {
-            this.getActiveMode().appendContent(content, callback);
+        appendContent: function(content) {
+            this.getActiveMode().appendContent(content);
         },
 
         // StructuredEditMode callbacks
@@ -128,9 +128,8 @@ var editor = (function($) {
             this._editlet.setContent(content);
             if(callback) callback();
         },
-        appendContent: function(content, callback) {
+        appendContent: function(content) {
             this._editlet.appendContent(content);
-            if(callback) callback();
         }
     });
 
@@ -211,7 +210,9 @@ var editor = (function($) {
             // 4. Wikibody
             this._populateBodyField(parsed['body']);
         },
-        appendContent: function(content, callback) {
+        appendContent: function(content) {
+            this._wikibodyEditlet.appendContent(content);
+
         },
         getContent: function() {
             var parsed = this._gatherData();
@@ -254,7 +255,7 @@ var editor = (function($) {
             sb.push('<div class="prop prop-' + prop['type']['id'] + '" data-pname="' + prop['type']['id'] + '">');
             sb.push('   <label for="' + idPrefix + '_0">' + prop['type']['label'] + '</label>');
             sb.push('   <ol></ol>');
-            sb.push('   <a class="add-field" href="#">Add field</a>');
+            sb.push('   <a class="add-field btn" href="#">Add field</a>');
             sb.push('</div>');
             $propList.append(sb.join('\n'));
 
@@ -293,13 +294,13 @@ var editor = (function($) {
             var sb = [];
             sb.push('<div class="prop prop-property" data-pname="property">');
             sb.push('    <label for="prop_property">Available properties</label>');
-            sb.push('    <select class="field" id="prop_property" name="prop_property">');
+            sb.push('    <div class="fields"><select class="field" id="prop_property" name="prop_property">');
 
             for(var pname in props) {
                 sb.push('        <option value="' + pname + '">' + props[pname]['type']['label'] + '</option>');
             }
-            sb.push('    </select>');
-            sb.push('    <a class="add-prop" href="#">Add</a>');
+            sb.push('    </select></div>');
+            sb.push('    <a class="add-prop btn" href="#">Add property</a>');
             sb.push('</div>');
             $root.append(sb.join('\n'));
         },
@@ -433,9 +434,9 @@ var editor = (function($) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="number" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if('Boolean' === ranges) {
                     if(value) {
-                        sb.push('<input class="field" data-type="' + ranges + '" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="on" checked="checked">');
+                        sb.push('<input class="field" data-type="' + ranges + '" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="on" checked="checked"> Yes');
                     } else {
-                        sb.push('<input class="field" data-type="' + ranges + '" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="on">');
+                        sb.push('<input class="field" data-type="' + ranges + '" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="on"> Yes');
                     }
                 } else if('Date' === ranges) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="date" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
