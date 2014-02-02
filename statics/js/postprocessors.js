@@ -88,8 +88,8 @@ var postprocessors = (function($) {
         },
         dependencies: function() {
             return [
-                '/statics/css/vendor/highlight/googlecode.css',
-                '/statics/js/highlight.pack.js'
+                'http://yandex.st/highlightjs/8.0/styles/default.min.css',
+                'http://yandex.st/highlightjs/8.0/highlight.min.js'
             ];
         },
         run: function() {
