@@ -211,9 +211,14 @@ var postprocessors = (function($) {
             return ['http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'];
         },
         runBeforeDependencies: function() {
+            if('MathJax' in window) return;
+
             window['MathJax'] = {
                 displayAlign: "left"
             };
+        },
+        run: function() {
+            MathJax.Hub.Queue(['Typeset', MathJax.Hub]);
         }
     });
 
@@ -245,15 +250,23 @@ var postprocessors = (function($) {
             });
         });
 
-        // Run post-processors
+        // Run codes before loading dependencies
         procsToRun.forEach(function(p) {
             p.runBeforeDependencies();
         });
-        head.load(dependencies, function() {
+
+        // Load dependencies and run()
+        if(dependencies.length) {
+            head.load(dependencies, function() {
+                procsToRun.forEach(function(p) {
+                    p.run();
+                });
+            });
+        } else {
             procsToRun.forEach(function(p) {
                 p.run();
             });
-        });
+        }
     }
 
     return {

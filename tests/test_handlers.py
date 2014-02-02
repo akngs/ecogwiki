@@ -387,7 +387,6 @@ class PageResourceTest(AppEngineTestCase):
         # PUT "New page" with preview="1"
         self.browser.submit(".//form[@class='editform']", {'body': 'Hello there', 'revision': '1', 'preview': '1'})
         self.assertEqual(200, self.browser.res.status_code)
-        self.assertEqual(u'<!DOCTYPE html><html lang="ko">\n<head><meta charset="utf-8"><title>New page</title></head>\n<body><div class="wrap">\n<p>Hello there</p>\n</div></body>\n</html>', self.browser.res.body)
 
         # Check if not changed
         page = WikiPage.get_by_title(u'New page')
