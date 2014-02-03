@@ -139,8 +139,10 @@
 <script src="/statics/js/main.js?ver={{ app.version }}"></script>
 <script src="/statics/js/postprocessors.js?ver={{ app.version }}" type="text/javascript"></script>
 <script type="text/javascript">
-    main.run();
-    postprocessors.run(document.body);
+    $(function() {
+        main.run();
+        postprocessors.run(document.body);
+    });
 </script>
 
 {% block before_body_close %}{% endblock %}
