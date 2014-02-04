@@ -482,35 +482,45 @@ class TextProperty(TypeProperty):
 class NumberProperty(TypeProperty):
     def __init__(self, itemtype, ptype, pname, pvalue):
         super(NumberProperty, self).__init__(itemtype, ptype, pname, pvalue)
-        try:
-            if pvalue.find('.') == -1:
-                self.value = int(pvalue)
-            else:
-                self.value = float(pvalue)
-        except ValueError:
-            raise ValueError('Invalid number: %s' % pvalue)
+        if type(pvalue) == str or type(pvalue) == unicode:
+            try:
+                if pvalue.find('.') == -1:
+                    pvalue = int(pvalue)
+                else:
+                    pvalue = float(pvalue)
+            except ValueError:
+                raise ValueError('Invalid number: %s' % pvalue)
+
+        self.value = pvalue
 
 
 class IntegerProperty(NumberProperty):
     def __init__(self, itemtype, ptype, pname, pvalue):
         super(IntegerProperty, self).__init__(itemtype, ptype, pname, pvalue)
 
-        try:
-            self.value = int(pvalue)
-        except ValueError:
-            raise ValueError('Invalid integer: %s' % pvalue)
-        if self.value != float(pvalue):
-            raise ValueError('Invalid integer: %s' % pvalue)
+        if type(pvalue) == str or type(pvalue) == unicode:
+            try:
+                pvalue_conv = int(pvalue)
+            except ValueError:
+                raise ValueError('Invalid integer: %s' % pvalue)
+            if pvalue_conv != float(pvalue):
+                raise ValueError('Invalid integer: %s' % pvalue)
+            pvalue = pvalue_conv
+
+        self.value = pvalue
 
 
 class FloatProperty(NumberProperty):
     def __init__(self, itemtype, ptype, pname, pvalue):
         super(FloatProperty, self).__init__(itemtype, ptype, pname, pvalue)
 
-        try:
-            self.value = float(pvalue)
-        except ValueError:
-            raise ValueError('Invalid float: %s' % pvalue)
+        if type(pvalue) == str or type(pvalue) == unicode:
+            try:
+                pvalue = float(pvalue)
+            except ValueError:
+                raise ValueError('Invalid float: %s' % pvalue)
+
+        self.value = pvalue
 
 
 class DateTimeProperty(TextProperty):
