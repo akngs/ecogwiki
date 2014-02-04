@@ -97,6 +97,58 @@ class CustomTypeAndPropertyTest(AppEngineTestCase):
         self.assertEqual({u'politicalParty'}, politician.difference(person))
 
 
+class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
+    def setUp(self):
+        super(SimpleCustomTypeAndPropertyTest, self).setUp()
+        schema.SCHEMA_TO_LOAD.append({
+            "datatypes": {
+            },
+            "properties": {
+                "politicalParty": {
+                    "comment": "Political party.",
+                    "comment_plain": "Political party.",
+                    "domains": [
+                        "Thing"
+                    ],
+                    "id": "politicalParty",
+                    "label": "Political Party",
+                    "reversed_label": "%s",
+                    "ranges": [
+                        "Text"
+                    ]
+                }
+            },
+            "types": {
+                "Politician": {
+                    "ancestors": [
+                        "Thing",
+                        "Person"
+                    ],
+                    "comment": "",
+                    "comment_plain": "",
+                    "id": "Politician",
+                    "label": "Politician",
+                    "specific_properties": [
+                        "politicalParty"
+                    ],
+                    "subtypes": [],
+                    "supertypes": [
+                        "Person"
+                    ],
+                }
+            }
+        })
+        self.person = schema.get_schema('Person')
+        self.politician = schema.get_schema('Politician')
+
+    def tearDown(self):
+        schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
+        super(SimpleCustomTypeAndPropertyTest, self).tearDown()
+
+    def test_populate_url_if_omitted(self):
+        self.assertEqual('/sp.schema/types/Politician', self.politician['url'])
+
+
 class EnumerationTest(AppEngineTestCase):
     def setUp(self):
         super(EnumerationTest, self).setUp()

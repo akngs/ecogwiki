@@ -6,6 +6,7 @@ import json
 import caching
 import operator
 from datetime import date
+from models import WikiPage
 from markdownext import md_wikilink
 
 
@@ -97,6 +98,10 @@ def get_schema(itemtype, self_contained=False):
     # merge specific_properties into properties
     item['properties'] = sorted(list(props.union(sprops)))
     item['specific_properties'] = sorted(list(sprops))
+
+    # populate missing fields
+    if 'url' not in item:
+        item['url'] = '%s/sp.schema/types/%s' % (WikiPage.get_config()['service']['domain'], itemtype)
 
     caching.set_schema(itemtype, item)
     return item
