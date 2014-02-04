@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 import os
 import re
 import sys
@@ -48,7 +49,7 @@ def get_sc_schema(itemtype):
     schema = get_schema(itemtype).copy()
 
     # extend properties to include cardinalities and type infos
-    props = {}
+    props = collections.OrderedDict()
     for p in schema['properties']:
         props[p] = {
             'cardinality': get_cardinality(itemtype, p),
@@ -110,17 +111,18 @@ def get_schema(itemtype, self_contained=False):
         item['properties'] = []
 
     for stype in item['supertypes']:
-        item['properties'] += get_schema(stype)['properties']
-    item['properties'] = list(set(item['properties']))
+        super_props = [p for p in get_schema(stype)['properties'] if p not in item['properties']]
+        item['properties'] += super_props
 
     # remove legacy spellings
-    legacy_spellings = get_legacy_spellings()
-    props = set(item['properties']).difference(legacy_spellings)
+    legacy_spellings = set(get_legacy_spellings())
+
+    item['properties'] = [p for p in item['properties'] if p not in legacy_spellings]
     sprops = set(item['specific_properties']).difference(legacy_spellings)
 
     # merge specific_properties into properties
-    item['properties'] = sorted(list(props.union(sprops)))
-    item['specific_properties'] = sorted(list(sprops))
+    item['properties'] += [p for p in sprops if p not in item['properties']]
+    item['specific_properties'] = list(sprops)
 
     caching.set_schema(itemtype, item)
     return item
