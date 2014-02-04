@@ -5,9 +5,9 @@ from tests import AppEngineTestCase
 from models import SchemaDataIndex, PageOperationMixin
 
 
-class SchemaTest(AppEngineTestCase):
+class LabelTest(AppEngineTestCase):
     def setUp(self):
-        super(SchemaTest, self).setUp()
+        super(LabelTest, self).setUp()
 
     def test_get_plural_label(self):
         self.assertEqual(u'Creative Works', schema.get_schema('CreativeWork')['plural_label'])
@@ -26,38 +26,9 @@ class SchemaTest(AppEngineTestCase):
         self.assertEqual(u'Date Published', schema.get_property('datePublished')['label'])
         self.assertEqual(u'Published %s', schema.get_property('datePublished')['reversed_label'])
 
-    def test_legacy_spells(self):
-        self.assertRaises(KeyError, schema.get_property, 'contactPoints')
-        self.assertTrue('awards' not in schema.get_schema('Person')['properties'])
-
     def test_incoming_links(self):
         self.assertEqual(u'Related People', schema.humane_property('Person', 'relatedTo', True))
         self.assertEqual(u'Children (People)', schema.humane_property('Person', 'parent', True))
-
-    def test_datatype(self):
-        self.assertEqual('Boolean', schema.get_datatype('Boolean')['label'])
-
-    def test_custom_datatype(self):
-        isbn = schema.get_datatype('ISBN')
-        self.assertEqual(['DataType'], isbn['ancestors'])
-
-    def test_get_itemtypes(self):
-        itemtypes = schema.get_itemtypes()
-        self.assertEqual(list, type(itemtypes))
-        self.assertEqual('APIReference', itemtypes[0])
-        self.assertEqual('Zoo', itemtypes[-1])
-
-    def test_properties_should_contain_all_specific_properties(self):
-        for t in schema.get_itemtypes():
-            item = schema.get_schema(t)
-            self.assertEqual(set(), set(item['specific_properties']).difference(item['properties']))
-
-    def test_self_contained_schema(self):
-        s = schema.get_schema('Person', True)
-        url = s['properties']['url']
-        self.assertEqual(dict, type(url))
-        self.assertEqual([0, 0], url['cardinality'])
-        self.assertEqual(['URL'], url['type']['ranges'])
 
 
 class CustomTypeAndPropertyTest(AppEngineTestCase):
@@ -124,6 +95,60 @@ class CustomTypeAndPropertyTest(AppEngineTestCase):
         politician = set(schema.get_schema('Politician')['properties'])
         self.assertEqual(set(), person.difference(politician))
         self.assertEqual({u'politicalParty'}, politician.difference(person))
+
+
+class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
+    def setUp(self):
+        super(SimpleCustomTypeAndPropertyTest, self).setUp()
+        schema.SCHEMA_TO_LOAD.append({
+            "datatypes": {
+                "ISBN2": {
+                    "comment": "ISBN 2",
+                },
+            },
+            "properties": {
+                "politicalParty": {
+                    "comment": "A political party.",
+                }
+            },
+            "types": {
+                "Politician": {
+                    "supertypes": ["Person"],
+                    "specific_properties": ["politicalParty"],
+                    "comment": "A political party.",
+                }
+            }
+        })
+        self.dtype = schema.get_datatype('ISBN2')
+        self.item = schema.get_schema('Politician')
+        self.prop = schema.get_property('politicalParty')
+
+    def tearDown(self):
+        schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
+        super(SimpleCustomTypeAndPropertyTest, self).tearDown()
+
+    def test_populate_omitted_item_fields(self):
+        self.assertEqual('/sp.schema/types/Politician', self.item['url'])
+        self.assertEqual(["Thing", "Person"], self.item['ancestors'])
+        self.assertEqual('Politician', self.item['id'])
+        self.assertEqual('A political party.', self.item['comment_plain'])
+        self.assertEqual([], self.item['subtypes'])
+
+    def test_populate_omitted_datatype_fields(self):
+        self.assertEqual('/sp.schema/datatypes/ISBN2', self.dtype['url'])
+        self.assertEqual(["Thing", "Person"], self.item['ancestors'])
+        self.assertEqual([], self.dtype['properties'])
+        self.assertEqual([], self.dtype['specific_properties'])
+        self.assertEqual(['DataType'], self.dtype['ancestors'])
+        self.assertEqual(['DataType'], self.dtype['supertypes'])
+        self.assertEqual([], self.dtype['subtypes'])
+        self.assertEqual('ISBN2', self.dtype['id'])
+        self.assertEqual('ISBN 2', self.dtype['comment_plain'])
+
+    def test_populate_omitted_property_fields(self):
+        self.assertEqual(["Thing"], self.prop['domains'])
+        self.assertEqual(["Text"], self.prop['ranges'])
+        self.assertEqual('A political party.', self.item['comment_plain'])
 
 
 class EnumerationTest(AppEngineTestCase):
@@ -457,3 +482,37 @@ class ConversionPriorityTest(unittest.TestCase):
 
         prop = schema.SchemaConverter.convert(u'SoftwareApplication', {u'featureList': u'See http://x.com'})['featureList']
         self.assertEqual(schema.TextProperty, type(prop))
+
+
+class MiscTest(AppEngineTestCase):
+    def setUp(self):
+        super(MiscTest, self).setUp()
+
+    def test_should_not_allow_legacy_spells(self):
+        self.assertRaises(KeyError, schema.get_property, 'contactPoints')
+        self.assertTrue('awards' not in schema.get_schema('Person')['properties'])
+
+    def test_get_datatype(self):
+        self.assertEqual('Boolean', schema.get_datatype('Boolean')['label'])
+
+    def test_get_custom_datatype(self):
+        isbn = schema.get_datatype('ISBN')
+        self.assertEqual(['DataType'], isbn['ancestors'])
+
+    def test_get_itemtypes(self):
+        itemtypes = schema.get_itemtypes()
+        self.assertEqual(list, type(itemtypes))
+        self.assertEqual('APIReference', itemtypes[0])
+        self.assertEqual('Zoo', itemtypes[-1])
+
+    def test_properties_should_contain_all_specific_properties(self):
+        for t in schema.get_itemtypes():
+            item = schema.get_schema(t)
+            self.assertEqual(set(), set(item['specific_properties']).difference(item['properties']))
+
+    def test_self_contained_schema(self):
+        s = schema.get_schema('Person', True)
+        url = s['properties']['url']
+        self.assertEqual(dict, type(url))
+        self.assertEqual([0, 0], url['cardinality'])
+        self.assertEqual(['URL'], url['type']['ranges'])

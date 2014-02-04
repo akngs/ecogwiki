@@ -71,6 +71,30 @@ def get_schema(itemtype, self_contained=False):
         return item
 
     item = get_schema_set()['types'][itemtype]
+
+    # populate missing fields
+    if 'url' not in item:
+        item['url'] = '/sp.schema/types/%s' % itemtype
+    if 'id' not in item:
+        item['id'] = itemtype
+    if 'label' not in item:
+        item['label'] = item['id']
+    if 'comment' not in item:
+        item['comment'] = item['label']
+    if 'comment_plain' not in item:
+        item['comment_plain'] = item['comment']
+    if 'subtypes' not in item:
+        item['subtypes'] = []
+    if 'ancestors' not in item:
+        # collect ancestors
+        ancestors = []
+        parent = item
+        while len(parent['supertypes']) > 0:
+            parent_itemtype = parent['supertypes'][0]
+            ancestors.append(parent_itemtype)
+            parent = get_schema(parent_itemtype)
+        ancestors.reverse()
+        item['ancestors'] = ancestors
     if 'plural_label' not in item:
         if item['label'][-2:] in ['ay', 'ey', 'iy', 'oy', 'uy', 'wy']:
             item['plural_label'] = u'%ss' % item['label']
@@ -113,13 +137,36 @@ def get_itemtypes():
 
 
 def get_datatype(type_name):
-    datatype = caching.get_schema_datatype(type_name)
-    if datatype is not None:
-        return datatype
+    dtype = caching.get_schema_datatype(type_name)
+    if dtype is not None:
+        return dtype
 
-    datatype = get_schema_set()['datatypes'][type_name]
-    caching.set_schema_datatype(type_name, datatype)
-    return datatype
+    dtype = get_schema_set()['datatypes'][type_name]
+
+    # populate missing fields
+    if 'url' not in dtype:
+        dtype['url'] = '/sp.schema/datatypes/%s' % type_name
+    if 'properties' not in dtype:
+        dtype['properties'] = []
+    if 'specific_properties' not in dtype:
+        dtype['specific_properties'] = []
+    if 'supertypes' not in dtype:
+        dtype['supertypes'] = ['DataType']
+    if 'subtypes' not in dtype:
+        dtype['subtypes'] = []
+    if 'id' not in dtype:
+        dtype['id'] = type_name
+    if 'label' not in dtype:
+        dtype['label'] = dtype['id']
+    if 'comment' not in dtype:
+        dtype['comment'] = dtype['label']
+    if 'comment_plain' not in dtype:
+        dtype['comment_plain'] = dtype['comment']
+    if 'ancestors' not in dtype:
+        dtype['ancestors'] = dtype['supertypes']
+
+    caching.set_schema_datatype(type_name, dtype)
+    return dtype
 
 
 def get_property(prop_name):
@@ -131,8 +178,23 @@ def get_property(prop_name):
         return prop
 
     prop = get_schema_set()['properties'][prop_name]
+
+    # populate missing fields
+    if 'domains' not in prop:
+        prop['domains'] = ['Thing']
+    if 'ranges' not in prop:
+        prop['ranges'] = ['Text']
+    if 'id' not in prop:
+        prop['id'] = prop_name
+    if 'label' not in prop:
+        prop['label'] = prop['id']
+    if 'comment' not in prop:
+        prop['comment'] = prop['label']
+    if 'comment_plain' not in prop:
+        prop['comment_plain'] = prop['comment']
     if 'reversed_label' not in prop:
         prop['reversed_label'] = '[%%s] %s' % prop['label']
+
     caching.set_schema_property(prop_name, prop)
     return prop
 
