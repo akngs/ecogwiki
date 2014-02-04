@@ -120,10 +120,6 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
             },
             "types": {
                 "Politician": {
-                    "ancestors": [
-                        "Thing",
-                        "Person"
-                    ],
                     "comment": "",
                     "comment_plain": "",
                     "id": "Politician",
@@ -147,6 +143,9 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
 
     def test_populate_url_if_omitted(self):
         self.assertEqual('/sp.schema/types/Politician', self.politician['url'])
+
+    def test_populate_ancestors_if_omitted(self):
+        self.assertEqual(["Thing", "Person"], self.politician['ancestors'])
 
 
 class EnumerationTest(AppEngineTestCase):

@@ -102,6 +102,16 @@ def get_schema(itemtype, self_contained=False):
     # populate missing fields
     if 'url' not in item:
         item['url'] = '%s/sp.schema/types/%s' % (WikiPage.get_config()['service']['domain'], itemtype)
+    if 'ancestors' not in item:
+        # collect ancestors
+        ancestors = []
+        parent = item
+        while len(parent['supertypes']) > 0:
+            parent_itemtype = parent['supertypes'][0]
+            ancestors.append(parent_itemtype)
+            parent = get_schema(parent_itemtype)
+        ancestors.reverse()
+        item['ancestors'] = ancestors
 
     caching.set_schema(itemtype, item)
     return item
