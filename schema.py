@@ -479,6 +479,18 @@ class TextProperty(TypeProperty):
             return super(TextProperty, self).render()
 
 
+class LongTextProperty(TextProperty):
+    def __init__(self, itemtype, ptype, pname, pvalue):
+        super(LongTextProperty, self).__init__(itemtype, ptype, pname, pvalue)
+        self.value = pvalue
+
+    def is_wikilink(self):
+        return False
+
+    def render(self):
+        return super(LongTextProperty, self).render()
+
+
 class NumberProperty(TypeProperty):
     def __init__(self, itemtype, ptype, pname, pvalue):
         super(NumberProperty, self).__init__(itemtype, ptype, pname, pvalue)
@@ -622,12 +634,14 @@ PRIORITY = {
     FloatProperty: 3,
     NumberProperty: 3,
 
-    TextProperty: 4,
+    LongTextProperty: 4,
 
-    TypeProperty: 5,
+    TextProperty: 5,
 
-    ThingProperty: 6,
-    InvalidProperty: 6,
+    TypeProperty: 6,
 
-    Property: 7,
+    ThingProperty: 7,
+    InvalidProperty: 7,
+
+    Property: 8,
 }
