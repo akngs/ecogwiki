@@ -552,6 +552,10 @@ describe('Edit mode', function() {
             expect(mode._generateFieldHtml('f', 0, ['DateTime'], null, 'Hello')).toEqual('<input class="field" data-type="DateTime" type="text" id="prop_f_0" name="f" value="Hello">');
         });
 
+        it('should render select field for enum text type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['Text'], ['A', 'B'], 'A')).toEqual('<select class="field" data-type="Text" id="prop_f_0" name="f">\n<option value="A" selected="selected">A</option>\n<option value="B">B</option>\n</select>');
+        });
+
         it('should render textarea for longtext type', function() {
             expect(mode._generateFieldHtml('f', 0, ['LongText'], null, 'Hello')).toEqual('<textarea class="field" data-type="LongText" id="prop_f_0" name="f">Hello</textarea>');
         });

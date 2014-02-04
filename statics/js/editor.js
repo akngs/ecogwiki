@@ -431,6 +431,7 @@ var editor = (function($) {
             var type = forceType || prop['type']['ranges'];
 
             var sb = [];
+
             sb.push('<li class="field-row">');
             sb.push(this._generateFieldHtml(pname, i, type, prop['type']['enum'], value));
             sb.push('<a class="delete-field" href="#">Delete</a>');
@@ -463,7 +464,11 @@ var editor = (function($) {
                 // Render <select> element for enums
                 sb.push('<select class="field" data-type="' + ranges + '" id="prop_' + pname + '_' + index + '" name="' + pname + '">');
                 enums.forEach(function(v) {
-                    sb.push('<option value="' + v + '">' + v + '</option>');
+                    if(v === value) {
+                        sb.push('<option value="' + v + '" selected="selected">' + v + '</option>');
+                    } else {
+                        sb.push('<option value="' + v + '">' + v + '</option>');
+                    }
                 })
                 sb.push('</select>');
             } else {
