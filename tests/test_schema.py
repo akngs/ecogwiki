@@ -63,7 +63,45 @@ class SchemaTest(AppEngineTestCase):
 class CustomTypeAndPropertyTest(AppEngineTestCase):
     def setUp(self):
         super(CustomTypeAndPropertyTest, self).setUp()
-        schema.SCHEMA_TO_LOAD.append('schema-custom.json.sample')
+        schema.SCHEMA_TO_LOAD.append({
+            "datatypes": {
+            },
+            "properties": {
+                "politicalParty": {
+                    "comment": "Political party.",
+                    "comment_plain": "Political party.",
+                    "domains": [
+                        "Thing"
+                    ],
+                    "id": "politicalParty",
+                    "label": "Political Party",
+                    "reversed_label": "%s",
+                    "ranges": [
+                        "Text"
+                    ]
+                }
+            },
+            "types": {
+                "Politician": {
+                    "ancestors": [
+                        "Thing",
+                        "Person"
+                    ],
+                    "comment": "",
+                    "comment_plain": "",
+                    "id": "Politician",
+                    "label": "Politician",
+                    "specific_properties": [
+                        "politicalParty"
+                    ],
+                    "subtypes": [],
+                    "supertypes": [
+                        "Person"
+                    ],
+                    "url": "http://www.ecogwiki.com/sp.schema/types/Politician"
+                }
+            }
+        })
         self.person = schema.get_schema('Person')
         self.politician = schema.get_schema('Politician')
 
