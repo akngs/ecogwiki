@@ -120,13 +120,10 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
             },
             "types": {
                 "Politician": {
-                    "comment": "A political party.",
-                    "label": "Politician",
-                    "specific_properties": [
-                        "politicalParty"
-                    ],
-                    "subtypes": [],
                     "supertypes": ["Person"],
+                    "specific_properties": ["politicalParty"],
+                    "label": "Politician",
+                    "comment": "A political party.",
                 }
             }
         })
@@ -137,17 +134,20 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
         schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
         super(SimpleCustomTypeAndPropertyTest, self).tearDown()
 
-    def test_populate_url_if_omitted(self):
+    def test_populate_item_url_if_omitted(self):
         self.assertEqual('/sp.schema/types/Politician', self.politician['url'])
 
-    def test_populate_ancestors_if_omitted(self):
+    def test_populate_item_ancestors_if_omitted(self):
         self.assertEqual(["Thing", "Person"], self.politician['ancestors'])
 
-    def test_populate_id_if_omitted(self):
+    def test_populate_item_id_if_omitted(self):
         self.assertEqual('Politician', self.politician['id'])
 
-    def test_populate_comment_plain_if_omitted(self):
+    def test_populate_item_comment_plain_if_omitted(self):
         self.assertEqual('A political party.', self.politician['comment_plain'])
+
+    def test_populate_item_empty_subtypes_if_omitted(self):
+        self.assertEqual([], self.politician['subtypes'])
 
 
 class EnumerationTest(AppEngineTestCase):

@@ -72,6 +72,28 @@ def get_schema(itemtype, self_contained=False):
         return item
 
     item = get_schema_set()['types'][itemtype]
+
+    # populate missing fields
+    if 'url' not in item:
+        item['url'] = '%s/sp.schema/types/%s' % (WikiPage.get_config()['service']['domain'], itemtype)
+    if 'id' not in item:
+        item['id'] = itemtype
+    if 'comment' not in item:
+        item['comment'] = ''
+    if 'comment_plain' not in item:
+        item['comment_plain'] = item['comment']
+    if 'subtypes' not in item:
+        item['subtypes'] = []
+    if 'ancestors' not in item:
+        # collect ancestors
+        ancestors = []
+        parent = item
+        while len(parent['supertypes']) > 0:
+            parent_itemtype = parent['supertypes'][0]
+            ancestors.append(parent_itemtype)
+            parent = get_schema(parent_itemtype)
+        ancestors.reverse()
+        item['ancestors'] = ancestors
     if 'plural_label' not in item:
         if item['label'][-2:] in ['ay', 'ey', 'iy', 'oy', 'uy', 'wy']:
             item['plural_label'] = u'%ss' % item['label']
@@ -98,26 +120,6 @@ def get_schema(itemtype, self_contained=False):
     # merge specific_properties into properties
     item['properties'] = sorted(list(props.union(sprops)))
     item['specific_properties'] = sorted(list(sprops))
-
-    # populate missing fields
-    if 'url' not in item:
-        item['url'] = '%s/sp.schema/types/%s' % (WikiPage.get_config()['service']['domain'], itemtype)
-    if 'id' not in item:
-        item['id'] = itemtype
-    if 'comment' not in item:
-        item['comment'] = ''
-    if 'comment_plain' not in item:
-        item['comment_plain'] = item['comment']
-    if 'ancestors' not in item:
-        # collect ancestors
-        ancestors = []
-        parent = item
-        while len(parent['supertypes']) > 0:
-            parent_itemtype = parent['supertypes'][0]
-            ancestors.append(parent_itemtype)
-            parent = get_schema(parent_itemtype)
-        ancestors.reverse()
-        item['ancestors'] = ancestors
 
     caching.set_schema(itemtype, item)
     return item
