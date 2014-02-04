@@ -122,7 +122,6 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
                 "Politician": {
                     "comment": "",
                     "comment_plain": "",
-                    "id": "Politician",
                     "label": "Politician",
                     "specific_properties": [
                         "politicalParty"
@@ -146,6 +145,9 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
 
     def test_populate_ancestors_if_omitted(self):
         self.assertEqual(["Thing", "Person"], self.politician['ancestors'])
+
+    def test_populate_id_if_omitted(self):
+        self.assertEqual('Politician', self.politician['id'])
 
 
 class EnumerationTest(AppEngineTestCase):

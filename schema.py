@@ -102,6 +102,8 @@ def get_schema(itemtype, self_contained=False):
     # populate missing fields
     if 'url' not in item:
         item['url'] = '%s/sp.schema/types/%s' % (WikiPage.get_config()['service']['domain'], itemtype)
+    if 'id' not in item:
+        item['id'] = itemtype
     if 'ancestors' not in item:
         # collect ancestors
         ancestors = []
