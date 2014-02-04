@@ -114,7 +114,7 @@ describe('Editor', function() {
         ed = new editor.Editor(textarea, function() {
             logs.push('Editor.init() callback');
         }, function(callback) {
-            callback(['Article']);
+            callback([['Article', 'Article']]);
         }, function(itemtype, callback) {
             callback({'properties': {}});
         });
@@ -269,7 +269,7 @@ describe('Edit mode', function() {
         beforeEach(function() {
             logs = [];
             mode = new editor.StructuredEditMode(sandbox, function(callback) {
-                callback(['Article', 'Book', 'Person']);
+                callback([['Article', 'Article label'], ['Book', 'Book label'], ['Person', 'Person label']]);
             }, function(itemtype, callback) {
                 callback(schema[itemtype]);
             }, {
@@ -289,6 +289,15 @@ describe('Edit mode', function() {
             var $itemtypeSelector = $(sandbox).find('#prop_itemtype');
             expect($itemtypeSelector.length).toEqual(1);
             expect($itemtypeSelector.val()).toEqual('Article');
+
+            var $options = $itemtypeSelector.children();
+            expect($options.length).toEqual(3);
+            expect($($options[0]).val()).toEqual('Article');
+            expect($($options[0]).text()).toEqual('Article label');
+            expect($($options[1]).val()).toEqual('Book');
+            expect($($options[1]).text()).toEqual('Book label');
+            expect($($options[2]).val()).toEqual('Person');
+            expect($($options[2]).text()).toEqual('Person label');
         });
 
         it('should render mandatory fields', function() {
@@ -521,7 +530,7 @@ describe('Edit mode', function() {
 
         beforeEach(function() {
             mode = new editor.StructuredEditMode(sandbox, function(callback) {
-                callback(['Article']);
+                callback([['Article', 'Article']]);
             }, function(itemtype, callback) {
                 callback(schema[itemtype]);
             }, {});

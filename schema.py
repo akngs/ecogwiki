@@ -131,7 +131,11 @@ def get_itemtypes():
     if itemtypes is not None:
         return itemtypes
 
-    itemtypes = sorted(get_schema_set()['types'].keys())
+    itemtypes = sorted(
+        [(k, v['label']) for k, v in get_schema_set()['types'].items()],
+        key=operator.itemgetter(0)
+    )
+
     caching.set_schema_itemtypes(itemtypes)
     return itemtypes
 

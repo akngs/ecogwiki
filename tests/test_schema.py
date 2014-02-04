@@ -502,11 +502,11 @@ class MiscTest(AppEngineTestCase):
     def test_get_itemtypes(self):
         itemtypes = schema.get_itemtypes()
         self.assertEqual(list, type(itemtypes))
-        self.assertEqual('APIReference', itemtypes[0])
-        self.assertEqual('Zoo', itemtypes[-1])
+        self.assertEqual(('APIReference', 'API Reference'), itemtypes[0])
+        self.assertEqual(('Zoo', 'Zoo'), itemtypes[-1])
 
     def test_properties_should_contain_all_specific_properties(self):
-        for t in schema.get_itemtypes():
+        for t, _ in schema.get_itemtypes():
             item = schema.get_schema(t)
             self.assertEqual(set(), set(item['specific_properties']).difference(item['properties']))
 

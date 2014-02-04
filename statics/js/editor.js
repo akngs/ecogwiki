@@ -299,10 +299,13 @@ var editor = (function($) {
             sb.push('   <label for="prop_itemtype">Item type</label>');
             sb.push('   <select class="field" id="prop_itemtype" name="prop_itemtype">');
             for(var i = 0; i < this._types.length; i++) {
-                if(this._types[i] === itemtype) {
-                    sb.push('      <option selected="selected" value="' + this._types[i] + '">' + this._types[i] + '</option>');
+                var type = this._types[i][0];
+                var label = this._types[i][1];
+
+                if(type === itemtype) {
+                    sb.push('      <option selected="selected" value="' + type + '">' + label + '</option>');
                 } else {
-                    sb.push('      <option value="' + this._types[i] + '">' + this._types[i] + '</option>');
+                    sb.push('      <option value="' + type + '">' + label + '</option>');
                 }
             }
             sb.push('   </select>');
