@@ -104,12 +104,10 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
             "datatypes": {
                 "ISBN2": {
                     "comment": "ISBN 2",
-                    "label": "ISBN2",
                 },
             },
             "properties": {
                 "politicalParty": {
-                    "label": "Political Party",
                     "comment": "A political party.",
                 }
             },
@@ -117,7 +115,6 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
                 "Politician": {
                     "supertypes": ["Person"],
                     "specific_properties": ["politicalParty"],
-                    "label": "Politician",
                     "comment": "A political party.",
                 }
             }

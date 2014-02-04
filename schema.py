@@ -6,7 +6,6 @@ import json
 import caching
 import operator
 from datetime import date
-from models import WikiPage
 from markdownext import md_wikilink
 
 
@@ -75,11 +74,13 @@ def get_schema(itemtype, self_contained=False):
 
     # populate missing fields
     if 'url' not in item:
-        item['url'] = '%s/sp.schema/types/%s' % (WikiPage.get_config()['service']['domain'], itemtype)
+        item['url'] = '/sp.schema/types/%s' % itemtype
     if 'id' not in item:
         item['id'] = itemtype
+    if 'label' not in item:
+        item['label'] = item['id']
     if 'comment' not in item:
-        item['comment'] = ''
+        item['comment'] = item['label']
     if 'comment_plain' not in item:
         item['comment_plain'] = item['comment']
     if 'subtypes' not in item:
@@ -144,7 +145,7 @@ def get_datatype(type_name):
 
     # populate missing fields
     if 'url' not in dtype:
-        dtype['url'] = '%s/sp.schema/datatypes/%s' % (WikiPage.get_config()['service']['domain'], type_name)
+        dtype['url'] = '/sp.schema/datatypes/%s' % type_name
     if 'properties' not in dtype:
         dtype['properties'] = []
     if 'specific_properties' not in dtype:
@@ -155,12 +156,14 @@ def get_datatype(type_name):
         dtype['subtypes'] = []
     if 'id' not in dtype:
         dtype['id'] = type_name
-    if 'ancestors' not in dtype:
-        dtype['ancestors'] = dtype['supertypes']
+    if 'label' not in dtype:
+        dtype['label'] = dtype['id']
     if 'comment' not in dtype:
-        dtype['comment'] = ''
+        dtype['comment'] = dtype['label']
     if 'comment_plain' not in dtype:
         dtype['comment_plain'] = dtype['comment']
+    if 'ancestors' not in dtype:
+        dtype['ancestors'] = dtype['supertypes']
 
     caching.set_schema_datatype(type_name, dtype)
     return dtype
@@ -183,8 +186,10 @@ def get_property(prop_name):
         prop['ranges'] = ['Text']
     if 'id' not in prop:
         prop['id'] = prop_name
+    if 'label' not in prop:
+        prop['label'] = prop['id']
     if 'comment' not in prop:
-        prop['comment'] = ''
+        prop['comment'] = prop['label']
     if 'comment_plain' not in prop:
         prop['comment_plain'] = prop['comment']
     if 'reversed_label' not in prop:
