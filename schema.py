@@ -136,13 +136,34 @@ def get_itemtypes():
 
 
 def get_datatype(type_name):
-    datatype = caching.get_schema_datatype(type_name)
-    if datatype is not None:
-        return datatype
+    dtype = caching.get_schema_datatype(type_name)
+    if dtype is not None:
+        return dtype
 
-    datatype = get_schema_set()['datatypes'][type_name]
-    caching.set_schema_datatype(type_name, datatype)
-    return datatype
+    dtype = get_schema_set()['datatypes'][type_name]
+
+    # populate missing fields
+    if 'url' not in dtype:
+        dtype['url'] = '%s/sp.schema/datatypes/%s' % (WikiPage.get_config()['service']['domain'], type_name)
+    if 'properties' not in dtype:
+        dtype['properties'] = []
+    if 'specific_properties' not in dtype:
+        dtype['specific_properties'] = []
+    if 'supertypes' not in dtype:
+        dtype['supertypes'] = ['DataType']
+    if 'subtypes' not in dtype:
+        dtype['subtypes'] = []
+    if 'id' not in dtype:
+        dtype['id'] = type_name
+    if 'ancestors' not in dtype:
+        dtype['ancestors'] = dtype['supertypes']
+    if 'comment' not in dtype:
+        dtype['comment'] = ''
+    if 'comment_plain' not in dtype:
+        dtype['comment_plain'] = dtype['comment']
+
+    caching.set_schema_datatype(type_name, dtype)
+    return dtype
 
 
 def get_property(prop_name):
@@ -154,8 +175,21 @@ def get_property(prop_name):
         return prop
 
     prop = get_schema_set()['properties'][prop_name]
+
+    # populate missing fields
+    if 'domains' not in prop:
+        prop['domains'] = ['Thing']
+    if 'ranges' not in prop:
+        prop['ranges'] = ['Text']
+    if 'id' not in prop:
+        prop['id'] = prop_name
+    if 'comment' not in prop:
+        prop['comment'] = ''
+    if 'comment_plain' not in prop:
+        prop['comment_plain'] = prop['comment']
     if 'reversed_label' not in prop:
         prop['reversed_label'] = '[%%s] %s' % prop['label']
+
     caching.set_schema_property(prop_name, prop)
     return prop
 

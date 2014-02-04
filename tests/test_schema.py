@@ -102,20 +102,15 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
         super(SimpleCustomTypeAndPropertyTest, self).setUp()
         schema.SCHEMA_TO_LOAD.append({
             "datatypes": {
+                "ISBN2": {
+                    "comment": "ISBN 2",
+                    "label": "ISBN2",
+                },
             },
             "properties": {
                 "politicalParty": {
-                    "comment": "Political party.",
-                    "comment_plain": "Political party.",
-                    "domains": [
-                        "Thing"
-                    ],
-                    "id": "politicalParty",
                     "label": "Political Party",
-                    "reversed_label": "%s",
-                    "ranges": [
-                        "Text"
-                    ]
+                    "comment": "A political party.",
                 }
             },
             "types": {
@@ -127,27 +122,36 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
                 }
             }
         })
-        self.person = schema.get_schema('Person')
-        self.politician = schema.get_schema('Politician')
+        self.dtype = schema.get_datatype('ISBN2')
+        self.item = schema.get_schema('Politician')
+        self.prop = schema.get_property('politicalParty')
 
     def tearDown(self):
         schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
         super(SimpleCustomTypeAndPropertyTest, self).tearDown()
 
-    def test_populate_item_url_if_omitted(self):
-        self.assertEqual('/sp.schema/types/Politician', self.politician['url'])
+    def test_populate_omitted_item_fields(self):
+        self.assertEqual('/sp.schema/types/Politician', self.item['url'])
+        self.assertEqual(["Thing", "Person"], self.item['ancestors'])
+        self.assertEqual('Politician', self.item['id'])
+        self.assertEqual('A political party.', self.item['comment_plain'])
+        self.assertEqual([], self.item['subtypes'])
 
-    def test_populate_item_ancestors_if_omitted(self):
-        self.assertEqual(["Thing", "Person"], self.politician['ancestors'])
+    def test_populate_omitted_datatype_fields(self):
+        self.assertEqual('/sp.schema/datatypes/ISBN2', self.dtype['url'])
+        self.assertEqual(["Thing", "Person"], self.item['ancestors'])
+        self.assertEqual([], self.dtype['properties'])
+        self.assertEqual([], self.dtype['specific_properties'])
+        self.assertEqual(['DataType'], self.dtype['ancestors'])
+        self.assertEqual(['DataType'], self.dtype['supertypes'])
+        self.assertEqual([], self.dtype['subtypes'])
+        self.assertEqual('ISBN2', self.dtype['id'])
+        self.assertEqual('ISBN 2', self.dtype['comment_plain'])
 
-    def test_populate_item_id_if_omitted(self):
-        self.assertEqual('Politician', self.politician['id'])
-
-    def test_populate_item_comment_plain_if_omitted(self):
-        self.assertEqual('A political party.', self.politician['comment_plain'])
-
-    def test_populate_item_empty_subtypes_if_omitted(self):
-        self.assertEqual([], self.politician['subtypes'])
+    def test_populate_omitted_property_fields(self):
+        self.assertEqual(["Thing"], self.prop['domains'])
+        self.assertEqual(["Text"], self.prop['ranges'])
+        self.assertEqual('A political party.', self.item['comment_plain'])
 
 
 class EnumerationTest(AppEngineTestCase):
