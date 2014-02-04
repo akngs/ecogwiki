@@ -120,16 +120,13 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
             },
             "types": {
                 "Politician": {
-                    "comment": "",
-                    "comment_plain": "",
+                    "comment": "A political party.",
                     "label": "Politician",
                     "specific_properties": [
                         "politicalParty"
                     ],
                     "subtypes": [],
-                    "supertypes": [
-                        "Person"
-                    ],
+                    "supertypes": ["Person"],
                 }
             }
         })
@@ -148,6 +145,9 @@ class SimpleCustomTypeAndPropertyTest(AppEngineTestCase):
 
     def test_populate_id_if_omitted(self):
         self.assertEqual('Politician', self.politician['id'])
+
+    def test_populate_comment_plain_if_omitted(self):
+        self.assertEqual('A political party.', self.politician['comment_plain'])
 
 
 class EnumerationTest(AppEngineTestCase):

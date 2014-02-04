@@ -104,6 +104,10 @@ def get_schema(itemtype, self_contained=False):
         item['url'] = '%s/sp.schema/types/%s' % (WikiPage.get_config()['service']['domain'], itemtype)
     if 'id' not in item:
         item['id'] = itemtype
+    if 'comment' not in item:
+        item['comment'] = ''
+    if 'comment_plain' not in item:
+        item['comment_plain'] = item['comment']
     if 'ancestors' not in item:
         # collect ancestors
         ancestors = []
