@@ -529,6 +529,18 @@ class PageResourceTest(AppEngineTestCase):
         self.assertEqual(u'*   Hello\n*   [__]', page.body)
 
 
+class CustomTemplateTest(AppEngineTestCase):
+    def setUp(self):
+        super(CustomTemplateTest, self).setUp()
+        self.browser = Browser()
+        self.login('ak@gmail.com', 'ak')
+
+    def test_custom_template(self):
+        self.update_page(u'.schema Book\n\nHello there\n', 'A book')
+        self.browser.get('/A_book')
+        self.assertEqual('<!DOCTYPE html><html lang="ko"><head></head><body><h1>Book template: A book</h1></body></html>', self.browser.res.body)
+
+
 class SearchResultResourceTest(AppEngineTestCase):
     def setUp(self):
         super(SearchResultResourceTest, self).setUp()

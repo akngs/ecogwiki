@@ -1,4 +1,5 @@
 # coding=utf-8
+import os
 import json
 import urllib2
 import search
@@ -86,7 +87,7 @@ class PageLikeResource(Resource):
             }
             if page.metadata.get('schema', None) == 'Blog':
                 content['posts'] = page.get_posts(count=50)
-            return TemplateRepresentation(content, self.req, 'wikipage.html')
+            return TemplateRepresentation(content, self.req, self._findTemplateForWikipage(page))
 
     def represent_html_bodyonly(self, page):
         content = {
@@ -114,6 +115,20 @@ class PageLikeResource(Resource):
             'data': page.rawdata,
         }
         return JsonRepresentation(content)
+
+    def _findTemplateForWikipage(self, page):
+        schema_itemtype = page.metadata['schema']
+        base_path = os.path.join(os.path.dirname(__file__), 'templates')
+        tries = [os.path.join('schema', '%s.html' % schema_itemtype)]
+
+        if os.environ['SERVER_NAME'] == 'testbed.example.com':
+            tries.append(os.path.join('schema', '%s.html.sample' % schema_itemtype))
+
+        for t in tries:
+            if os.path.exists(os.path.join(base_path, t)):
+                return t
+
+        return 'wikipage.html'
 
     def _403(self, page, head=False):
         self.res.status = 403

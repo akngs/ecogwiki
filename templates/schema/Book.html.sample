@@ -1,0 +1,1 @@
+<!DOCTYPE html><html lang="ko"><head></head><body><h1>Book template: {{ page.title }}</h1></body></html>

@@ -2,6 +2,7 @@
 *.pyo
 .DS_Store
 .idea/
+templates/schema/*.html
 app.yaml
 appengine_config.py
 schema-custom.json
