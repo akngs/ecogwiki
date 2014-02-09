@@ -50,7 +50,7 @@
             "reversed_label": "%s Died"
         },
         "description": {
-            "ranges": ["LongText", "Text"]
+            "ranges": ["LongText"]
         },
         "founder": {
             "reversed_label": "%s Founded"

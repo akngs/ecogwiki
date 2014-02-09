@@ -418,6 +418,9 @@ class Property(object):
     def render(self):
         return self.pvalue
 
+    def should_index(self):
+        return True
+
 
 class InvalidProperty(Property):
     def __eq__(self, other):
@@ -425,6 +428,9 @@ class InvalidProperty(Property):
 
     def render(self):
         return u'<span class="error">%s</span>' % self.pvalue
+
+    def should_index(self):
+        return False
 
 
 class ThingProperty(Property):
@@ -495,6 +501,9 @@ class LongTextProperty(TextProperty):
 
     def render(self):
         return super(LongTextProperty, self).render()
+
+    def should_index(self):
+        return False
 
 
 class NumberProperty(TypeProperty):

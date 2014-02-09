@@ -321,19 +321,18 @@ class YamlSchemaDataTest(AppEngineTestCase):
         self.assertEqual([u'AK', u'TK'], raw['author'])
 
 
-
 class SchemaIndexTest(AppEngineTestCase):
     def setUp(self):
         super(SchemaIndexTest, self).setUp()
         self.login('ak@gmail.com', 'ak')
 
-    def test_schema_index_create(self):
+    def test_create(self):
         self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}\n[[datePublished::2013]]', u'Hello')
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'author', u'AK'))
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'isbn', u'1234567890'))
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'datePublished', u'2013'))
 
-    def test_schema_index_update(self):
+    def test_update(self):
         self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567890}}\n[[datePublished::2013]]', u'Hello')
         self.update_page(u'.schema Book\n[[author::AK]]\n{{isbn::1234567899}}\n[[dateModified::2013]]', u'Hello')
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'author', u'AK'))
@@ -348,6 +347,10 @@ class SchemaIndexTest(AppEngineTestCase):
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'author', u'AK'))
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'isbn', u'1234567890'))
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'datePublished', u'2013'))
+
+    def test_should_not_index_for_longtext(self):
+        self.update_page(u'{{description::Hello there}}', u'Hello')
+        self.assertFalse(SchemaDataIndex.has_match(u'Hello', u'description', u'Hello there'))
 
 
 class TypeConversionTest(unittest.TestCase):
