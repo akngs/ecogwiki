@@ -104,8 +104,7 @@ class PageOperationMixin(object):
 
     @property
     def rawdata(self):
-        data = self.data
-        return dict((k, v.pvalue if isinstance(v, schema.Property) else v) for k, v in data.items())
+        return dict((k, self._get_raw_data_value(v)) for k, v in self.data.items())
 
     @property
     def metadata(self):
@@ -195,6 +194,14 @@ class PageOperationMixin(object):
             return True
         else:
             return False
+
+    def _get_raw_data_value(self, value):
+        if type(value) == list:
+            return [self._get_raw_data_value(v) for v in value]
+        elif isinstance(value, schema.Property):
+            return value.pvalue
+        else:
+            return value
 
     def _check_special_titles_years(self):
         return (

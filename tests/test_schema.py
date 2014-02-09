@@ -314,6 +314,13 @@ class YamlSchemaDataTest(AppEngineTestCase):
         matched = PageOperationMixin.re_yaml_schema.search(body).group(0)
         self.assertTrue(matched.startswith('\t'))
 
+    def test_rawdata(self):
+        page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: [AK, TK]\n', u'Hello')
+        raw = page.rawdata
+        self.assertEqual(u'Hello', raw['name'])
+        self.assertEqual([u'AK', u'TK'], raw['author'])
+
+
 
 class SchemaIndexTest(AppEngineTestCase):
     def setUp(self):
