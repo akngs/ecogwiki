@@ -49,7 +49,8 @@
         "deathDate": {
             "reversed_label": "%s Died"
         },
-        "description": {
+        "longDescription": {
+            "label": "Long description",
             "ranges": ["LongText"]
         },
         "founder": {
@@ -80,6 +81,11 @@
         }
     },
     "types": {
+        "Thing": {
+            "properties": [
+                "longDescription"
+            ]
+        },
         "Person": {
             "plural_label": "People"
         }

@@ -349,8 +349,8 @@ class SchemaIndexTest(AppEngineTestCase):
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'datePublished', u'2013'))
 
     def test_should_not_index_for_longtext(self):
-        self.update_page(u'{{description::Hello there}}', u'Hello')
-        self.assertFalse(SchemaDataIndex.has_match(u'Hello', u'description', u'Hello there'))
+        self.update_page(u'{{longDescription::Hello there}}', u'Hello')
+        self.assertFalse(SchemaDataIndex.has_match(u'Hello', u'longDescription', u'Hello there'))
 
 
 class TypeConversionTest(unittest.TestCase):
@@ -522,7 +522,7 @@ class MiscTest(AppEngineTestCase):
 
     def test_properties_order_should_follow_that_of_source(self):
         article = schema.get_schema('Article')
-        self.assertEqual('additionalType', article['properties'][0])
+        self.assertEqual('about', article['properties'][0])
         self.assertEqual('wordCount', article['properties'][-1])
 
     def test_self_contained_schema(self):

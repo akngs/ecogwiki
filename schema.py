@@ -120,8 +120,9 @@ def get_schema(itemtype, self_contained=False):
     item['properties'] = [p for p in item['properties'] if p not in legacy_spellings]
     sprops = set(item['specific_properties']).difference(legacy_spellings)
 
-    # merge specific_properties into properties
+    # merge specific_properties into properties and sort
     item['properties'] += [p for p in sprops if p not in item['properties']]
+    item['properties'] = sorted(item['properties'])
     item['specific_properties'] = list(sprops)
 
     caching.set_schema(itemtype, item)
