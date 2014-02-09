@@ -3,7 +3,7 @@
     "Boolean": {
       "ancestors": [
         "DataType"
-      ],
+      ], 
       "comment": "", 
       "comment_plain": "", 
       "id": "Boolean", 
@@ -1724,8 +1724,8 @@
       ]
     }, 
     "citation": {
-      "comment": "A citation or reference to another creative work, such as another publication, web page, scholarly article, etc. NOTE: Candidate for promotion to ScholarlyArticle.", 
-      "comment_plain": "A citation or reference to another creative work, such as another publication, web page, scholarly article, etc. NOTE: Candidate for promotion to ScholarlyArticle.", 
+      "comment": "A citation or reference to another creative work, such as another publication, web page, scholarly article, etc.", 
+      "comment_plain": "A citation or reference to another creative work, such as another publication, web page, scholarly article, etc.", 
       "domains": [
         "CreativeWork"
       ], 
@@ -4550,8 +4550,8 @@
       ]
     }, 
     "itemOffered": {
-      "comment": "The item being sold.", 
-      "comment_plain": "The item being sold.", 
+      "comment": "The item being offered.", 
+      "comment_plain": "The item being offered.", 
       "domains": [
         "Offer", 
         "Demand"
@@ -5377,8 +5377,8 @@
       ]
     }, 
     "offers": {
-      "comment": "An offer to sell this item\u2014for example, an offer to sell a product, the DVD of a movie, or tickets to an event.", 
-      "comment_plain": "An offer to sell this item\u2014for example, an offer to sell a product, the DVD of a movie, or tickets to an event.", 
+      "comment": "An offer to transfer some rights to an item or to provide a service\u2014for example, an offer to sell tickets to an event, to rent the DVD of a movie, to stream a TV show over the internet, to repair a motorcycle, or to loan a book.", 
+      "comment_plain": "An offer to transfer some rights to an item or to provide a service\u2014for example, an offer to sell tickets to an event, to rent the DVD of a movie, to stream a TV show over the internet, to repair a motorcycle, or to loan a book.", 
       "domains": [
         "Product", 
         "CreativeWork", 
@@ -7379,8 +7379,8 @@
       ]
     }, 
     "seller": {
-      "comment": "The seller.", 
-      "comment_plain": "The seller.", 
+      "comment": "The organization or person making the offer.", 
+      "comment_plain": "The organization or person making the offer.", 
       "domains": [
         "Offer", 
         "Demand"
@@ -10951,7 +10951,7 @@
         "openingHours", 
         "paymentAccepted", 
         "priceRange"
-      ],
+      ], 
       "specific_properties": [], 
       "subtypes": [], 
       "supertypes": [
@@ -39863,5 +39863,5 @@
       "url": "http://schema.org/Zoo"
     }
   }, 
-  "valid": "2013-12-16"
+  "valid": "2014-02-09"
 }
