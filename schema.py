@@ -216,8 +216,15 @@ def get_cardinality(itemtype, prop_name):
 
 
 def get_cardinalities(itemtype):
-    return dict((pname, get_cardinality(itemtype, pname))
-                for pname in get_schema(itemtype)['properties'])
+    result = caching.get_cardinalities(itemtype)
+    if result is not None:
+        return result
+
+    properties = get_schema(itemtype)['properties']
+    properties_dict = dict([(pname, get_cardinality(itemtype, pname)) for pname in properties])
+
+    caching.set_cardinalities(itemtype, properties_dict)
+    return properties_dict
 
 
 def humane_item(itemtype, plural=False):
@@ -348,6 +355,7 @@ class SchemaConverter(object):
 
     def check_cardinality(self):
         cardinalities = get_cardinalities(self._itemtype)
+
         for pname, (cfrom, cto) in cardinalities.items():
             if pname not in self._data:
                 num = 0
