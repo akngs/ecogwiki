@@ -105,6 +105,11 @@ def set_schema_property(prop_name, prop):
 def set_schema_datatype(type_name, prop):
     _set_cache('schema\tdatatype\t%s' % type_name, prop)
 
+def set_cardinalities(key, data):
+    try:
+        return c.set('schema\tcardinalities\t%s' % key, data)
+    except:
+        pass
 
 def set_config(value):
     _set_cache('model\tconfig', value)
@@ -145,6 +150,8 @@ def set_hashbangs(title, value):
     _set_cache('model\thashbangs\t%s' % title, value)
 
 
+
+
 def get_schema_set():
     return _get_cache('schema_set')
 
@@ -164,6 +171,11 @@ def get_schema_property(prop_name):
 def get_schema_datatype(type_name):
     return _get_cache('schema\tdatatype\t%s' % type_name)
 
+def get_cardinalities(key):
+    try:
+        return c.get('schema\tcardinalities\t%s' % key)
+    except:
+        pass
 
 def get_config():
     return _get_cache('model\tconfig')
