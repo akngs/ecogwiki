@@ -20,7 +20,7 @@ See [Ecogwiki Help page](http://www.ecogwiki.com/Help)
 
 Install development dependencies:
 
-    pip install requirements.txt
+    pip install -r requirements.txt
 
 Run tests:
 
