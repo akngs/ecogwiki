@@ -1,43 +1,63 @@
 # -*- coding: utf-8 -*-
+import os
+from acl import ACL
+import unittest2 as unittest
 from tests import AppEngineTestCase
 from google.appengine.api import users
+from google.appengine.ext import testbed
 
 
-class AclTestCase(AppEngineTestCase):
-    def assertAcl(self, readable, writable, page, user, default_permission):
-        self.assertEqual(readable, page.can_read(user, default_permission))
-        self.assertEqual(writable, page.can_write(user, default_permission))
-
-
-class DefaultAclTest(AclTestCase):
+class AclTestCase(unittest.TestCase):
     def setUp(self):
-        super(DefaultAclTest, self).setUp()
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_user_stub()
+
+    def tearDown(self):
+        self.testbed.deactivate()
+        self.logout()
+
+    def login(self, email, user_id, is_admin=False):
+        os.environ['USER_EMAIL'] = email or ''
+        os.environ['USER_ID'] = user_id or ''
+        os.environ['USER_IS_ADMIN'] = '1' if is_admin else '0'
+
+    def logout(self):
+        self.login(None, None)
+
+    def assertAcl(self, readable, writable, acl_r, acl_w, user, default_permission):
+        self.assertEqual(readable, ACL(default_permission, acl_r, acl_w).can_read(user))
+        self.assertEqual(writable, ACL(default_permission, acl_r, acl_w).can_write(user))
+
+
+class SystemWideAclTest(AclTestCase):
+    def setUp(self):
+        super(SystemWideAclTest, self).setUp()
 
         self.login('user1@example.com', 'user1')
-        self.page = self.update_page(u'Hello')
         self.user1 = users.User("user1@example.com")
         self.user2 = users.User("user2@example.com")
 
     def test_read_all_write_login(self):
         default = {'read': ['all'], 'write': ['login']}
-        self.assertAcl(True, False, self.page, None, default)
-        self.assertAcl(True, True, self.page, self.user1, default)
+        self.assertAcl(True, False, [], [], None, default)
+        self.assertAcl(True, True, [], [], self.user1, default)
 
     def test_read_login_write_login(self):
         default = {'read': ['login'], 'write': ['login']}
-        self.assertAcl(False, False, self.page, None, default)
-        self.assertAcl(True, True, self.page, self.user1, default)
+        self.assertAcl(False, False, [], [], None, default)
+        self.assertAcl(True, True, [], [], self.user1, default)
 
     def test_read_all_write_all(self):
         default = {'read': ['all'], 'write': ['all']}
-        self.assertAcl(True, True, self.page, None, default)
-        self.assertAcl(True, True, self.page, self.user1, default)
+        self.assertAcl(True, True, [], [], None, default)
+        self.assertAcl(True, True, [], [], self.user1, default)
 
     def test_specific_user(self):
         default = {'read': ['all'], 'write': ['user1@example.com']}
-        self.assertAcl(True, False, self.page, None, default)
-        self.assertAcl(True, True, self.page, self.user1, default)
-        self.assertAcl(True, False, self.page, self.user2, default)
+        self.assertAcl(True, False, [], [], None, default)
+        self.assertAcl(True, True, [], [], self.user1, default)
+        self.assertAcl(True, False, [], [], self.user2, default)
 
 
 class PageLevelAclTest(AclTestCase):
@@ -50,33 +70,48 @@ class PageLevelAclTest(AclTestCase):
         self.default = {'read': ['all'], 'write': ['login']}
 
     def test_default(self):
-        page = self.update_page(u'Hello')
-        self.assertAcl(True, False, page, None, self.default)
-        self.assertAcl(True, True, page, self.user1, self.default)
+        self.assertAcl(True, False, [], [], None, self.default)
+        self.assertAcl(True, True, [], [], self.user1, self.default)
 
     def test_stricter_read(self):
-        page = self.update_page(u'.read login\nHello')
-        self.assertAcl(False, False, page, None, self.default)
-        self.assertAcl(True, True, page, self.user1, self.default)
+        self.assertAcl(False, False, ['login'], [], None, self.default)
+        self.assertAcl(True, True, ['login'], [], self.user1, self.default)
 
     def test_looser_write(self):
-        page = self.update_page(u'.write all\nHello')
-        self.assertAcl(True, True, page, None, self.default)
-        self.assertAcl(True, True, page, self.user1, self.default)
+        self.assertAcl(True, True, [], ['all'], None, self.default)
+        self.assertAcl(True, True, [], ['all'], self.user1, self.default)
 
     def test_different_read_and_write(self):
-        page = self.update_page(u'.write user1@example.com\n.read user2@example.com\nHello')
-        self.assertAcl(False, False, page, None, self.default)
-        self.assertAcl(True, True, page, self.user1, self.default)
-        self.assertAcl(True, False, page, self.user2, self.default)
+        self.assertAcl(False, False, ['user2@example.com'], ['user1@example.com'], None, self.default)
+        self.assertAcl(True, True, ['user2@example.com'], ['user1@example.com'], self.user1, self.default)
+        self.assertAcl(True, False, ['user2@example.com'], ['user1@example.com'], self.user2, self.default)
 
     def test_read_login_write_all(self):
-        page = self.update_page(u'.read login\n.write all\nHello')
-        self.assertAcl(False, False, page, None, self.default)
-        self.assertAcl(True, True, page, self.user1, self.default)
+        self.assertAcl(False, False, ['login'], ['all'], None, self.default)
+        self.assertAcl(True, True, ['login'], ['all'], self.user1, self.default)
 
     def test_read_specified_user_write_login(self):
-        page = self.update_page(u'.read user1@example.com\n.write login\nHello')
-        self.assertAcl(False, False, page, None, self.default)
-        self.assertAcl(True, True, page, self.user1, self.default)
-        self.assertAcl(False, False, page, self.user2, self.default)
+        self.assertAcl(False, False, ['user1@example.com'], ['login'], None, self.default)
+        self.assertAcl(True, True, ['user1@example.com'], ['login'], self.user1, self.default)
+        self.assertAcl(False, False, ['user1@example.com'], ['login'], self.user2, self.default)
+
+
+class AclParsingTest(AppEngineTestCase):
+    def setUp(self):
+        super(AclParsingTest, self).setUp()
+        self.login('user1@example.com', 'user1')
+
+    def test_empty(self):
+        page = self.update_page(u'Hello')
+        self.assertEqual(u'', page.acl_read)
+        self.assertEqual(u'', page.acl_write)
+
+    def test_read(self):
+        page = self.update_page(u'.read user1@example.com')
+        self.assertEqual(u'user1@example.com', page.acl_read)
+        self.assertEqual(u'', page.acl_write)
+
+    def test_write(self):
+        page = self.update_page(u'.write user1@example.com')
+        self.assertEqual(u'', page.acl_read)
+        self.assertEqual(u'user1@example.com', page.acl_write)

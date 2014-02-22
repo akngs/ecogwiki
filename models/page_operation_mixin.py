@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import re
+import acl
 import yaml
-import main
 import schema
 import operator
 import urllib2
@@ -10,7 +10,7 @@ from collections import OrderedDict
 from yaml.parser import ParserError
 from lxml.html.clean import Cleaner
 
-from models import md, is_admin_user
+from models import md
 from models import TocGenerator
 from models.utils import merge_dicts, pairs_to_dict, get_cur_user
 
@@ -163,37 +163,10 @@ class PageOperationMixin(object):
             return 'other'
 
     def can_read(self, user, default_acl=None, acl_r=None, acl_w=None):
-        default_acl = default_acl or main.DEFAULT_CONFIG['service']['default_permissions']
-        acl_r = acl_r or self.acl_read or default_acl['read'] or []
-        acl_w = acl_w or self.acl_write or default_acl['write'] or []
-
-        if u'all' in acl_r or len(acl_r) == 0:
-            return True
-        elif user is not None and u'login' in acl_r:
-            return True
-        elif user is not None and (user.email() in acl_r or user.email() in acl_w):
-            return True
-        elif is_admin_user(user):
-            return True
-        else:
-            return False
+        return acl.ACL(default_acl, self.acl_read, self.acl_write).can_read(user, acl_r, acl_w)
 
     def can_write(self, user, default_acl=None, acl_r=None, acl_w=None):
-        default_acl = default_acl or main.DEFAULT_CONFIG['service']['default_permissions']
-        acl_w = acl_w or self.acl_write or default_acl['write'] or []
-
-        if (not self.can_read(user, default_acl, acl_r, acl_w)) and (user is None or user.email() not in acl_w):
-            return False
-        elif 'all' in acl_w:
-            return True
-        elif (len(acl_w) == 0 or u'login' in acl_w) and user is not None:
-            return True
-        elif user is not None and user.email() in acl_w:
-            return True
-        elif is_admin_user(user):
-            return True
-        else:
-            return False
+        return acl.ACL(default_acl, self.acl_read, self.acl_write).can_write(user, acl_r, acl_w)
 
     def _get_raw_data_value(self, value):
         if type(value) == list:
