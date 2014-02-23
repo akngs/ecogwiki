@@ -19,19 +19,20 @@ class PageOperationMixin(object):
     re_img = re.compile(ur'<(.+?)>[\n\t\s]*<img( .+? )/>[\n\t\s]*</(.+?)>')
     re_metadata = re.compile(ur'^\.([^\s]+)(\s+(.+))?$')
     re_data = re.compile(ur'({{|\[\[)(?P<name>[^\]}]+)::(?P<value>[^\]}]+)(}}|\]\])')
-    re_yaml_schema = re.compile(r'''
-                                    # HEADER
-            (?:[ ]{4}|\t)           #   leading tab or 4 space followed by (non-capture)
-            \#!yaml/schema          #   `#!yaml/schema`
-            [\n\r]+                 #   new line(s)
-            (                       # CONTENT (group 1)
-                (                   #   multiple lines of  (group 2)
-                    (?:[ ]{4}|\t)   #   leading tab or 4 space followed by (non-capture)
-                    .+?             #   any string
-                    [\n\r]+         #   new line(s)
-                )+
-            )
-    ''', re.VERBOSE)
+    re_section_data = re.compile(ur'''^(?P<name>[^\s]+?)::---+$''')
+    re_yaml_schema = re.compile(ur'''
+                                # HEADER
+        (?:[ ]{4}|\t)           #   leading tab or 4 space followed by (non-capture)
+        \#!yaml/schema          #   `#!yaml/schema`
+        \n+                     #   new line(s)
+        (                       # CONTENT (group 1)
+            (                   #   multiple lines of  (group 2)
+                (?:[ ]{4}|\t)   #   leading tab or 4 space followed by (non-capture)
+                .+?             #   any string
+                \n+             #   new line(s)
+            )+
+        )
+    ''', re.VERBOSE + re.MULTILINE + re.DOTALL)
     re_conflicted = re.compile(ur'<<<<<<<.+=======.+>>>>>>>', re.DOTALL)
     re_special_titles_years = re.compile(ur'^(10000|\d{1,4})( BCE)?$')
     re_special_titles_dates = re.compile(ur'^((?P<month>January|February|March|'
@@ -41,10 +42,13 @@ class PageOperationMixin(object):
 
     @property
     def rendered_data(self):
-        data = [(n, v, schema.humane_property(self.itemtype, n)) for n, v in self.data.items() if n != 'schema']
+        data = [
+            (n, v, schema.humane_property(self.itemtype, n))
+            for n, v in self.data.items()
+            if n not in ['schema', 'name'] and v.ptype != 'LongText'
+        ]
 
-        if len(data) == 1:
-            # only name and schema?
+        if len(data) == 0:
             return ''
 
         html = [
@@ -315,16 +319,65 @@ class PageOperationMixin(object):
 
     @classmethod
     def parse_data(cls, title, body, itemtype=u'Article'):
-        # collect data
         default_data = {'name': title, 'schema': schema.get_itemtype_path(itemtype)}
+
+        # collect
         yaml_data = cls.parse_schema_yaml(body)
         body_data = pairs_to_dict((m.group('name'), m.group('value')) for m in re.finditer(cls.re_data, body))
-        data = merge_dicts([default_data, yaml_data, body_data])
+
+        if itemtype == u'Article' or u'Article' in schema.get_schema(itemtype)[u'ancestors']:
+            default_section = u'articleBody'
+        else:
+            default_section = u'longDescription'
+        section_data = cls.parse_sections(body, default_section)
+
+        # merge
+        data = merge_dicts([default_data, yaml_data, body_data, section_data])
 
         # validation and type conversion
         typed = schema.SchemaConverter.convert(itemtype, data)
 
         return typed
+
+    @classmethod
+    def parse_sections(cls, body, default_section=u'articleBody'):
+        # remove metadata and yaml schema block
+        body = cls.remove_metadata(body)
+        body = re.sub(PageOperationMixin.re_yaml_schema, u'\n', body).strip()
+        lines = body.split('\n')
+
+        # append default section
+        if not cls.re_section_data.match(lines[0]):
+            lines.insert(0, u'%s::---' % default_section)
+
+        i = 0
+        sections = {}
+        section_name = None
+        section_lines = None
+
+        while i < len(lines):
+            m = cls.re_section_data.match(lines[i])
+            if m:
+                if section_name is None:
+                    # Found first section. Start new one
+                    section_name = m.group('name')
+                    section_lines = []
+                else:
+                    # Found other section. Close current one and start the new one
+                    sections[section_name] = '\n'.join(section_lines).strip()
+                    section_name = m.group('name')
+                    section_lines = []
+            else:
+                # In the section. Collect lines
+                section_lines.append(lines[i])
+
+            # Remove this line
+            lines.pop(i)
+
+        if section_name:
+            sections[section_name] = '\n'.join(section_lines).strip()
+
+        return sections
 
     @classmethod
     def parse_metadata(cls, body):

@@ -246,12 +246,32 @@ class SchemaPathTest(unittest.TestCase):
                          schema.get_itemtype_path('Article'))
 
 
+class SectionTest(unittest.TestCase):
+    def test_default_section(self):
+        data = PageOperationMixin.parse_sections(u'Hello')
+        self.assertEqual({'articleBody'}, set(data.keys()))
+        self.assertEqual(u'Hello', data['articleBody'])
+
+    def test_specifying_default_section(self):
+        data = PageOperationMixin.parse_sections(u'Hello', u'longText')
+        self.assertEqual({'longText'}, set(data.keys()))
+        self.assertEqual(u'Hello', data['longText'])
+
+    def test_additional_sections(self):
+        data = PageOperationMixin.parse_sections(u'Hello\n\nsection1::---\n\nHello\n\nthere\n\nsection2::---\n\nGood\n\nbye\n')
+        self.assertEqual({'articleBody', 'section1', 'section2'}, set(data.keys()))
+        self.assertEqual(u'Hello', data['articleBody'])
+        self.assertEqual(u'Hello\n\nthere', data['section1'])
+        self.assertEqual(u'Good\n\nbye', data['section2'])
+
+
 class EmbeddedSchemaDataTest(unittest.TestCase):
     def test_no_data(self):
         data = PageOperationMixin.parse_data(u'Hello', u'Hello')
-        self.assertEqual(['name', 'schema'], data.keys())
+        self.assertEqual(['articleBody', 'name', 'schema'], data.keys())
         self.assertEqual(u'Hello', data['name'].pvalue)
         self.assertEqual(u'Thing/CreativeWork/Article/', data['schema'].pvalue)
+        self.assertEqual(u'Hello', data['articleBody'].pvalue)
 
     def test_author_and_isbn(self):
         data = PageOperationMixin.parse_data(u'Hello', u'[[author::AK]]\n{{isbn::1234567890}}', u'Book')
@@ -272,12 +292,12 @@ class YamlSchemaDataTest(AppEngineTestCase):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello', u'Hello')
         self.assertEqual({u'Book/author': [u'AK']}, page.outlinks)
         self.assertEqual(
-            {'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK'},
+            {'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK', 'longDescription': u'Hello'},
             dict((k, v.pvalue) for k, v in page.data.items())
         )
 
     def test_re_match(self):
-        body = u'''\t#!yaml/schema\r\n    url: "http://anotherfam.kr/"\r\n\r\n\r\n[[\uc81c\uc791\ub450\ub808]]\ub97c ...\r\n'''
+        body = u'''\t#!yaml/schema\n    url: "http://anotherfam.kr/"\n\n\n[[\uc81c\uc791\ub450\ub808]]\ub97c ...\n'''
         data = PageOperationMixin.parse_schema_yaml(body)
         self.assertEqual(data['url'], 'http://anotherfam.kr/')
 
@@ -303,14 +323,14 @@ class YamlSchemaDataTest(AppEngineTestCase):
         self.assertEqual(-1, page.rendered_body.find(u'#!yaml/schema'))
 
     def test_tab_and_space_mixed(self):
-        body = u'\t#!yaml/schema\r\n    alternateName: hi\r\n\turl: http://x.com\r\n    name: "Hello"\r\n'
+        body = u'\t#!yaml/schema\n    alternateName: hi\n\turl: http://x.com\n    name: "Hello"\n'
         data = PageOperationMixin.parse_schema_yaml(body)
         self.assertEqual(data['name'], u'Hello')
         self.assertEqual(data['alternateName'], u'hi')
         self.assertEqual(data['url'], u'http://x.com')
 
     def test_yaml_indent_catching_only_space(self):
-        body = u'''\r\n\t#!yaml/schema\n    url: "http://x.com"\n\nHello\n'''
+        body = u'''\n\t#!yaml/schema\n    url: "http://x.com"\n\nHello\n'''
         matched = PageOperationMixin.re_yaml_schema.search(body).group(0)
         self.assertTrue(matched.startswith('\t'))
 
@@ -349,7 +369,7 @@ class SchemaIndexTest(AppEngineTestCase):
         self.assertTrue(SchemaDataIndex.has_match(u'Hello', u'datePublished', u'2013'))
 
     def test_should_not_index_for_longtext(self):
-        self.update_page(u'{{longDescription::Hello there}}', u'Hello')
+        self.update_page(u'longDescription::---\n\nHello there', u'Hello')
         self.assertFalse(SchemaDataIndex.has_match(u'Hello', u'longDescription', u'Hello there'))
 
 

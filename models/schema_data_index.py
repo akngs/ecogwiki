@@ -15,7 +15,7 @@ class SchemaDataIndex(ndb.Model):
         ndb.delete_multi(keys)
 
         # insert
-        entities = [cls(title=title, name=name, value=v.pvalue if isinstance(v, schema.Property) else v)
+        entities = [cls(title=title, name=name, value=unicode(v.pvalue if isinstance(v, schema.Property) else v))
                     for name, v in cls.data_as_pairs(data)
                     if not isinstance(v, schema.Property) or v.should_index()]
         ndb.put_multi(entities)
@@ -29,15 +29,17 @@ class SchemaDataIndex(ndb.Model):
         inserts = new_pairs.difference(old_pairs)
 
         # delete
-        queries = [cls.query(cls.title == title, cls.name == name, cls.value == (v.pvalue if isinstance(v, schema.Property) else v))
-                   for name, v in deletes]
+        queries = [cls.query(cls.title == title, cls.name == name, cls.value == unicode(v.pvalue if isinstance(v, schema.Property) else v))
+                   for name, v in deletes
+                   if not isinstance(v, schema.Property) or v.should_index()]
+
         entities = reduce(lambda a, b: a + b, [q.fetch() for q in queries], [])
         keys = [e.key for e in entities]
         if len(keys) > 0:
             ndb.delete_multi(keys)
 
         # insert
-        entities = [cls(title=title, name=name, value=v.pvalue if isinstance(v, schema.Property) else v)
+        entities = [cls(title=title, name=name, value=unicode(v.pvalue if isinstance(v, schema.Property) else v))
                     for name, v in inserts
                     if not isinstance(v, schema.Property) or v.should_index()]
 
@@ -49,12 +51,12 @@ class SchemaDataIndex(ndb.Model):
         return cls.query(cls.title == title)
 
     @classmethod
-    def query_titles(cls, name, value):
-        return [i.title for i in cls.query(cls.name == name, cls.value == value)]
+    def query_titles(cls, name, v):
+        return [i.title for i in cls.query(cls.name == name, cls.value == unicode(v.pvalue if isinstance(v, schema.Property) else v))]
 
     @classmethod
-    def has_match(cls, title, name, value):
-        return cls.query(cls.title == title, cls.name == name, cls.value == value).count() > 0
+    def has_match(cls, title, name, v):
+        return cls.query(cls.title == title, cls.name == name, cls.value == unicode(v.pvalue if isinstance(v, schema.Property) else v)).count() > 0
 
     @staticmethod
     def data_as_pairs(data):

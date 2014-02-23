@@ -54,7 +54,7 @@ class SimpleExtensionsTest(RenderingTestCase):
 
     def test_leading_newlines_followed_by_schema_block(self):
         self.assertRenderedText(
-            u'''\r\n\t#!yaml/schema\n    url: "http://abc.com"\n\nHello\n''',
+            u'''\n\t#!yaml/schema\n    url: "http://abc.com"\n\nHello\n''',
             u'<p>Hello</p>')
 
 

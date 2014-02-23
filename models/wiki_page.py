@@ -149,6 +149,8 @@ class WikiPage(ndb.Model, PageOperationMixin):
         caching.del_titles()
 
     def update_content(self, content, base_revision, comment='', user=None, force_update=False, dont_create_rev=False, dont_defer=False, partial='all'):
+        content = content.replace('\r\n', '\n')
+
         if partial == 'all':
             return self._update_content_all(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
         elif partial.startswith('checkbox'):
