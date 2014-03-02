@@ -583,6 +583,11 @@ class URLProperty(TypeProperty):
         return u'<a href="%s" class="url" itemprop="url">%s</a>' % (self.value, self.value)
 
 
+class EmbeddableURLProperty(URLProperty):
+    def render(self):
+        return u'<img src="%s" class="embeddableUrl" itemprop="url">' % self.value
+
+
 class DateProperty(TypeProperty):
     P_DATE = ur'(?P<y>\d+)(-(?P<m>(\d\d|\?\?))-(?P<d>(\d\d|\?\?)))?( (?P<bce>BCE))?'
 
@@ -646,6 +651,7 @@ class ISBNProperty(TypeProperty):
 
 PRIORITY = {
     ISBNProperty: 1,
+    EmbeddableURLProperty: 1,
     URLProperty: 1,
 
     DateProperty: 2,

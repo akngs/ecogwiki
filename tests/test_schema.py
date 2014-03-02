@@ -476,6 +476,11 @@ class TypeConversionTest(unittest.TestCase):
         data = schema.SchemaConverter.convert(u'Code', {u'codeRepository': u'See http://github.org'})['codeRepository']
         self.assertEqual(schema.InvalidProperty, type(data))
 
+    def test_embeddable_url(self):
+        data = schema.SchemaConverter.convert(u'Thing', {u'image': u'http://x.com/a.png'})
+        self.assertEqual(u'http://x.com/a.png', data['image'].value)
+        self.assertEqual(schema.EmbeddableURLProperty, type(data['image']))
+
     def test_thing(self):
         data = schema.SchemaConverter.convert(u'Code', {u'programmingLanguage': u'JavaScript'})
         self.assertEqual('JavaScript', data['programmingLanguage'].value)
