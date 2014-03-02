@@ -45,7 +45,7 @@ class PageOperationMixin(object):
         data = [
             (n, v, schema.humane_property(self.itemtype, n))
             for n, v in self.data.items()
-            if n not in ['schema', 'name'] and v.ptype != 'LongText'
+            if (n not in ['schema', 'name']) and (not isinstance(v, schema.Property) or v.ptype != 'LongText')
         ]
 
         if len(data) == 0:

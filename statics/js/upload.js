@@ -3,16 +3,19 @@ var upload = (function($) {
 
     var Uploader = Class.extend({
         init: function() {},
+        setListener: function(listener) {},
+        isReady: function() {},
         prepareUpload: function() {},
-        performUpload: function() {}
+        performUpload: function(file, additionalCallback) {}
     });
 
     var GDriveUploader = Uploader.extend({
-        init: function(gapi, oauthClientId, gdriveFolder, listener) {
+        init: function(gapi, oauthClientId, gdriveFolder) {
             this._api = gapi;
             this._oauthClientId = oauthClientId;
             this._gdriveFolder = gdriveFolder;
-            this._listener = listener;
+            this._listener = null;
+            this._ready = false;
 
             this._apiScopes = [
                 'https://www.googleapis.com/auth/drive.file',
@@ -21,6 +24,13 @@ var upload = (function($) {
                 'https://www.googleapis.com/auth/userinfo.profile'
             ];
             this._folderId = null;
+            if(this._listener) this._listener.onUploaderStateChanged(this._ready);
+        },
+        setListener: function(listener) {
+            this._listener = listener;
+        },
+        isReady: function() {
+            return this._ready;
         },
         prepareUpload: function() {
             this._api.auth.authorize(
@@ -28,7 +38,10 @@ var upload = (function($) {
                 this._prepareUploadCallback.bind(this)
             );
         },
-        performUpload: function(file) {
+        performUpload: function(file, additionalCallback) {
+            this._ready = false;
+            if(this._listener) this._listener.onUploaderStateChanged(this._ready);
+
             var boundary = '-------314159265358979323846';
             var delimiter = '\r\n--' + boundary + '\r\n';
             var close_delim = '\r\n--' + boundary + '--';
@@ -65,7 +78,14 @@ var upload = (function($) {
                 request.execute(function(resp) {
                     var mimeType = resp['mimeType'];
                     var url = resp['webContentLink'];
-                    self._listener.onUploaded(url, mimeType);
+                    self._ready = true;
+                    if(self._listener) {
+                        self._listener.onUploaderStateChanged(self._ready);
+                        self._listener.onUploaded(url, mimeType);
+                    }
+                    if(additionalCallback) {
+                        additionalCallback(url, mimeType);
+                    }
                 });
             };
         },
@@ -102,7 +122,11 @@ var upload = (function($) {
         },
         _prepareUploadFolderCallback: function(folderId) {
             this._folderId = folderId;
-            this._listener.onUploadPrepared();
+            this._ready = true;
+            if(this._listener) {
+                this._listener.onUploadPrepared();
+                this._listener.onUploaderStateChanged(this._ready);
+            }
         },
         _findFolder: function(folderName, parentId, callback) {
             var q = "trashed=false and mimeType = 'application/vnd.google-apps.folder' and title='" + folderName + "'";

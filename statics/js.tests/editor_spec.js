@@ -551,7 +551,7 @@ describe('Edit mode', function() {
 
         it('should render url field for embeddable url type', function() {
             expect(mode._generateFieldHtml('f', 0, ['EmbeddableURL'], null, 'http://x.com')).toEqual(
-                '<input class="field" data-type="EmbeddableURL" type="url" id="prop_f_0" name="f" value="http://x.com"> [TODO:Upload Button]'
+                '<input class="field" data-type="EmbeddableURL" type="url" id="prop_f_0" name="f" value="http://x.com"> <a class="upload-link" href="#" data-field="prop_f_0">Upload</a>'
             );
         });
 

@@ -634,6 +634,10 @@ article .body .structured-data dd {
     margin-left: 0;
     margin-right: 0;
 }
+article .body .structured-data dd img {
+    display: inline-block;
+    width: 100%;
+}
 
 article .body hr {
     padding: 0;

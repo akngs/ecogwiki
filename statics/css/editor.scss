@@ -107,16 +107,22 @@
     }
 }
 
-#fileUploadLink {
-    display: block;
-    margin: 1em 0 0.5em;
-    padding: 0.5em 1em;
+.upload-link,
+.upload-link:hover {
+    padding: 0.3em 1em;
     border-radius: 3px;
     border: 1px solid #ddd;
     background-color: #f0f0f0;
     text-align: center;
 }
 
-#fileUploadLink.disabled {
+.upload-link.disabled,
+.upload-link:hover.disabled {
     color: #CCC;
+    cursor: wait;
+}
+
+.upload-link.main {
+    display: block;
+    margin: 1em 0 0.5em;
 }

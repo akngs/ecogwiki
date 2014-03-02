@@ -61,7 +61,7 @@
     {% endif %}
 
     {% if user and config.service.google_oauth2_web_client_id %}
-    <a id="fileUploadLink" href="#" class="disabled">Click here to upload.</a>
+    <a class="upload-link main disabled" href="#">Click here to upload.</a>
     {% endif %}
 
     <input name="comment" placeholder="Comment" class="comment" value="">
@@ -92,8 +92,8 @@
     <textarea name="body" placeholder="Body" autofocus="autofocus"></textarea>
     <input type="submit" />
 </form>
-
 {% endblock %}
+
 {% block before_body_close %}
     <script type="text/javascript" src="/statics/js/js-yaml.min.js?ver={{ app.version }}"></script>
     <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
@@ -149,44 +149,14 @@
     <script type="text/javascript">
     function _gapiLoaded() {
         gapi.client.load('drive', 'v2', function() {
+            var $clickedLink = null;
+
             var oauthClientId = $('#google_oauth2_web_client_id').val();
             var userName = $('.user-email').text().split('@')[0];
             var gdriveFolder = $('#google_drive_folder').val().replace(/\{username\}/, userName);
-            var uploader = new upload.GDriveUploader(gapi, oauthClientId, gdriveFolder, {
-                onUploadPrepared: function() {
-                    $('#fileUploadLink').removeClass('disabled');
-                },
-                onUploaded: function(url, mimeType) {
-                    $('#fileUploadLink').removeClass('disabled');
-
-                    var embeddable = [
-                        'image/jpg',
-                        'image/jpeg',
-                        'image/png',
-                        'image/gif'
-                    ];
-                    if(embeddable.indexOf(mimeType) === -1) {
-                        ed.appendContent(url);
-                    } else {
-                        ed.appendContent('![Image](' + url + ')');
-                    }
-                }
-            });
+            var uploader = new upload.GDriveUploader(gapi, oauthClientId, gdriveFolder);
             uploader.prepareUpload();
-
-            $('#fileUploadLink').on('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                if($(this).hasClass('disabled')) return;
-
-                $(this).addClass('disabled');
-                $('#file').click();
-            });
-
-            $('#file').on('change', function() {
-                uploader.performUpload(this.files[0]);
-            });
+            ed.setUploader(uploader);
         });
     }
     </script>
