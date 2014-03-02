@@ -499,6 +499,9 @@ describe('Edit mode', function() {
             "url": {"cardinality": [0, 0], "type": { "label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
                 "id": "url", "ranges": ["URL"]
             }},
+            "eurl": {"cardinality": [0, 0], "type": { "label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
+                "id": "eurl", "ranges": ["EmbeddableURL"]
+            }},
             "text": {"cardinality": [0, 0], "type": {"label": "", "comment": "", "comment_plain": "", "domains": ["Article"],
                 "id": "text", "ranges": ["Text"]
             }},
@@ -544,6 +547,17 @@ describe('Edit mode', function() {
         it('should parse url as string', function() {
             mode.setContent('    #!yaml/schema\n    url: "http://x.com"\n', function() {});
             expect(mode.getContent()).toEqual('    #!yaml/schema\n    url: "http://x.com"\n');
+        });
+
+        it('should render url field for embeddable url type', function() {
+            expect(mode._generateFieldHtml('f', 0, ['EmbeddableURL'], null, 'http://x.com')).toEqual(
+                '<input class="field" data-type="EmbeddableURL" type="url" id="prop_f_0" name="f" value="http://x.com"> <a class="upload-link" href="#" data-field="prop_f_0">Upload</a>'
+            );
+        });
+
+        it('should parse embeddable url as string', function() {
+            mode.setContent('    #!yaml/schema\n    eurl: "http://x.com"\n', function() {});
+            expect(mode.getContent()).toEqual('    #!yaml/schema\n    eurl: "http://x.com"\n');
         });
 
         it('should render text field for text type', function() {

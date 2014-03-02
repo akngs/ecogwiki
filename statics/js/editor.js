@@ -88,6 +88,55 @@ var editor = (function($) {
         appendContent: function(content) {
             this.getActiveMode().appendContent(content);
         },
+        setUploader: function(uploader) {
+            this._uploader = uploader;
+            this._$clickedLink = null;
+
+            var self = this;
+            this._uploader.setListener({
+                onUploaderStateChanged: function(ready) {
+                    if(ready) {
+                        $('.upload-link').removeClass('disabled');
+                    } else {
+                        $('.upload-link').addClass('disabled');
+                    }
+                },
+                onUploadPrepared: function() {},
+                onUploaded: function(url, mimeType) {
+                    var fieldId = self._$clickedLink.data('field');
+                    if(fieldId) {
+                        // update property
+                        $('#' + fieldId).val(url);
+                    } else {
+                        // append to body
+                        var embeddable = [
+                            'image/jpg',
+                            'image/jpeg',
+                            'image/png',
+                            'image/gif'
+                        ];
+                        if(embeddable.indexOf(mimeType) === -1) {
+                            self.appendContent(url);
+                        } else {
+                            self.appendContent('![Image](' + url + ')');
+                        }
+                    }
+                }
+            });
+
+            $(document).on('click', '.upload-link', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if($(this).hasClass('disabled')) return;
+                self._$clickedLink = $(this);
+                $('#file').click();
+            });
+
+            $('#file').on('change', function() {
+                self._uploader.performUpload(this.files[0]);
+            });
+        },
 
         // StructuredEditMode callbacks
         onStartLoadTypes: function() {
@@ -442,15 +491,14 @@ var editor = (function($) {
 
             if($field.data('type') === "LongText") {
                 $field.parent().addClass('field-row-longtext');
-                var editlet = TextEditlet.createInstance($field[0]);
-                this._sectionEditlets[$field.attr('id')] = editlet;
+                this._sectionEditlets[$field.attr('id')] = TextEditlet.createInstance($field[0]);
             }
 
             return $field;
         },
         _generateFieldHtml: function(pname, index, ranges, enums, value) {
             // Decide type to use
-            var priority = ['ISBN', 'URL', 'Date', 'DateTime', 'Time', 'Boolean', 'Integer', 'Float', 'Number', 'LongText', 'Text'];
+            var priority = ['ISBN', 'EmbeddableURL', 'URL', 'Date', 'DateTime', 'Time', 'Boolean', 'Integer', 'Float', 'Number', 'LongText', 'Text'];
             if($.isArray(ranges)) {
                 for(var i = 0; i < priority.length; i++) {
                     if(ranges.indexOf(priority[i]) !== -1) return this._generateFieldHtml(pname, index, priority[i], enums, value);
@@ -469,12 +517,17 @@ var editor = (function($) {
                     } else {
                         sb.push('<option value="' + v + '">' + v + '</option>');
                     }
-                })
+                });
                 sb.push('</select>');
             } else {
                 // Render appropriate element
                 if('ISBN' === ranges) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if('EmbeddableURL' === ranges) {
+                    sb.push(
+                        '<input class="field" data-type="' + ranges + '" type="url" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '"> ' +
+                        '<a class="upload-link" href="#" data-field="prop_' + pname + '_' + index + '">Upload</a>'
+                    );
                 } else if('URL' === ranges) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="url" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if('LongText' === ranges) {
@@ -691,7 +744,7 @@ var editor = (function($) {
                     lines.push('');
 
                     lines.push(value);
-                })
+                });
             }
 
             return lines.join('\n');
