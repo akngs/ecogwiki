@@ -442,15 +442,14 @@ var editor = (function($) {
 
             if($field.data('type') === "LongText") {
                 $field.parent().addClass('field-row-longtext');
-                var editlet = TextEditlet.createInstance($field[0]);
-                this._sectionEditlets[$field.attr('id')] = editlet;
+                this._sectionEditlets[$field.attr('id')] = TextEditlet.createInstance($field[0]);
             }
 
             return $field;
         },
         _generateFieldHtml: function(pname, index, ranges, enums, value) {
             // Decide type to use
-            var priority = ['ISBN', 'URL', 'Date', 'DateTime', 'Time', 'Boolean', 'Integer', 'Float', 'Number', 'LongText', 'Text'];
+            var priority = ['ISBN', 'EmbeddableURL', 'URL', 'Date', 'DateTime', 'Time', 'Boolean', 'Integer', 'Float', 'Number', 'LongText', 'Text'];
             if($.isArray(ranges)) {
                 for(var i = 0; i < priority.length; i++) {
                     if(ranges.indexOf(priority[i]) !== -1) return this._generateFieldHtml(pname, index, priority[i], enums, value);
@@ -469,12 +468,14 @@ var editor = (function($) {
                     } else {
                         sb.push('<option value="' + v + '">' + v + '</option>');
                     }
-                })
+                });
                 sb.push('</select>');
             } else {
                 // Render appropriate element
                 if('ISBN' === ranges) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if('EmbeddableURL' === ranges) {
+                    sb.push('<input class="field" data-type="' + ranges + '" type="url" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '"> [TODO:Upload Button]');
                 } else if('URL' === ranges) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="url" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
                 } else if('LongText' === ranges) {
@@ -691,7 +692,7 @@ var editor = (function($) {
                     lines.push('');
 
                     lines.push(value);
-                })
+                });
             }
 
             return lines.join('\n');
