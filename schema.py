@@ -151,8 +151,8 @@ def get_selectable_itemtypes():
     if itemtypes is not None:
         return itemtypes
 
-    selectable_types = get_schema_set()['ui']['selectableTypes']
-    itemtypes = [(k, v['label']) for k, v in get_schema_set()['types'].items() if k in selectable_types]
+    all_itemtypes = get_schema_set()['types']
+    itemtypes = [(k, all_itemtypes[k]['label']) for k in get_schema_set()['ui']['selectableTypes']]
 
     caching.set_schema_selectable_itemtypes(itemtypes)
     return itemtypes
