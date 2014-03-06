@@ -35,6 +35,9 @@ def get_schema_set():
 
         schema_set = _merge_schema_set(new_schema, schema_set)
 
+        if 'ui' not in schema_set:
+            schema_set['ui'] = {'selectableTypes': []}
+
     caching.set_schema_set(schema_set)
     return schema_set
 
@@ -140,6 +143,18 @@ def get_itemtypes():
     )
 
     caching.set_schema_itemtypes(itemtypes)
+    return itemtypes
+
+
+def get_selectable_itemtypes():
+    itemtypes = caching.get_schema_selectable_itemtypes()
+    if itemtypes is not None:
+        return itemtypes
+
+    selectable_types = get_schema_set()['ui']['selectableTypes']
+    itemtypes = [(k, v['label']) for k, v in get_schema_set()['types'].items() if k in selectable_types]
+
+    caching.set_schema_selectable_itemtypes(itemtypes)
     return itemtypes
 
 
@@ -284,7 +299,7 @@ def _merge_schema_set(addon, schema_set):
                 dtypes[k] = {}
             dtypes[k].update(v)
 
-    # ...and types
+    # ...and types...
     if 'types' in addon:
         types = schema_set['types']
         for k, v in addon['types'].items():
@@ -296,6 +311,10 @@ def _merge_schema_set(addon, schema_set):
                     types[supertype]['subtypes'].append(k)
 
             types[k].update(v)
+
+    # and ui
+    if 'ui' in addon:
+        schema_set['ui'] = addon['ui']
 
     return schema_set
 

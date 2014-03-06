@@ -98,6 +98,10 @@ def set_schema_itemtypes(value):
     _set_cache('schema\titemtypes', value)
 
 
+def set_schema_selectable_itemtypes(value):
+    _set_cache('schema\tselectable_itemtypes', value)
+
+
 def set_schema_property(prop_name, prop):
     _set_cache('schema\tprop\t%s' % prop_name, prop)
 
@@ -164,6 +168,10 @@ def get_schema_itemtypes():
     return _get_cache('schema\titemtypes')
 
 
+def get_schema_selectable_itemtypes():
+    return _get_cache('schema\tselectable_itemtypes')
+
+
 def get_schema_property(prop_name):
     return _get_cache('schema\tprop\t%s' % prop_name)
 
@@ -171,11 +179,13 @@ def get_schema_property(prop_name):
 def get_schema_datatype(type_name):
     return _get_cache('schema\tdatatype\t%s' % type_name)
 
+
 def get_cardinalities(key):
     try:
         return c.get('schema\tcardinalities\t%s' % key)
     except:
         pass
+
 
 def get_config():
     return _get_cache('model\tconfig')

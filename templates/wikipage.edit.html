@@ -104,7 +104,7 @@
 
             },
             function(callback) {
-                $.get('/sp.schema/types?_type=json', function(data) {callback(data['values']);});
+                $.get('/sp.schema/types?_type=json', function(data) {callback(data['selectable_itemtypes']);});
             },
             function(itemtype, callback) {
                 $.get('/sp.schema/sctypes/' + itemtype + '?_type=json', function(data) {callback(data);});

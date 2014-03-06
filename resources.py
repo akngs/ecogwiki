@@ -575,7 +575,7 @@ class SchemaResource(Resource):
     def load(self):
         tokens = self.path.split('/')[1:]
         if tokens[0] == 'types' and len(tokens) == 1:
-            return {'id': 'types', 'values': schema.get_itemtypes()}
+            return {'id': 'types', 'itemtypes': schema.get_itemtypes(), 'selectable_itemtypes': schema.get_selectable_itemtypes()}
         elif tokens[0] == 'types':
             return schema.get_schema(tokens[1])
         elif tokens[0] == 'sctypes':
