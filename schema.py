@@ -152,7 +152,10 @@ def get_selectable_itemtypes():
         return itemtypes
 
     selectable_types = get_schema_set()['ui']['selectableTypes']
-    itemtypes = [(k, v['label']) for k, v in get_schema_set()['types'].items() if k in selectable_types]
+    itemtypes = sorted(
+        [(k, v['label']) for k, v in get_schema_set()['types'].items() if k in selectable_types],
+        key=operator.itemgetter(0)
+    )
 
     caching.set_schema_selectable_itemtypes(itemtypes)
     return itemtypes
