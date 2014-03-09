@@ -78,15 +78,15 @@ def _format_datetime(value, pattern):
 
 def userpage_link(user):
     if user is None:
-        return '<span class="user">Anonymous</span>'
+        return '<span class="user" data-userpage="" data-email="">Anonymous</span>'
 
     preferences = UserPreferences.get_by_user(user)
     if preferences is None:
-        return '<span class="user email">%s</span>' % user.email()
+        return '<span class="user email" data-userpage="" data-email="">%s</span>' % user.email()
     elif preferences.userpage_title is None or len(preferences.userpage_title.strip()) == 0:
-        return '<span class="user email">%s</span>' % user.email()
+        return '<span class="user email" data-userpage="" data-email="%s">%s</span>' % (user.email(), user.email())
     path = to_abs_path(preferences.userpage_title)
-    return '<a href="%s" class="user userpage wikilink">%s</a>' % (path, preferences.userpage_title)
+    return '<a href="%s" class="user userpage wikilink" data-userpage="%s" data-email="%s">%s</a>' % (path, preferences.userpage_title, user.email(), preferences.userpage_title)
 
 
 JINJA.filters['dt'] = format_datetime

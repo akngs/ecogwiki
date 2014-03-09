@@ -98,6 +98,7 @@
     <script type="text/javascript" src="/statics/js/js-yaml.min.js?ver={{ app.version }}"></script>
     <script type="text/javascript" src="/statics/js/editor.js?ver={{ app.version }}"></script>
     <script type="text/javascript">
+        var $curUser = $('.cur-user .user');
         var ed = new editor.Editor(
             document.querySelector('.editform textarea'),
             function() {
@@ -108,7 +109,10 @@
             },
             function(itemtype, callback) {
                 $.get('/sp.schema/sctypes/' + itemtype + '?_type=json', function(data) {callback(data);});
-            }
+            },
+            $('header h1').text(),
+            $curUser.data('userpage'),
+            $curUser.data('email')
         );
 
         /* Delete */

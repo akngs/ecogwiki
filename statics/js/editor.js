@@ -2,7 +2,7 @@ var editor = (function($) {
     "use strict";
 
     var Editor = Class.extend({
-        init: function(textarea, callback, typesLoader, schemaLoader) {
+        init: function(textarea, callback, typesLoader, schemaLoader, pagename, userPage, userEmail) {
             var self = this;
 
             this._textarea = textarea;
@@ -41,8 +41,16 @@ var editor = (function($) {
                 '</ul>'
             );
 
+            var vars = {
+                'thisPage': pagename || '',
+                'userPage': userPage || '',
+                'userEmail': userEmail || ''
+            };
+            vars['parentPage'] =  vars['thisPage'].substr(0, vars['thisPage'].lastIndexOf('/'));
+            vars['userEmail'] = vars['userEmail'].substr(0, vars['userEmail'].indexOf('@'));
+
             this._plainEditMode = new PlainEditMode(this._$root.find('.mode-pane .plain')[0]);
-            this._structEditMode = new StructuredEditMode(this._$root.find('.mode-pane .structured')[0], typesLoader, schemaLoader, this);
+            this._structEditMode = new StructuredEditMode(this._$root.find('.mode-pane .structured')[0], typesLoader, schemaLoader, this, vars);
 
             this.setActiveModeName('plain', callback);
         },
@@ -194,7 +202,7 @@ var editor = (function($) {
 
 
     var StructuredEditMode = EditMode.extend({
-        init: function(rootEl, typesLoader, schemaLoader, callback) {
+        init: function(rootEl, typesLoader, schemaLoader, callback, variables) {
             this._rootEl = rootEl;
             this._parser = new ContentParser();
             this._types = [];
@@ -204,6 +212,7 @@ var editor = (function($) {
             this._typesLoader = typesLoader;
             this._schemaLoader = schemaLoader;
             this._callback = callback;
+            this._variables = variables || {};
 
             $(this._rootEl).on('click', '.add-prop', this._onAddProp.bind(this));
             $(this._rootEl).on('click', '.add-field', this._onAddField.bind(this));
@@ -444,7 +453,7 @@ var editor = (function($) {
         },
         _getProperty: function(itemtype, pname) {
             var schema = this._schema[itemtype] || {'properties': {}};
-            return schema['properties'][pname] || {
+            var prop = schema['properties'][pname] || {
                 "type": {
                     "label": pname,
                     "comment": pname,
@@ -455,6 +464,13 @@ var editor = (function($) {
                 },
                 "cardinality": [0, 0]
             };
+            prop['defaultValue'] = (schema['defaultValues'] && schema['defaultValues'][pname]) || '';
+
+            for(var key in this._variables) {
+                prop['defaultValue'] = prop['defaultValue'].replace('${' + key + '}', this._variables[key]);
+            }
+
+            return prop;
         },
         _updateButtonsVisibility: function(itemtype, pname) {
             var $root = $(this._rootEl);
@@ -482,7 +498,7 @@ var editor = (function($) {
             var sb = [];
 
             sb.push('<li class="field-row">');
-            sb.push(this._generateFieldHtml(pname, i, type, prop['type']['enum'], value));
+            sb.push(this._generateFieldHtml(pname, i, type, prop['type']['enum'], value || prop['defaultValue']));
             sb.push('<a class="delete-field" href="#">Delete</a>');
             sb.push('</li>');
             $prop.find('ol').append(sb.join('\n'));

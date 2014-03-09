@@ -113,6 +113,7 @@
         <span class="user-email"></span>
         <a href="{{ users.create_login_url(cur_url)|e }}">Login</a>
         {% endif %}
+        <span class="cur-user" style="display: none">{{ user|userpage }}</span>
     </li>
 </ul></div>
 
