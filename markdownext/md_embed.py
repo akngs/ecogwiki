@@ -30,7 +30,9 @@ p = re.compile(
     r'|'
     r'^(?P<googlemap>https?\://maps\.google\.com/(?P<googlemap_vid>.+?))$'
     r'|'
-    r'^(?P<googlemap2><iframe.*?src="https?\://maps\.google\.com/(?P<googlemap2_vid>.+?)".*?>\s*</iframe>)$'
+    r'^(?P<googlemap2>https?\://www\.google\.com/maps/(?P<googlemap2_vid>.+?))$'
+    r'|'
+    r'^(?P<googlemap3><iframe.*?src="https?\://maps\.google\.com/(?P<googlemap3_vid>.+?)".*?>\s*</iframe>)$'
     r')'
 )
 
@@ -67,7 +69,9 @@ class EmbedPrepreprocessor(Preprocessor):
         elif m.group('googlemap'):
             return self._create_video(m, 'googlemap', 425, 350, 'http://maps.google.com/%s&output=embed')
         elif m.group('googlemap2'):
-            return self._create_video(m, 'googlemap2', 425, 350, 'http://maps.google.com/%s')
+            return self._create_video(m, 'googlemap2', 425, 350, 'http://www.google.com/maps/%s&output=embed')
+        elif m.group('googlemap3'):
+            return self._create_video(m, 'googlemap3', 425, 350, 'http://maps.google.com/%s')
         else:
             raise ValueError('Should not reach here')
 

@@ -119,7 +119,7 @@ class EmbedTest(RenderingTestCase):
     def test_google_map2(self):
         self.assertRenderedText(
             u'<iframe marginheight="0" marginwidth="0" src="https://maps.google.com/?ie=UTF8&amp;t=m&amp;ll=37.0625,-95.677068&amp;spn=24.455808,37.353516&amp;z=4&amp;output=embed"></iframe>',
-            u'<div class="video googlemap2"><iframe allowfullscreen="true" frameborder="0" height="350" scrolling="no" src="http://maps.google.com/?ie=UTF8&amp;t=m&amp;ll=37.0625,-95.677068&amp;spn=24.455808,37.353516&amp;z=4&amp;output=embed" width="425"></iframe></div>')
+            u'<div class="video googlemap3"><iframe allowfullscreen="true" frameborder="0" height="350" scrolling="no" src="http://maps.google.com/?ie=UTF8&amp;t=m&amp;ll=37.0625,-95.677068&amp;spn=24.455808,37.353516&amp;z=4&amp;output=embed" width="425"></iframe></div>')
 
 
 class WikilinkTest(RenderingTestCase):
