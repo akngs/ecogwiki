@@ -47,7 +47,7 @@ var editor = (function($) {
                 'userEmail': userEmail || ''
             };
             vars['parentPage'] =  vars['thisPage'].substr(0, vars['thisPage'].lastIndexOf('/'));
-            vars['userEmail'] = vars['userEmail'].substr(0, vars['userEmail'].indexOf('@'));
+            vars['userPage'] = vars['userPage'] || vars['userEmail'].substr(0, vars['userEmail'].indexOf('@'));
 
             this._plainEditMode = new PlainEditMode(this._$root.find('.mode-pane .plain')[0]);
             this._structEditMode = new StructuredEditMode(this._$root.find('.mode-pane .structured')[0], typesLoader, schemaLoader, this, vars);
