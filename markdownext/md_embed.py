@@ -33,6 +33,8 @@ p = re.compile(
     r'^(?P<googlemap2>https?\://www\.google\.com/maps/(?P<googlemap2_vid>.+?))$'
     r'|'
     r'^(?P<googlemap3><iframe.*?src="https?\://maps\.google\.com/(?P<googlemap3_vid>.+?)".*?>\s*</iframe>)$'
+    r'|'
+    r'^(?P<navermap><table.*?td.*?>(?P<navermap_vid>.+?)</td>.*</table>)$'
     r')'
 )
 
@@ -72,8 +74,15 @@ class EmbedPrepreprocessor(Preprocessor):
             return self._create_video(m, 'googlemap2', 425, 350, 'http://www.google.com/maps/%s&output=embed')
         elif m.group('googlemap3'):
             return self._create_video(m, 'googlemap3', 425, 350, 'http://maps.google.com/%s')
+        elif m.group('navermap'):
+            return self._create_video_without_iframe(m, 'navermap', 460, 340)
         else:
             raise ValueError('Should not reach here')
+
+    def _create_video_without_iframe(self, m, vtype, width, height):
+        url = m.group('%s_vid' % vtype)
+        div = "<div class=\"video %s\">%s</div>" % (vtype, url)
+        return div
 
     def _create_video(self, m, vtype, width, height, url):
         vid = m.group('%s_vid' % vtype)
