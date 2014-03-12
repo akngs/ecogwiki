@@ -722,7 +722,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if results is None:
             page_query, attrs = search.parse_wikiquery(q)
             titles = cls._evaluate_pages(page_query)
-            accessible_titles = WikiPage.get_titles(user).intersection(titles)
+            accessible_titles = sorted(WikiPage.get_titles(user).intersection(titles))
 
             results = []
             if attrs == [u'name']:
