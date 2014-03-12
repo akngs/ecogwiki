@@ -34,7 +34,7 @@ p = re.compile(
     r'|'
     r'^(?P<googlemap3><iframe.*?src="https?\://maps\.google\.com/(?P<googlemap3_vid>.+?)".*?>\s*</iframe>)$'
     r'|'
-    r'^(?P<navermap><table.*?td.*?>(?P<navermap_vid>.+?)</td>.*</table>)$'
+    r'^(?P<navermap><table.*?td.*?>(?P<navermap_vid><a href=\"http://map.naver.com.*><img src=\"http://.*?map.naver.com.*></a>?)</td>.*</table>)$'
     r')'
 )
 
