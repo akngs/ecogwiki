@@ -34,9 +34,9 @@ p = re.compile(
     r'|'
     r'^(?P<googlemap3><iframe.*?src="https?\://maps\.google\.com/(?P<googlemap3_vid>.+?)".*?>\s*</iframe>)$'
     r'|'
-    r'^(?P<navermap><table.*?td.*?>(?P<navermap_vid><a href=\"http://map.naver.com.*><img src=\"http://.*?map.naver.com.*></a>?)</td>.*</table>)$'
+    r'^(?P<navermap><table.*?td.*?><a href="(?P<navermap_url>http://map.naver.com.*?)"\s+.*><img src="(?P<navermap_imgsrc>http://.*?map.naver.com.*?)".*</a></td>.*</table>)$'
     r'|'
-    r'^(?P<daummap><a href="(?P<daummap_url>.*?)"\s+.*<img.*src="(?P<daummap_imgsrc>.*?)"\s+.*)$'
+    r'^(?P<daummap><a href="(?P<daummap_url>http://map.daum.net.*?)"\s+.*<img.*src="(?P<daummap_imgsrc>http://map.*?.daum.net.*?)"\s+.*)$'
     r')'
 )
 
@@ -79,16 +79,14 @@ class EmbedPrepreprocessor(Preprocessor):
         elif m.group('navermap'):
             return self._create_video_without_iframe(m, 'navermap', 460, 340)
         elif m.group('daummap'):
-            url = m.group('daummap_url')
-            imgsrc = m.group('daummap_imgsrc')
-            return "<div class=\"video daummap\"><a href=\"%s\"><img src=\"%s\"></a></div>" % (url, imgsrc)
+            return self._create_video_without_iframe(m, 'daummap', 500, 350)
         else:
             raise ValueError('Should not reach here')
 
     def _create_video_without_iframe(self, m, vtype, width, height):
-        url = m.group('%s_vid' % vtype)
-        div = "<div class=\"video %s\">%s</div>" % (vtype, url)
-        return div
+        url = m.group('%s_url' % vtype)
+        imgsrc = m.group('%s_imgsrc' % vtype)
+        return "<div class=\"video %s\"><a href=\"%s\"><img src=\"%s\"></a></div>" % (vtype, url, imgsrc)
 
     def _create_video(self, m, vtype, width, height, url):
         vid = m.group('%s_vid' % vtype)
