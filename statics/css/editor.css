@@ -54,25 +54,36 @@
   margin-left: 0;
   list-style-type: none; }
 .ecogwiki-editor .structured ol.props {
-  margin: 1em 0; }
+  margin: 1em 0 0 24px; }
 .ecogwiki-editor .structured .prop {
-  margin: 0.8em 0 1.6em; }
-.ecogwiki-editor .structured .prop:last-child {
-  margin-bottom: 0.8em; }
+  margin: 0.8em 0 2em; }
+.ecogwiki-editor .structured .prop.prop-property {
+  margin-left: 24px; }
 .ecogwiki-editor .structured .field-row {
+  position: relative;
   padding: 0.2em 0 0.4em; }
 .ecogwiki-editor .structured .delete-field {
-  float: right; }
+  position: absolute;
+  top: 6px;
+  left: -24px;
+  border-width: 0;
+  border-radius: 8px;
+  background-color: #FF9B9B;
+  color: #FFF;
+  font-weight: bold;
+  padding: 0 5px; }
+.ecogwiki-editor .structured .delete-field:hover {
+  background-color: #F00; }
 .ecogwiki-editor .structured .field-row-longtext .delete-field {
   float: none; }
 .ecogwiki-editor .structured .add-field,
 .ecogwiki-editor .structured .add-prop {
-  padding: 0.1em 1em;
-  margin: 0.2em 0 0.4em; }
+  font-size: smaller; }
 .ecogwiki-editor .structured .field {
   display: inline-block;
   line-height: 1.428571429;
-  border: 1px solid #cccccc;
+  border: 1px solid #dddddd;
+  color: #666;
   padding: 2px 3px;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075); }
 .ecogwiki-editor .structured .field-row:hover .field {
