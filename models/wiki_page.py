@@ -201,7 +201,6 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # validate and prepare new contents
         new_data, new_md = self.validate_new_content(base_revision, body, user)
-        new_data['datePageModified'] = schema.DateTimeProperty(self.itemtype, 'DateTime', 'datePageModified', now)
         new_body = self._merge_if_needed(base_revision, body)
 
         # get old data and metadata

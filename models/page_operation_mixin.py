@@ -45,7 +45,7 @@ class PageOperationMixin(object):
         data = [
             (n, v, schema.humane_property(self.itemtype, n))
             for n, v in self.data.items()
-            if (n not in ['schema', 'name']) and (not isinstance(v, schema.Property) or v.ptype != 'LongText')
+            if (n not in ['schema', 'name', 'datePageModified']) and (not isinstance(v, schema.Property) or v.ptype != 'LongText')
         ]
 
         if len(data) == 0:
@@ -104,7 +104,9 @@ class PageOperationMixin(object):
 
     @property
     def data(self):
-        return PageOperationMixin.parse_data(self.title, self.body, self.itemtype)
+        data = PageOperationMixin.parse_data(self.title, self.body, self.itemtype)
+        data['datePageModified'] = schema.DateTimeProperty(self.itemtype, 'DateTime', 'datePageModified', self.updated_at)
+        return data
 
     @property
     def rawdata(self):

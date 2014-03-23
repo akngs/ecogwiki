@@ -590,7 +590,7 @@ class DateTimeProperty(TypeProperty):
     def __init__(self, itemtype, ptype, pname, pvalue):
         super(TypeProperty, self).__init__(itemtype, ptype, pname, pvalue)
         if isinstance(pvalue, datetime):
-            pvalue = pvalue.strftime("%Y-%m-%d %H:%M:%S")
+            self.pvalue = pvalue.strftime("%Y-%m-%d %H:%M:%S")
 
     def __eq__(self, o):
         return super(DateTimeProperty, self).__eq__(o) and o.pvalue == self.pvalue

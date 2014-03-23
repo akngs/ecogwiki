@@ -291,9 +291,13 @@ class YamlSchemaDataTest(AppEngineTestCase):
     def test_yaml(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello', u'Hello')
         self.assertEqual({u'Book/author': [u'AK']}, page.outlinks)
+
+        data_items = dict((k, v.pvalue) for k, v in page.data.items())
+        del data_items['datePageModified']
+
         self.assertEqual(
             {'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK', 'longDescription': u'Hello'},
-            dict((k, v.pvalue) for k, v in page.data.items())
+            data_items
         )
 
     def test_re_match(self):
