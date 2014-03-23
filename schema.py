@@ -6,7 +6,7 @@ import sys
 import json
 import caching
 import operator
-from datetime import date
+from datetime import date, datetime
 from markdownext import md_wikilink
 
 
@@ -586,9 +586,17 @@ class FloatProperty(NumberProperty):
         self.value = pvalue
 
 
-class DateTimeProperty(TextProperty):
-    # TODO implement this (shouldn't inherit from TextProperty)
-    pass
+class DateTimeProperty(TypeProperty):
+    def __init__(self, itemtype, ptype, pname, pvalue):
+        super(TypeProperty, self).__init__(itemtype, ptype, pname, pvalue)
+        if isinstance(pvalue, datetime):
+            pvalue = pvalue.strftime("%Y-%m-%d %H:%M:%S")
+
+    def __eq__(self, o):
+        return super(DateTimeProperty, self).__eq__(o) and o.pvalue == self.pvalue
+
+    def is_wikilink(self):
+        return False
 
 
 class TimeProperty(TextProperty):

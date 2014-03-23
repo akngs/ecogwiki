@@ -197,8 +197,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if not force_update and self.body == body:
             return False
 
+        now = datetime.now()
+
         # validate and prepare new contents
         new_data, new_md = self.validate_new_content(base_revision, body, user)
+        new_data['datePageModified'] = schema.DateTimeProperty(self.itemtype, 'DateTime', 'datePageModified', now)
         new_body = self._merge_if_needed(base_revision, body)
 
         # get old data and metadata
@@ -223,7 +226,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if not dont_create_rev:
             self.revision += 1
         if not force_update:
-            self.updated_at = datetime.now()
+            self.updated_at = now
         self.put()
 
         # create revision
@@ -282,8 +285,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # check data
         new_data = PageOperationMixin.parse_data(self.title, new_body, new_md['schema'])
+
         if any(type(value) == schema.InvalidProperty for value in new_data.values()):
-            invalid_keys = [key for key,value in new_data.iteritems() if type(value) == schema.InvalidProperty]
+            invalid_keys = [key for key, value in new_data.iteritems() if type(value) == schema.InvalidProperty]
             raise ValueError('Invalid schema data: %s' % ', '.join(invalid_keys))
 
         # check revision
