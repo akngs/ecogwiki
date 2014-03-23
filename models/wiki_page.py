@@ -720,10 +720,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
         email = user.email() if user is not None else 'None'
         results = caching.get_wikiquery(q, email)
         if results is None:
-            page_query, attrs = search.parse_wikiquery(q)
+            page_query, attrs, sort_criteria = search.parse_wikiquery(q)
             titles = cls._evaluate_pages(page_query)
             accessible_titles = sorted(WikiPage.get_titles(user).intersection(titles))
 
+            # evaluate
             results = []
             if attrs == [u'name']:
                 results += [{u'name': title} for title in accessible_titles]
@@ -731,6 +732,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 for title in accessible_titles:
                     pagedata = WikiPage.get_by_title(title, follow_redirect=True).data
                     results.append(OrderedDict((attr, pagedata[attr] if attr in pagedata else None) for attr in attrs))
+
+            # sort: only use first criterion
+            if len(sort_criteria) > 0:
+                criterion = sort_criteria[0][0]
+                descending = sort_criteria[0][1] == '-'
+                results = sorted(results, key=lambda r: r[criterion].pvalue, reverse=descending)
 
             if len(results) == 1:
                 results = results[0]

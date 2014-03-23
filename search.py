@@ -59,9 +59,10 @@ double_quote_str = p.dblQuotedString.setParseAction(p.removeQuotes)
 
 page_query_expr = p.Forward()
 attr_expr = p.Forward()
+sort_expr = p.Forward()
 
 expr = page_query_expr + p.Optional(p.Suppress('>') + attr_expr)
-expr.setParseAction(lambda x: x if len(x) == 2 else [x[0], [u'name']])
+expr.setParseAction(lambda x: x if len(x) == 2 else [x[0], [[u'name']]])
 
 page_query_term = p.Group(p.Optional(identifier + p.Suppress(':')) + double_quote_str)
 page_query_term.setParseAction(lambda x: x if len(x[0]) == 2 else [[u'name', x[0][0]]])
@@ -70,8 +71,20 @@ page_query_expr << p.operatorPrecedence(page_query_term, [
     (p.Literal('+'), 2, p.opAssoc.LEFT),
 ])
 
-attr_expr << p.Group(p.delimitedList(identifier))
+attr_expr << p.Group(p.delimitedList(p.Group(identifier + p.Optional(sort_expr))))
+sort_expr << p.oneOf('+ -')
 
 
 def parse_wikiquery(q):
-    return expr.parseString(q).asList()
+    page_query, attrs_and_order = expr.parseString(q).asList()
+
+    attrs = []
+    sort_criteria = []
+    for attr in attrs_and_order:
+        if len(attr) == 2:
+            attrs.append(attr[0])
+            sort_criteria.append(attr)
+        else:
+            attrs.append(attr[0])
+
+    return page_query, attrs, sort_criteria
