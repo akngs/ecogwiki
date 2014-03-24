@@ -448,7 +448,7 @@ class PageOperationMixin(object):
             lines = [u'# Incoming Links']
             for rel, links in inlinks.items():
                 itemtype, rel = rel.split('/')
-                lines.append(u'## %s' % schema.humane_property(itemtype, rel, True))
+                lines.append(u'## %s <span class="hidden">(%s)</span>' % (schema.humane_property(itemtype, rel, True), itemtype))
                 # remove dups and sort
                 links = list(set(links))
                 links.sort()
