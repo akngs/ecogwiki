@@ -492,6 +492,10 @@ article .body h6 {
     font-size: 0.9em;
 }
 
+article .body .hidden {
+    display: none;
+}
+
 article .body a[href^="ftp://"],
 article .body a[href^="https://"],
 article .body a[href^="http://"] {
