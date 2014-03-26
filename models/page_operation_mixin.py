@@ -321,6 +321,8 @@ class PageOperationMixin(object):
 
     @classmethod
     def parse_data(cls, title, body, itemtype=u'Article'):
+        body = body.replace('\r\n', '\n')
+
         default_data = {'name': title, 'schema': schema.get_itemtype_path(itemtype)}
 
         # collect
