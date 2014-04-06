@@ -330,6 +330,9 @@ var main = (function($) {
             });
         })();
 
+        // Open external link in new window or tab
+        $('article a:not(.wikipage)').attr('target', '_blank');
+
         // Track outbound links
         (function() {
             var host = window.location.host;
