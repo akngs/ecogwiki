@@ -331,7 +331,7 @@ var main = (function($) {
         })();
 
         // Open external link in new window or tab
-        $('article a:not(.wikipage)').attr('target', '_blank');
+        $('article a.plainurl').attr('target', '_blank');
 
         // Track outbound links
         (function() {
