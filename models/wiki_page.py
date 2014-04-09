@@ -204,8 +204,15 @@ class WikiPage(ndb.Model, PageOperationMixin):
         new_body = self._merge_if_needed(base_revision, body)
 
         # get old data and metadata
-        old_md = self.metadata.copy()
-        old_data = self.data.copy()
+        try:
+            old_md = self.metadata.copy()
+        except ValueError:
+            old_md = {}
+
+        try:
+            old_data = self.data.copy()
+        except ValueError:
+            old_data = {}
 
         # delete caches
         caching.del_rendered_body(self.title)

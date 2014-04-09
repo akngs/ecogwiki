@@ -42,9 +42,14 @@ class PageOperationMixin(object):
 
     @property
     def rendered_data(self):
+        try:
+            data = self.data
+        except ValueError:
+            data = {}
+
         data = [
             (n, v, schema.humane_property(self.itemtype, n))
-            for n, v in self.data.items()
+            for n, v in data.items()
             if (n not in ['schema', 'name', 'datePageModified']) and (not isinstance(v, schema.Property) or v.ptype != 'LongText')
         ]
 
