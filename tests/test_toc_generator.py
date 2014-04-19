@@ -114,7 +114,7 @@ class ExtractHeadingsTest(unittest.TestCase):
         <h1>a three</h1>
         '''
         headings = TocGenerator.extract_headings(html)
-        self.assertEqual(len(headings), 3);
+        self.assertEqual(len(headings), 3)
 
 
 class HTMLGenerationTest(unittest.TestCase):
