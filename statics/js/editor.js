@@ -549,8 +549,11 @@ var editor = (function($) {
                     sb.push('<textarea class="field" data-type="' + ranges + '" id="prop_' + pname + '_' + index + '" name="' + pname + '">' + value + '</textarea>');
                 } else if(['Text', 'DateTime', 'Time'].indexOf(ranges) !== -1) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
-                } else if(['Number', 'Integer', 'Float'].indexOf(ranges) !== -1) {
-                    sb.push('<input class="field" data-type="' + ranges + '" type="number" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if('Integer' === ranges) {
+                    sb.push('<input class="field" data-type="' + ranges + '" type="number" step="1" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if(['Number', 'Float'].indexOf(ranges) !== -1) {
+                    sb.push('<input class="field" data-type="' + ranges + '" type="number" step="any" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+
                 } else if('Boolean' === ranges) {
                     if(value) {
                         sb.push('<input class="field" data-type="' + ranges + '" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="on" checked="checked"> Yes');
