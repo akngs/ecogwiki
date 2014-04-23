@@ -72,32 +72,45 @@
             list-style-type: none;
         }
         ol.props {
-            margin: 1em 0;
+            margin: 1em 0 0 24px;
         }
         .prop {
-            margin: 0.8em 0 1.6em;
+            margin: 0.8em 0 2em;
         }
-        .prop:last-child {
-            margin-bottom: 0.8em;
+        .prop.prop-property {
+            margin-left: 24px;
         }
         .field-row {
+            position: relative;
             padding: 0.2em 0 0.4em;
         }
         .delete-field {
-            float: right;
+            position: absolute;
+            top: 6px;
+            left: -24px;
+            border-width: 0;
+            border-radius: 8px;
+            background-color: #FF9B9B;
+            color: #FFF;
+            font-weight: bold;
+            padding: 0 5px;
         }
+        .delete-field:hover {
+            background-color: #F00;
+        }
+
         .field-row-longtext .delete-field {
             float: none;
         }
         .add-field,
         .add-prop {
-            padding: 0.1em 1em;
-            margin: 0.2em 0 0.4em;
+            font-size: smaller;
         }
         .field {
             display: inline-block;
             line-height: 1.428571429;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
+            color: #666;
             padding: 2px 3px;
             box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
         }

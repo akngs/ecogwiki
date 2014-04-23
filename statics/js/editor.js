@@ -339,7 +339,7 @@ var editor = (function($) {
             sb.push('<div class="prop prop-' + prop['type']['id'] + '" data-pname="' + prop['type']['id'] + '">');
             sb.push('   <label for="' + idPrefix + '_0" title="' + encodeHtmlEntity(prop['type']['comment']) + '">' + prop['type']['label'] + '</label>');
             sb.push('   <ol></ol>');
-            sb.push('   <a class="add-field btn" href="#">Add field</a>');
+            sb.push('   <a class="add-field" href="#">+ Add ' + prop['type']['label'] + '</a>');
             sb.push('</div>');
             $propList.append(sb.join('\n'));
 
@@ -380,14 +380,13 @@ var editor = (function($) {
             var $root = $(this._rootEl);
             var sb = [];
             sb.push('<div class="prop prop-property" data-pname="property">');
-            sb.push('    <label for="prop_property">Available properties</label>');
             sb.push('    <div class="field-row"><select class="field" id="prop_property" name="prop_property">');
 
             for(var pname in props) {
                 sb.push('        <option value="' + pname + '">' + props[pname]['type']['label'] + '</option>');
             }
             sb.push('    </select></div>');
-            sb.push('    <a class="add-prop btn" href="#">Add property</a>');
+            sb.push('    <a class="add-prop" href="#">+ Add property</a>');
             sb.push('</div>');
             $root.append(sb.join('\n'));
         },
@@ -499,7 +498,7 @@ var editor = (function($) {
 
             sb.push('<li class="field-row">');
             sb.push(this._generateFieldHtml(pname, i, type, prop['type']['enum'], value || prop['defaultValue']));
-            sb.push('<a class="delete-field" href="#">Delete</a>');
+            sb.push('<a class="delete-field" href="#">&times;</a>');
             sb.push('</li>');
             $prop.find('ol').append(sb.join('\n'));
 
@@ -550,8 +549,11 @@ var editor = (function($) {
                     sb.push('<textarea class="field" data-type="' + ranges + '" id="prop_' + pname + '_' + index + '" name="' + pname + '">' + value + '</textarea>');
                 } else if(['Text', 'DateTime', 'Time'].indexOf(ranges) !== -1) {
                     sb.push('<input class="field" data-type="' + ranges + '" type="text" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
-                } else if(['Number', 'Integer', 'Float'].indexOf(ranges) !== -1) {
-                    sb.push('<input class="field" data-type="' + ranges + '" type="number" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if('Integer' === ranges) {
+                    sb.push('<input class="field" data-type="' + ranges + '" type="number" step="1" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+                } else if(['Number', 'Float'].indexOf(ranges) !== -1) {
+                    sb.push('<input class="field" data-type="' + ranges + '" type="number" step="any" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="' + value + '">');
+
                 } else if('Boolean' === ranges) {
                     if(value) {
                         sb.push('<input class="field" data-type="' + ranges + '" type="checkbox" id="prop_' + pname + '_' + index + '" name="' + pname + '" value="on" checked="checked"> Yes');

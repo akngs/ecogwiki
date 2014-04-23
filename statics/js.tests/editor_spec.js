@@ -600,9 +600,9 @@ describe('Edit mode', function() {
         });
 
         it('should render number field for number type', function() {
-            expect(mode._generateFieldHtml('f', 0, ['Number'], null, 1.5)).toEqual('<input class="field" data-type="Number" type="number" id="prop_f_0" name="f" value="1.5">');
-            expect(mode._generateFieldHtml('f', 0, ['Integer'], null, 1)).toEqual('<input class="field" data-type="Integer" type="number" id="prop_f_0" name="f" value="1">');
-            expect(mode._generateFieldHtml('f', 0, ['Float'], null, 1.5)).toEqual('<input class="field" data-type="Float" type="number" id="prop_f_0" name="f" value="1.5">');
+            expect(mode._generateFieldHtml('f', 0, ['Number'], null, 1.5)).toEqual('<input class="field" data-type="Number" type="number" step="any" id="prop_f_0" name="f" value="1.5">');
+            expect(mode._generateFieldHtml('f', 0, ['Integer'], null, 1)).toEqual('<input class="field" data-type="Integer" type="number" step="1" id="prop_f_0" name="f" value="1">');
+            expect(mode._generateFieldHtml('f', 0, ['Float'], null, 1.5)).toEqual('<input class="field" data-type="Float" type="number" step="any" id="prop_f_0" name="f" value="1.5">');
         });
 
         it('should parse number as number', function() {

@@ -152,6 +152,9 @@ class PageResource(PageLikeResource):
         if not page.can_read(self.user):
             self._403(page, head)
             return
+        if (not page.can_write(self.user)) and self.req.GET.get('view', self.default_view) == 'edit':
+            self._403(page, head)
+            return
 
         if get_restype(self.req, 'html') == 'html' and self.req.GET.get('view', self.default_view) == 'default':
             redirect = page.metadata.get('redirect', None)

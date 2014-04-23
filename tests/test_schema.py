@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import schema
+import caching
 import unittest2 as unittest
 from tests import AppEngineTestCase
-from models import SchemaDataIndex, PageOperationMixin
+from models import SchemaDataIndex, PageOperationMixin, WikiPage
 
 
 class LabelTest(AppEngineTestCase):
@@ -291,9 +292,13 @@ class YamlSchemaDataTest(AppEngineTestCase):
     def test_yaml(self):
         page = self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: AK\n    isbn: "1234567890"\n\nHello', u'Hello')
         self.assertEqual({u'Book/author': [u'AK']}, page.outlinks)
+
+        data_items = dict((k, v.pvalue) for k, v in page.data.items())
+        del data_items['datePageModified']
+
         self.assertEqual(
             {'name': u'Hello', 'isbn': u'1234567890', 'schema': u'Thing/CreativeWork/Book/', 'author': u'AK', 'longDescription': u'Hello'},
-            dict((k, v.pvalue) for k, v in page.data.items())
+            data_items
         )
 
     def test_re_match(self):
@@ -517,6 +522,45 @@ class ConversionPriorityTest(unittest.TestCase):
 
         prop = schema.SchemaConverter.convert(u'SoftwareApplication', {u'featureList': u'See http://x.com'})['featureList']
         self.assertEqual(schema.TextProperty, type(prop))
+
+
+class SchemaChangeTest(AppEngineTestCase):
+    def setUp(self):
+        super(SchemaChangeTest, self).setUp()
+        self.login('ak@gmail.com', 'ak')
+
+    def tearDown(self):
+        schema.SCHEMA_TO_LOAD = schema.SCHEMA_TO_LOAD[:-1]
+        super(SchemaChangeTest, self).tearDown()
+
+    def test_change_schema_after_writing_and_try_to_read(self):
+        self.update_page(u'Hello there?', u'Hello')
+
+        caching.flush_all()
+        schema.SCHEMA_TO_LOAD.append({
+            "properties": {
+                "author": {
+                    "cardinality": [1, 1]
+                }
+            }
+        })
+
+        page = WikiPage.get_by_title(u'Hello')
+        page.rendered_body
+
+    def test_change_schema_after_writing_and_try_to_update(self):
+        self.update_page(u'Hello there?', u'Hello')
+
+        caching.flush_all()
+        schema.SCHEMA_TO_LOAD.append({
+            "properties": {
+                "author": {
+                    "cardinality": [1, 1]
+                }
+            }
+        })
+
+        self.update_page(u'.schema Book\n\n    #!yaml/schema\n    author: "Alan Kang"\n\nHello there?\n', u'Hello')
 
 
 class MiscTest(AppEngineTestCase):

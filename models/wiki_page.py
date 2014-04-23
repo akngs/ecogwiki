@@ -197,13 +197,22 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if not force_update and self.body == body:
             return False
 
+        now = datetime.now()
+
         # validate and prepare new contents
         new_data, new_md = self.validate_new_content(base_revision, body, user)
         new_body = self._merge_if_needed(base_revision, body)
 
         # get old data and metadata
-        old_md = self.metadata.copy()
-        old_data = self.data.copy()
+        try:
+            old_md = self.metadata.copy()
+        except ValueError:
+            old_md = {}
+
+        try:
+            old_data = self.data.copy()
+        except ValueError:
+            old_data = {}
 
         # delete caches
         caching.del_rendered_body(self.title)
@@ -223,7 +232,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         if not dont_create_rev:
             self.revision += 1
         if not force_update:
-            self.updated_at = datetime.now()
+            self.updated_at = now
         self.put()
 
         # create revision
@@ -282,8 +291,9 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
         # check data
         new_data = PageOperationMixin.parse_data(self.title, new_body, new_md['schema'])
+
         if any(type(value) == schema.InvalidProperty for value in new_data.values()):
-            invalid_keys = [key for key,value in new_data.iteritems() if type(value) == schema.InvalidProperty]
+            invalid_keys = [key for key, value in new_data.iteritems() if type(value) == schema.InvalidProperty]
             raise ValueError('Invalid schema data: %s' % ', '.join(invalid_keys))
 
         # check revision
@@ -720,10 +730,11 @@ class WikiPage(ndb.Model, PageOperationMixin):
         email = user.email() if user is not None else 'None'
         results = caching.get_wikiquery(q, email)
         if results is None:
-            page_query, attrs = search.parse_wikiquery(q)
+            page_query, attrs, sort_criteria = search.parse_wikiquery(q)
             titles = cls._evaluate_pages(page_query)
-            accessible_titles = WikiPage.get_titles(user).intersection(titles)
+            accessible_titles = sorted(WikiPage.get_titles(user).intersection(titles))
 
+            # evaluate
             results = []
             if attrs == [u'name']:
                 results += [{u'name': title} for title in accessible_titles]
@@ -731,6 +742,12 @@ class WikiPage(ndb.Model, PageOperationMixin):
                 for title in accessible_titles:
                     pagedata = WikiPage.get_by_title(title, follow_redirect=True).data
                     results.append(OrderedDict((attr, pagedata[attr] if attr in pagedata else None) for attr in attrs))
+
+            # sort: only use first criterion
+            if len(sort_criteria) > 0:
+                criterion = sort_criteria[0][0]
+                descending = sort_criteria[0][1] == '-'
+                results = sorted(results, key=lambda r: r[criterion].pvalue, reverse=descending)
 
             if len(results) == 1:
                 results = results[0]

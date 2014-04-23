@@ -42,10 +42,15 @@ class PageOperationMixin(object):
 
     @property
     def rendered_data(self):
+        try:
+            data = self.data
+        except ValueError:
+            data = {}
+
         data = [
             (n, v, schema.humane_property(self.itemtype, n))
-            for n, v in self.data.items()
-            if (n not in ['schema', 'name']) and (not isinstance(v, schema.Property) or v.ptype != 'LongText')
+            for n, v in data.items()
+            if (n not in ['schema', 'name', 'datePageModified']) and (not isinstance(v, schema.Property) or v.ptype != 'LongText')
         ]
 
         if len(data) == 0:
@@ -104,7 +109,9 @@ class PageOperationMixin(object):
 
     @property
     def data(self):
-        return PageOperationMixin.parse_data(self.title, self.body, self.itemtype)
+        data = PageOperationMixin.parse_data(self.title, self.body, self.itemtype)
+        data['datePageModified'] = schema.DateTimeProperty(self.itemtype, 'DateTime', 'datePageModified', self.updated_at)
+        return data
 
     @property
     def rawdata(self):
@@ -319,6 +326,8 @@ class PageOperationMixin(object):
 
     @classmethod
     def parse_data(cls, title, body, itemtype=u'Article'):
+        body = body.replace('\r\n', '\n')
+
         default_data = {'name': title, 'schema': schema.get_itemtype_path(itemtype)}
 
         # collect
@@ -444,9 +453,9 @@ class PageOperationMixin(object):
         # incoming links
         if len(inlinks) > 0:
             lines = [u'# Incoming Links']
-            for rel, links in inlinks.items():
+            for i, (rel, links) in enumerate(inlinks.items()):
                 itemtype, rel = rel.split('/')
-                lines.append(u'## %s' % schema.humane_property(itemtype, rel, True))
+                lines.append(u'## %s <span class="hidden">(%s %d)</span>' % (schema.humane_property(itemtype, rel, True), itemtype, i))
                 # remove dups and sort
                 links = list(set(links))
                 links.sort()
