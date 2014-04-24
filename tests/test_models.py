@@ -272,6 +272,21 @@ class GetConfigTest(AppEngineTestCase):
         config = WikiPage.get_config()
         self.assertEqual('', config['service']['title'])
 
+    def test_invalid_config_page(self):
+        self.config_page.update_content(u'''
+          admin:
+            email: ak@gmail.com
+          service:
+            default_permissions_with_typo:
+              read: [whatthe
+              write: [what]
+        ''', 1, user=self.get_cur_user())
+        config = WikiPage.get_config()
+        self.assertEqual(
+            {'read': ['all'], 'write': ['login']},
+            config['service']['default_permissions']
+        )
+
 
 class RelatedPageUpdatingTest(AppEngineTestCase):
     def setUp(self):
