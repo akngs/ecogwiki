@@ -137,6 +137,10 @@ class EmbedTest(RenderingTestCase):
             u'<iframe src="https://docs.google.com/spreadsheets/d/15k0qoVJSdth9vsjyoBVcYVAZpCKHl8wyuyoBLfvmUs0/pubhtml?widget=true&amp;headers=false"></iframe>',
             u'<div class="video googless"><iframe allowfullscreen="true" frameborder="0" height="480" scrolling="no" src="http://docs.google.com/spreadsheets/d/15k0qoVJSdth9vsjyoBVcYVAZpCKHl8wyuyoBLfvmUs0/pubhtml?widget=true&amp;headers=false" width="640"></iframe></div>')
 
+    def test_google_spreadsheet2(self):
+        self.assertRenderedText(
+            u'https://docs.google.com/spreadsheets/d/15k0qoVJSdth9vsjyoBVcYVAZpCKHl8wyuyoBLfvmUs0/pubhtml',
+            u'<div class="video googless2"><iframe allowfullscreen="true" frameborder="0" height="480" scrolling="no" src="http://docs.google.com/spreadsheets/d/15k0qoVJSdth9vsjyoBVcYVAZpCKHl8wyuyoBLfvmUs0/pubhtml?widget=true&amp;headers=false" width="640"></iframe></div>')
 
 class WikilinkTest(RenderingTestCase):
     def test_plain(self):
