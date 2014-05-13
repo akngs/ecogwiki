@@ -234,7 +234,28 @@ var main = (function($) {
                         var $container = $('<div>');
                         $container.addClass('wikiquery-container');
                         $(this.parentNode).replaceWith($container);
-                        $container.load($this.attr('href') + '?view=bodyonly .wrap');
+                        $container.load($this.attr('href') + '?view=bodyonly .wrap', function() {
+                            // dynamically load/unload images from memory to prevent browser crashes
+                            var $images = $container.find('img');
+                            $images.appear();
+                            $images.on('appear', function(e, $imgs) {
+                                $imgs.each(function() {
+                                    var $img = $(this);
+                                    if(!$img.data('src')) return;
+
+                                    $img.attr('src', $img.data('src'));
+                                });
+                            }).on('disappear', function(e, $imgs) {
+                                $imgs.each(function() {
+                                    var $img = $(this);
+                                    $img.data('src', $img.attr('src'));
+
+                                    $img.attr('width', $img.width());
+                                    $img.attr('height', $img.height());
+                                    $img.attr('src', '#');
+                                });
+                            });
+                        });
                     } else {
                         // Other block-level elements can contain block-level elements so use it as a parent
                         $(this.parentNode).addClass('wikiquery-container').load($this.attr('href') + '?view=bodyonly .wrap');
