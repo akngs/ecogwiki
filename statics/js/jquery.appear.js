@@ -66,7 +66,6 @@
     appear: function(options) {
       var opts = $.extend({}, defaults, options || {});
       var selector = this.selector || this;
-        console.log(selector);
       if (!check_binded) {
         var on_check = function() {
           if (check_lock) {
