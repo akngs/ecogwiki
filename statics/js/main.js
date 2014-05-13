@@ -248,8 +248,9 @@ var main = (function($) {
                             }).on('disappear', function(e, $imgs) {
                                 $imgs.each(function() {
                                     var $img = $(this);
-                                    $img.data('src', $img.attr('src'));
+                                    if($img.attr('src') === '#') return;
 
+                                    $img.data('src', $img.attr('src'));
                                     $img.attr('width', $img.width());
                                     $img.attr('height', $img.height());
                                     $img.attr('src', '#');
