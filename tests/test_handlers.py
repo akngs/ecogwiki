@@ -168,6 +168,11 @@ class PageHandlerTest(AppEngineTestCase):
         link_texts = [link.text for link in links]
         self.assertTrue(u'New page' in link_texts)
 
+    def test_try_to_get_edit_page_without_permission(self):
+        self.logout()
+        self.browser.get('/A?view=edit')
+        self.assertEqual(403, self.browser.res.status_code)
+
 
 class RevisionTest(AppEngineTestCase):
     def setUp(self):
