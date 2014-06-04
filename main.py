@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
+import ext
 import webapp2
 
 
@@ -42,6 +43,10 @@ DEFAULT_CONFIG = {
         },
     }
 }
+
+
+ext.scan_exts()
+
 
 app = webapp2.WSGIApplication([
     (ur'/sp\.(.*)', 'views.SpecialPageHandler'),

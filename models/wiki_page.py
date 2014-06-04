@@ -150,15 +150,22 @@ class WikiPage(ndb.Model, PageOperationMixin):
 
     def update_content(self, content, base_revision, comment='', user=None, force_update=False, dont_create_rev=False, dont_defer=False, partial='all'):
         content = content.replace('\r\n', '\n')
+        result = None
 
         if partial == 'all':
-            return self._update_content_all(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
+            result = self._update_content_all(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer)
         elif partial.startswith('checkbox'):
-            return self._update_content_checkbox(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, partial)
+            result = self._update_content_checkbox(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, partial)
         elif partial.startswith('log'):
-            return self._update_content_log(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, partial)
+            result = self._update_content_log(content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, partial)
         else:
             raise ValueError('Invalid partial expression: %s' % partial)
+
+        import ext
+        for ext in ext.model_exts:
+            ext.on_page_update_content(self, result)
+
+        return result
 
     def _update_content_checkbox(self, content, base_revision, comment, user, force_update, dont_create_rev, dont_defer, exp):
         cur_index = {'value': -1}
