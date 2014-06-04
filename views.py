@@ -8,6 +8,7 @@ from resources import RedirectResource, PageResource, RevisionResource, Revision
     RelatedPagesResource, WikiqueryResource, TitleListResource, SearchResultResource,\
     TitleIndexResource, PostListResource, ChangeListResource, UserPreferencesResource,\
     SchemaResource
+from ext import ViewExtention
 
 
 class PageHandler(webapp2.RequestHandler):
@@ -15,6 +16,8 @@ class PageHandler(webapp2.RequestHandler):
         return self.get(path, True)
 
     def get(self, path, head=False):
+        ViewExtention.route(path, self.request, self.response, head)
+
         if path == '':
             resource = RedirectResource(self.request, self.response, '/Home')
         elif self.request.path.find(' ') != -1:
