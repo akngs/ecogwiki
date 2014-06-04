@@ -132,6 +132,15 @@ class EmbedTest(RenderingTestCase):
             u'<div class="video daummap"><a href="http://map.daum.net/?urlX=482297&amp;urlY=1009276&amp;urlLevel=3&amp;map_type=TYPE_MAP&amp;map_hybrid=false&amp;SHOWMARK=true"><img src="http://map2.daum.net/map/mapservice?MX=482297&amp;MY=1009276&amp;SCALE=2.5&amp;IW=500&amp;IH=350&amp;COORDSTM=WCONGNAMUL"></a></div>'
         )
 
+    def test_google_spreadsheet(self):
+        self.assertRenderedText(
+            u'<iframe src="https://docs.google.com/spreadsheets/d/15k0qoVJSdth9vsjyoBVcYVAZpCKHl8wyuyoBLfvmUs0/pubhtml?widget=true&amp;headers=false"></iframe>',
+            u'<div class="video googless"><iframe allowfullscreen="true" frameborder="0" height="480" scrolling="no" src="http://docs.google.com/spreadsheets/d/15k0qoVJSdth9vsjyoBVcYVAZpCKHl8wyuyoBLfvmUs0/pubhtml?widget=true&amp;headers=false" width="640"></iframe></div>')
+
+    def test_google_spreadsheet2(self):
+        self.assertRenderedText(
+            u'https://docs.google.com/spreadsheets/d/15k0qoVJSdth9vsjyoBVcYVAZpCKHl8wyuyoBLfvmUs0/pubhtml',
+            u'<div class="video googless2"><iframe allowfullscreen="true" frameborder="0" height="480" scrolling="no" src="http://docs.google.com/spreadsheets/d/15k0qoVJSdth9vsjyoBVcYVAZpCKHl8wyuyoBLfvmUs0/pubhtml?widget=true&amp;headers=false" width="640"></iframe></div>')
 
 class WikilinkTest(RenderingTestCase):
     def test_plain(self):

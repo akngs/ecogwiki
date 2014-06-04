@@ -37,6 +37,10 @@ p = re.compile(
     r'^(?P<navermap><table.*?td.*?><a href="(?P<navermap_url>http://map.naver.com.*?)"\s+.*><img src="(?P<navermap_imgsrc>http://.*?map.naver.com.*?)".*</a></td>.*</table>)$'
     r'|'
     r'^(?P<daummap><a href="(?P<daummap_url>http://map.daum.net.*?)"\s+.*<img.*src="(?P<daummap_imgsrc>http://map.*?.daum.net.*?)"\s+.*)$'
+    r'|'
+    r'^(?P<googless><iframe.*?src="https?\://docs.google.com/spreadsheets/(?P<googless_vid>.+?)".*?>\s*</iframe>)$'
+    r'|'
+    r'^(?P<googless2>https?\://docs.google.com/spreadsheets/(?P<googless2_vid>.+?))$'
     r')'
 )
 
@@ -76,6 +80,10 @@ class EmbedPrepreprocessor(Preprocessor):
             return self._create_video(m, 'googlemap2', 425, 350, 'http://www.google.com/maps/%s&output=embed')
         elif m.group('googlemap3'):
             return self._create_video(m, 'googlemap3', 425, 350, 'http://maps.google.com/%s')
+        elif m.group('googless'):
+            return self._create_video(m, 'googless', 640, 480, 'http://docs.google.com/spreadsheets/%s')
+        elif m.group('googless2'):
+            return self._create_video(m, 'googless2', 640, 480, 'http://docs.google.com/spreadsheets/%s?widget=true&amp;headers=false')
         elif m.group('navermap'):
             return self._create_video_without_iframe(m, 'navermap', 460, 340)
         elif m.group('daummap'):
