@@ -15,10 +15,12 @@ class ViewExtention(object):
     @classmethod
     def route(cls, path, req, res, head_only):
         for ext in view_exts:
-            ext.try_route(path, req, res, head_only)
+            if ext.try_route(path, req, res, head_only):
+                return True
+        return False
 
     def try_route(self, path, req, res, head_only):
-        pass
+        return False
 
 
 def scan_exts():

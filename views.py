@@ -16,7 +16,8 @@ class PageHandler(webapp2.RequestHandler):
         return self.get(path, True)
 
     def get(self, path, head=False):
-        ViewExtention.route(path, self.request, self.response, head)
+        if ViewExtention.route(path, self.request, self.response, head):
+            return
 
         if path == '':
             resource = RedirectResource(self.request, self.response, '/Home')
