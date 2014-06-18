@@ -101,8 +101,13 @@
         var $curUser = $('.cur-user .user');
         var ed = new editor.Editor(
             document.querySelector('.editform textarea'),
-            function() {
+            function(ed) {
+                var index = location.href.indexOf('schema=');
+                if(index === -1) return;
 
+                var schema = location.href.substr(index).split('=')[1];
+                ed.setContent('.schema ' + schema + '\n');
+                ed.setActiveModeName('structured');
             },
             function(callback) {
                 $.get('/sp.schema/types?_type=json', function(data) {callback(data['selectable_itemtypes']);});

@@ -64,12 +64,12 @@ JINJA = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'])
 
 
-to_rel_path = lambda title: WikiPage.title_to_path(title)
-to_abs_path = lambda title: '/' + to_rel_path(title)
-to_pluspath = lambda title: '/%2B' + to_rel_path(title)
-format_short_datetime = lambda v: _format_datetime(v, '%m-%d %H:%M')
-format_datetime = lambda v: _format_datetime(v, '%Y-%m-%d %H:%M:%S')
-format_iso_datetime = lambda v: _format_datetime(v, '%Y-%m-%dT%H:%M:%SZ')
+to_rel_path = lambda title: WikiPage.title_to_path(title) if title else ''
+to_abs_path = lambda title: '/' + to_rel_path(title) if title else ''
+to_pluspath = lambda title: '/%2B' + to_rel_path(title) if title else ''
+format_short_datetime = lambda v: _format_datetime(v, '%m-%d %H:%M') if v else ''
+format_datetime = lambda v: _format_datetime(v, '%Y-%m-%d %H:%M:%S') if v else ''
+format_iso_datetime = lambda v: _format_datetime(v, '%Y-%m-%dT%H:%M:%SZ') if v else ''
 
 
 def _format_datetime(value, pattern):

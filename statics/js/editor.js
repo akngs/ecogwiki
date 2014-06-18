@@ -75,7 +75,7 @@ var editor = (function($) {
 
             this.setContent($(this._textarea).val(), function() {
                 self.getActiveMode().focus();
-                if(callback) callback();
+                if(callback) callback(self);
             });
         },
         getActiveModeName: function() {
