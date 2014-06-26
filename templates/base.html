@@ -37,6 +37,7 @@
 
     ga('create', '{{ config.service.ga_profile_id }}', '{{ config.service.domain }}');
     ga('require', 'linkid', 'linkid.js');
+    ga('require', 'displayfeatures');
 
     // Send search pageview if needed
     var tokens = document.cookie.split(';');
