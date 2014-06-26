@@ -31,7 +31,6 @@ DEFAULT_CONFIG = {
         'domain': '',
         'fb_app_id': '',
         'ga_profile_id': '',
-        'ga_classic_profile_id': '',
         'google_oauth2_web_client_id': '',
         'google_drive_folder': 'ecogwiki_public',
         'css_list': [

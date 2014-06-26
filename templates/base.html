@@ -28,7 +28,6 @@
     function ga() {}
     </script>
     {% else %}
-    <!-- universal -->
     <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -51,7 +50,18 @@
         document.cookie = 'ecogwiki_search_query=;expires=Thu, 01 Jan 1970 00:00:01 GMT;'
     }
 
-    // ... and then send this page's pageview
+    // set content group
+    {% if page %}
+        {% if 'pub' in page.metadata %}
+            ga('set', 'contentGroup1', 'Post');
+        {% else %}
+            ga('set', 'contentGroup1', 'Wiki');
+        {% endif %}
+    {% else %}
+        ga('set', 'contentGroup1', 'System');
+    {% endif %}
+
+    // and then send this page's pageview
     ga('send', 'pageview');
 
     // Logged-in?
@@ -62,19 +72,6 @@
     {% else %}
     ga('set', 'dimension1', '0');
     {% endif %}
-    </script>
-
-    <!-- classical -->
-    <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', '{{ config.service.ga_classic_profile_id }}']);
-    _gaq.push(['_trackPageview']);
-
-    (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
     </script>
     {% endif %}
     <!-- } Google Analytics -->
