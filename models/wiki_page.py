@@ -119,6 +119,7 @@ class WikiPage(ndb.Model, PageOperationMixin):
         page.related_links = self.related_links
         page.older_title = self.older_title
         page.newer_title = self.newer_title
+        page.updated_at = self.updated_at
 
         return page
 
