@@ -368,7 +368,22 @@ var main = (function($) {
         })();
     }
 
+    // querystring parser
+    function qs() {
+        var query = document.location.search.substring(1);
+        if(!query) return {};
+
+        var tokens = query.split('&');
+        var result = {};
+        for(var i = 0; i < tokens.length; i++) {
+            var kv = tokens[i].split('=');
+            result[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1]);
+        }
+        return result;
+    }
+
     return {
-        'run': run
+        'run': run,
+        'qs': qs
     };
 })($);
