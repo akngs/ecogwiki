@@ -294,4 +294,11 @@ window.fbAsyncInit = function() {
     $(function() {ga('send', 'event', 'page', 'error', 'not found');});
     </script>
     {% endif %}
+    <script type="text/javascript">
+    $(function() {
+        window.setTimeout(function() {
+            ga('send', 'event', 'page', 'read >20s');
+        }, 20 * 1000);
+    });
+    </script>
 {% endblock %}
