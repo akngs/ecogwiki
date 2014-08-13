@@ -344,7 +344,8 @@ var editor = (function($) {
             $propList.append(sb.join('\n'));
 
             for(var i = 0; i < numOfFields; i++) {
-                this._addField(itemtype, pname, encodeHtmlEntity(values[i] || ''), forceType);
+                var required = i < prop['cardinality'][0];
+                this._addField(itemtype, pname, encodeHtmlEntity(values[i] || ''), forceType, required);
             }
 
             this._updateButtonsVisibility(itemtype, pname);
@@ -485,7 +486,7 @@ var editor = (function($) {
                 prop['cardinality'][0] < numOfFields;
             $root.find('.prop-' + pname + ' .delete-field')[deleteButtonVisible ? 'show' : 'hide']();
         },
-        _addField: function(itemtype, pname, value, forceType) {
+        _addField: function(itemtype, pname, value, forceType, required) {
             var $root = $(this._rootEl);
             var $prop = $root.find('.prop-' + pname);
             var prop = this._getProperty(itemtype, pname);
@@ -496,7 +497,7 @@ var editor = (function($) {
 
             var sb = [];
 
-            sb.push('<li class="field-row">');
+            sb.push('<li class="field-row ' + (required ? 'required' : '') + '">');
             sb.push(this._generateFieldHtml(pname, i, type, prop['type']['enum'], value || prop['defaultValue']));
             sb.push('<a class="delete-field" href="#">&times;</a>');
             sb.push('</li>');

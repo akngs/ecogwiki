@@ -2,7 +2,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  border-bottom: 1px solid #dddddd; }
+  border-bottom: 1px solid #ddd; }
 .ecogwiki-editor .mode-tab:before,
 .ecogwiki-editor .mode-tab:after {
   display: table;
@@ -32,7 +32,7 @@
   color: #555;
   cursor: default;
   background-color: #fff;
-  border: 1px solid #dddddd;
+  border: 1px solid #ddd;
   border-bottom-color: transparent; }
 .ecogwiki-editor.busy .mode-tab li > a {
   cursor: wait;
@@ -82,7 +82,7 @@
 .ecogwiki-editor .structured .field {
   display: inline-block;
   line-height: 1.428571429;
-  border: 1px solid #dddddd;
+  border: 1px solid #ddd;
   color: #666;
   padding: 2px 3px;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075); }
@@ -93,7 +93,7 @@
 .upload-link:hover {
   padding: 0.3em 1em;
   border-radius: 3px;
-  border: 1px solid #dddddd;
+  border: 1px solid #ddd;
   background-color: #f0f0f0;
   text-align: center; }
 
@@ -105,3 +105,8 @@
 .upload-link.main {
   display: block;
   margin: 1em 0 0.5em; }
+
+.required::after {
+  content: "required";
+  padding-left: 0.5em;
+  color: red; }

@@ -139,3 +139,9 @@
     display: block;
     margin: 1em 0 0.5em;
 }
+
+.required::after {
+    content: "required";
+    padding-left: 0.5em;
+    color: red;
+}
