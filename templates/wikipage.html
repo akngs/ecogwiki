@@ -58,6 +58,7 @@ window.fbAsyncInit = function() {
 {% endif %}
 {% endblock %}
 
+{% block body_attr %} class="{{ page.metadata.schema }}" {% endblock %}
 {% block body %}
 <article itemscope itemtype="{{ page.itemtype_url }}">
     <header>
