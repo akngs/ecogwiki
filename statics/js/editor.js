@@ -381,6 +381,7 @@ var editor = (function($) {
             var $root = $(this._rootEl);
             var sb = [];
             sb.push('<div class="prop prop-property" data-pname="property">');
+            sb.push('    <label for="prop_property">Additional properties</label>');
             sb.push('    <div class="field-row"><select class="field" id="prop_property" name="prop_property">');
 
             for(var pname in props) {
