@@ -591,8 +591,8 @@ class MiscTest(AppEngineTestCase):
 
     def test_properties_order_should_follow_that_of_source(self):
         article = schema.get_schema('Article')
-        self.assertEqual('about', article['properties'][0])
-        self.assertEqual('wordCount', article['properties'][-1])
+        self.assertEqual('additionalType', article['properties'][0])
+        self.assertEqual('longDescription', article['properties'][-1])
 
     def test_self_contained_schema(self):
         s = schema.get_schema('Person', True)

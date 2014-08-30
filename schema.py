@@ -121,12 +121,11 @@ def get_schema(itemtype, self_contained=False):
     legacy_spellings = set(get_legacy_spellings())
 
     item['properties'] = [p for p in item['properties'] if p not in legacy_spellings]
-    sprops = set(item['specific_properties']).difference(legacy_spellings)
+    sprops = [p for p in item['specific_properties'] if p not in legacy_spellings]
 
     # merge specific_properties into properties and sort
     item['properties'] += [p for p in sprops if p not in item['properties']]
-    item['properties'] = sorted(item['properties'])
-    item['specific_properties'] = list(sprops)
+    item['specific_properties'] = sprops
 
     caching.set_schema(itemtype, item)
     return item
