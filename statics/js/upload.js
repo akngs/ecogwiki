@@ -91,7 +91,7 @@ var upload = (function($) {
         },
         _prepareUploadCallback: function(result) {
             // Try again if fail
-            if(!result) {
+            if(!result || result.error) {
                 this._api.auth.authorize(
                     {'client_id': this._oauthClientId, 'scope': this._apiScopes.join(' '), 'immediate': false},
                     this._prepareUploadCallback.bind(this)
