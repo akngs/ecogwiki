@@ -112,6 +112,9 @@ var editor = (function($) {
                 onUploadPrepared: function() {},
                 onUploaded: function(url, thumbnailUrl, mimeType) {
                     var fieldId = self._$clickedLink.data('field');
+                    if(thumbnailUrl) {
+                        url += '&thumbnailUrl=' + encodeURIComponent(thumbnailUrl);
+                    }
                     if(fieldId) {
                         // update property
                         $('#' + fieldId).val(url);

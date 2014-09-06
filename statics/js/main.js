@@ -235,8 +235,16 @@ var main = (function($) {
                         $container.addClass('wikiquery-container');
                         $(this.parentNode).replaceWith($container);
                         $container.load($this.attr('href') + '?view=bodyonly .wrap', function() {
-                            // dynamically load/unload images from memory to prevent browser crashes
+                            // use thumbnail if there is one
                             var $images = $container.find('img');
+                            $images.each(function() {
+                                var original = this.getAttribute('src');
+                                var m = original.match(/&thumbnailUrl=(.+?)(&|$)/);
+                                var thumbnail = m ? decodeURIComponent(m[1]) : original;
+                                this.setAttribute('src', thumbnail);
+                            });
+
+                            // dynamically load/unload images from memory to prevent browser crashes
                             $images.appear();
                             $images.on('appear', function(e, $imgs) {
                                 $imgs.each(function() {
