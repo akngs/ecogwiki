@@ -103,7 +103,8 @@
   cursor: wait; }
 
 .upload-link.main {
-  display: block;
+  display: inline-block;
+  float: right;
   margin: 1em 0 0.5em; }
 
 .required::after {
