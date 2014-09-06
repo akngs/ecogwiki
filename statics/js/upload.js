@@ -78,13 +78,14 @@ var upload = (function($) {
                 request.execute(function(resp) {
                     var mimeType = resp['mimeType'];
                     var url = resp['webContentLink'];
+                    var thumbnailUrl = resp['thumbnailLink'];
                     self._ready = true;
                     if(self._listener) {
                         self._listener.onUploaderStateChanged(self._ready);
-                        self._listener.onUploaded(url, mimeType);
+                        self._listener.onUploaded(url, thumbnailUrl, mimeType);
                     }
                     if(additionalCallback) {
-                        additionalCallback(url, mimeType);
+                        additionalCallback(url, thumbnailUrl, mimeType);
                     }
                 });
             };

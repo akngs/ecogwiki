@@ -9,6 +9,9 @@
   "dependencies": {
   },
   "devDependencies": {
+    "karma-jasmine": "*",
+    "karma-phantomjs-launcher": "*",
+    "karma-chrome-launcher": "*",
     "karma-opera-launcher": "*",
     "karma-safari-launcher": "*",
     "karma-ios-launcher": "*"
